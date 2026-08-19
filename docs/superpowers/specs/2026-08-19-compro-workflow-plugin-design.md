@@ -4,13 +4,13 @@
 
 The `compro` project is being rewritten from a single monolithic skill into a multi-agent orchestrated plugin structure. The new architecture breaks the company profile generation process into distinct, isolated stages, allowing for better quality control, specialized prompt focus (writing vs. building vs. SEO), and automated feedback loops.
 
-The orchestrator (`compro`) manages the state machine, while specialized skills (`writer`, `reviewer`, `seo`, `builder`, `publisher`, `deploy-to-vercel`) execute the actual work.
+The plugin is primarily designed for Claude (via Claude Code) but maintains compatibility with other agents like Gemini or OpenCode. The orchestrator (`compro`) manages the state machine through prompt-based instructions, while specialized skills (`writer`, `reviewer`, `seo`, `builder`, `publisher`, `deploy-to-vercel`) execute the actual work.
 
 ## Architecture & Data Flow
 
-The system uses a prompt-based orchestrator. The `compro` skill is the entry point, and it dictates the sequence of operations by instructing the LLM to invoke other skills in a specific order.
+The system uses a prompt-based orchestrator. The `compro` skill is the entry point, and it dictates the sequence of operations by instructing the LLM (Claude, Gemini, or OpenCode) to invoke other skills in a specific order.
 
-State and artifacts are passed via the filesystem. Each skill reads specific input files and writes specific output files.
+State and artifacts are passed strictly via the filesystem to ensure compatibility across different LLM environments. Each skill reads specific input files and writes specific output files.
 
 ### The Pipeline
 
@@ -46,7 +46,7 @@ The project structure will be reorganized to support the plugin model:
 ```text
 compro/
 ├── .codex-plugin/
-│   └── plugin.json                     # Registers all skills
+│   └── plugin.json                     # Registers all skills (compatible format)
 ├── skills/
 │   ├── compro/SKILL.md                 # The orchestrator state machine
 │   ├── writer/SKILL.md                 # Copywriting & structure generation
@@ -77,13 +77,15 @@ compro/
 1. **Missing Intake Data**: The `compro` orchestrator will strictly enforce the presence of required input files. It will explicitly halt the pipeline and ask the user for the missing data via chat.
 2. **Infinite Loops**: The prompt-based orchestrator must be instructed to limit revision loops (e.g., max 3 attempts) before halting and asking for human intervention to prevent infinite loops between `writer` and `reviewer` or `builder` and `seo`.
 3. **Vercel CLI Issues**: `deploy-to-vercel` will capture stderr from bash commands.
-   - If unauthenticated, it will prompt the user to run `! vercel login`.
+   - If unauthenticated, it will prompt the user to run `! vercel login` (or equivalent command based on the environment).
    - If the project isn't linked, it will guide the user through linking or run `vercel link`.
    - Production deployments (`vercel --prod`) require explicit user confirmation.
+4. **Agent Compatibility**: Skill prompts must avoid Claude-specific features (like `<ant_...>` tags) and rely on standard markdown and clear conversational instructions to ensure Gemini and OpenCode can execute them reliably.
 
 ## Testing Strategy
 
 Since this relies on LLM orchestration, testing involves verifying the state machine transitions:
-1. Provide valid inputs and verify the pipeline runs through to completion.
+1. Provide valid inputs and verify the pipeline runs through to completion using Claude.
 2. Introduce a deliberate error in the draft to verify the `reviewer` catches it and the `writer` fixes it.
 3. Remove a required input file to verify `compro` halts at Gate 0.
+4. Cross-platform check: Manually verify the orchestrator prompt can be interpreted correctly by Gemini/OpenCode.
