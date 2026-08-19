@@ -1,0 +1,20 @@
+{
+  "name": "aorysan-marketplace",
+  "owner": {
+    "name": "aorysan",
+    "url": "https://github.com/aorysan"
+  },
+  "description": "Custom Claude plugins by aorysan",
+  "plugins": [
+    {
+      "name": "compro",
+      "version": "1.0.0",
+      "description": "Multi-agent company profile & pitch deck generator plugin",
+      "repository": "https://github.com/aorysan/compro",
+      "source": {
+        "source": "github",
+        "repo": "aorysan/compro"
+      }
+    }
+  ]
+}
