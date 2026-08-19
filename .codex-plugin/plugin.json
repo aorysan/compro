@@ -1,0 +1,35 @@
+{
+  "name": "compro",
+  "description": "Multi-agent company profile & pitch deck generator plugin",
+  "version": "1.0.0",
+  "skills": [
+    {
+      "name": "compro",
+      "path": "skills/compro/SKILL.md"
+    },
+    {
+      "name": "writer",
+      "path": "skills/writer/SKILL.md"
+    },
+    {
+      "name": "reviewer",
+      "path": "skills/reviewer/SKILL.md"
+    },
+    {
+      "name": "seo",
+      "path": "skills/seo/SKILL.md"
+    },
+    {
+      "name": "builder",
+      "path": "skills/builder/SKILL.md"
+    },
+    {
+      "name": "publisher",
+      "path": "skills/publisher/SKILL.md"
+    },
+    {
+      "name": "deploy-to-vercel",
+      "path": "skills/deploy-to-vercel/SKILL.md"
+    }
+  ]
+}
