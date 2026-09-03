@@ -2,3 +2,8 @@ node_modules/
 .preview/
 .DS_Store
 compros/
+# macOS resource fork files
+._*
+# Local Claude settings (keep plugin code only)
+.claude/settings.local.json
+.claude/projects/
