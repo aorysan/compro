@@ -7,3 +7,5 @@ compros/
 # Local Claude settings (keep plugin code only)
 .claude/settings.local.json
 .claude/projects/
+# Plan documents (local only, not for repo)
+docs/superpowers/plans/
