@@ -1,55 +1,36 @@
-# Compro (Company Profile & Pitch Deck Generator)
+# Compro — Layer 3 Company Profile Multi-Agent Plugin
 
-Sebuah arsitektur multi-agen (orchestrator plugin) untuk menghasilkan slide presentasi *Company Profile* berbasis HTML/CSS statis dari input *knowledge-base* bisnis. Didesain untuk dioperasikan oleh AI Assistants (Claude, Gemini, dll) atau melalui *Claude Code* (Anthropic).
+Arsitektur multi-agen untuk mengonversi data mentah bisnis menjadi presentasi slide *Company Profile* berbasis web (Reveal.js) yang teroptimasi SEO dan siap di-deploy ke Vercel.
 
-## Alur Kerja (The Pipeline)
+## Alur Kerja Layer 3 (Pipeline)
 
-Plugin `compro` berfungsi sebagai *orchestrator state-machine* yang mengkoordinasikan tugas agen-agen spesialis lainnya:
-
-1. **Gate 0 - Intake Check**: Mengecek ketersediaan bahan dasar (`input/business-knowledge-base.md`, `brand-story-guide.md`, logo).
-2. **Phase 1 - Drafting** (`/writer`): Menghasilkan draf *copywriting* per-slide.
-3. **Phase 2 - Content Review** (`/reviewer`): Memverifikasi akurasi draf terhadap fakta dan panduan merek. Terdapat mekanisme revisi berulang bila belum disetujui.
-4. **Phase 3 - Content SEO** (`/seo` - mode konten): Menyusun kerangka *keywords* dan metatag untuk output akhir.
-5. **Phase 4 - HTML Deck Build** (`/builder`): Membangun file presentasi statis (*slide deck*) dari layout di folder `templates/deck/` dengan menerapkan warna spesifik dari *brand*.
-6. **Phase 5 - Technical SEO** (`/seo` - mode teknikal): Verifikasi implementasi semantik HTML, dan metadata. Terdapat siklus *fix/rebuild* ke `builder` bila diperlukan.
-7. **Phase 6 - Pre-flight Publish** (`/publisher`): Verifikasi menyeluruh memastikan aset termuat dan resolusi layar responsif.
-8. **Phase 7 - Deployment** (`/deploy-to-vercel`): Menayangkan slide ke URL publik via Vercel CLI (opsional).
+1. **Gate 0 - Intake Check**: Mengecek ketersediaan bahan dasar (`input/business-knowledge-base.md`, `business-audit-report.md`, `brand-story-guide.md`).
+2. **Phase 1 - Drafting** (`/company-profile-writer`): Menghasilkan draf narasi per-slide dalam format Markdown.
+3. **Phase 2 - Content QA** (`/company-profile-reviewer`): Memverifikasi akurasi terhadap fakta bisnis, brand voice, dan merumuskan draf On-Page SEO (Meta Title/Description). Terdapat mekanisme revisi berulang bila belum disetujui.
+4. **Phase 3 - Slide Deck Build** (`/company-profile-builder`): Membangun file presentasi statis *single-file HTML* (Reveal.js) dengan CSS inlined agar portabel dan bebas error 404 styling.
+5. **Phase 4 - Pre-flight SEO & Auto-Fix** (`/company-profile-publisher`): Audit technical SEO (Title, Description, Open Graph, Schema.org JSON-LD, Alt Image) dan melakukan auto-patching otomatis pada file HTML.
+6. **Gate 5 - User Confirmation Gate**: Berhenti dan meminta persetujuan eksplisit dari pengguna sebelum rilis publik.
+7. **Phase 6 - Deployment** (`/company-profile-publisher`): Menayangkan slide ke URL publik via Vercel CLI (default: preview deployment) dan memverifikasi keterjangkauan live via HTTP GET 200.
 
 ## Struktur Repositori
 
 ```text
 ├── .codex-plugin/
-│   └── plugin.json           # File manifest untuk mendefinisikan skills
-├── skills/                   # Prompt Markdown berisi instruksi per-skill
-│   ├── compro/               # Orchestrator
-│   ├── writer/               # Copywriting 
-│   ├── reviewer/             # QA Checker
-│   ├── seo/                  # SEO Content & Technical validator
-│   ├── builder/              # HTML/CSS UI assembler
-│   ├── publisher/            # Publikasi pre-flight checker
-│   └── deploy-to-vercel/     # Script deployment 
-├── templates/
-│   └── deck/                 # Blueprint untuk file output 
-│       ├── deck-template.html
-│       ├── core.css          # Design system core (warna brand)
-│       ├── deck.css          # Logika UI deck PPT
-│       └── deck.js           # Fungsi transisi/navigasi
-├── scripts/                  # Alat QC via Node.js
-├── assets/                   # Aset global
-└── input/                    # Folder input (berisi dokumen referensi bisnis)
+│   └── plugin.json                     # Manifest registrasi skill
+├── skills/
+│   ├── compro/SKILL.md                 # Orchestrator State-Machine
+│   ├── company-profile-writer/SKILL.md # Skill 8: Copywriting & Slide Drafting
+│   ├── company-profile-reviewer/SKILL.md # Skill 9: QA & Content SEO Validator
+│   ├── company-profile-builder/        # Skill 10: HTML/CSS Reveal.js Assembler
+│   │   ├── SKILL.md
+│   │   └── templates/
+│   │       ├── profile-shell.html
+│   │       └── custom.css
+│   └── company-profile-publisher/      # Skill 11: SEO Auto-Fix & Vercel Deployer
+│       ├── SKILL.md
+│       └── scripts/
+│           └── deploy.js
+├── assets/                             # Aset global
+├── input/                              # Dokumen input bisnis
+└── docs/superpowers/                   # Spesifikasi desain & rencana implementasi
 ```
-
-## Persyaratan (Requirements)
-* **Node.js** (untuk Puppeteer jika ingin menjalankan QC render *screenshot*)
-* **Vercel CLI** (jika ingin melakukan deployment instan)
-* Environment AI (*Claude Code* / *Codex*)
-
-## Setup & Instalasi Lokal
-
-Repositori ini hanya berisi logika skrip dan plugin. Untuk melakukan instalasi dependensi (mis. pengecekan UI QA lewat *Puppeteer*):
-
-```bash
-npm install
-```
-
-> **Catatan**: Hasil *generate* (deck presentasi akhir per klien) akan ditaruh di dalam folder **`compros/`**, dan bukan sebagai isi dari repositori ini. Folder hasil buatan AI telah kami masukkan ke dalam `.gitignore`.
