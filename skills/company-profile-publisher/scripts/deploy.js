@@ -8,9 +8,8 @@
  * Usage: node deploy.js <folder-path> [--prod]
  */
 
-const { execSync } = require('child_process');
+const { execSync, execFileSync } = require('child_process');
 const fs = require('fs');
-const path = require('path');
 const https = require('https');
 
 const FOLDER = process.argv[2];
@@ -88,11 +87,13 @@ async function verifyLiveUrl(url) {
   let args = ['deploy', '--yes', '--no-wait'];
   args = args.concat([FOLDER]);
   if (IS_PROD) args.push('--prod');
-  const cmd = `vercel ${args.join(' ')}`;
 
   let output;
   try {
-    output = execSync(cmd, { cwd: FOLDER, encoding: 'utf-8' });
+    // execFileSync passes args as argv elements (no shell parsing => no
+    // injection, space-safe paths). The positional FOLDER arg already
+    // targets the folder, so no cwd override is needed.
+    output = execFileSync('vercel', args, { encoding: 'utf-8' });
   } catch (error) {
     console.error('Deploy failed:');
     console.error(error.stdout || error.message);
