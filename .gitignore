@@ -37,6 +37,7 @@ Desktop.ini
 # This is transient coordination state owned by the SDD skill, not
 # source. Keep it local so recovery maps are never published.
 .superpowers/
+docs/superpowers/plans
 
 # --- Layer 3 runtime outputs (produced from the skills at run time) ---
 # These are generated per-run and ARE the user's private working data.
