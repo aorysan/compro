@@ -31,6 +31,25 @@ Arsitektur multi-agen untuk mengonversi data mentah bisnis menjadi presentasi sl
 │       └── scripts/
 │           └── deploy.js
 ├── assets/                             # Aset global
-├── input/                              # Dokumen input bisnis
+├── scripts/                            # Verifikasi & test runner (test-all.js)
+├── test-fixtures/input/                # Contoh dokumen input untuk pengujian
 └── docs/superpowers/                   # Spesifikasi desain & rencana implementasi
 ```
+
+### Artefak yang dihasilkan saat run-time (tidak di-commit)
+
+Direktori berikut diproduksi oleh skill pada setiap eksekusi dan **dikecualikan
+dari git** melalui `.gitignore` — ini adalah data kerja privat per-pengguna,
+bukan bagian dari source code:
+
+| Direktori | Isi | Diproduksi oleh |
+|-----------|-----|-----------------|
+| `input/` | Dokumen intake bisnis pengguna | Gate 0 |
+| `artifacts/` | Draf narasi & laporan review (`01-company-profile-draft.md`, `02-company-profile-final.md`, `review-report.md`) | Phase 1 & 2 |
+| `compros/<name>/` | Deck slide per-profil (`index.html`, `compro.md`, `assets/`, `build.log`) | Phase 3 |
+| `qa/` | Laporan audit technical SEO (`seo-report.md`) | Phase 4 |
+| `deploy/` | Status deployment (`deployment-status.md`) | Phase 6 |
+
+State lokal lain yang juga di-ignore: `.vercel/` (kredensial & cache Vercel CLI),
+`.superpowers/` (workspace koordinasi Subagent-Driven Development), dan
+`node_modules/`.
