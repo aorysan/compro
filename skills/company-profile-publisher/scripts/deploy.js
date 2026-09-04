@@ -8,7 +8,7 @@
  * Usage: node deploy.js <folder-path> [--prod]
  */
 
-const { execSync, execFileSync } = require('child_process');
+const { execSync, spawnSync } = require('child_process');
 const fs = require('fs');
 const https = require('https');
 
@@ -90,10 +90,19 @@ async function verifyLiveUrl(url) {
 
   let output;
   try {
-    // execFileSync passes args as argv elements (no shell parsing => no
-    // injection, space-safe paths). The positional FOLDER arg already
-    // targets the folder, so no cwd override is needed.
-    output = execFileSync('vercel', args, { encoding: 'utf-8' });
+    // On Windows the npm-global `vercel` is a .cmd shim that cannot be
+    // spawned directly (ENOENT). `cmd.exe /c` runs it, and args stay
+    // separate argv elements (no shell-string concatenation => no
+    // injection, space-safe). The positional FOLDER arg already targets
+    // the folder, so no cwd override is needed.
+    const result = spawnSync('cmd.exe', ['/c', 'vercel', ...args], {
+      encoding: 'utf-8',
+    });
+    if (result.error) throw result.error;
+    if (result.status !== 0) {
+      throw new Error((result.stderr || result.stdout || '').trim() || 'vercel exited with an error');
+    }
+    output = result.stdout;
   } catch (error) {
     console.error('Deploy failed:');
     console.error(error.stdout || error.message);
