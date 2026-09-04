@@ -3,15 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Company Profile — <nama-company></title>
+  <title>Company Profile — {{COMPANY_NAME}}</title>
 
   <!-- Reveal.js CDN -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/reveal.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/theme/black.min.css" id="theme-link">
-  <link rel="stylesheet" href="custom.css">
 
+  <!-- Inlined Custom CSS for self-contained single-file HTML -->
   <style>
-    /* Inline critical CSS untuk memastikan render awal */
+/* {{CUSTOM_CSS}} */
+
+    /* Critical CSS overrides */
     .reveal .slides section .slide-content {
       max-width: 90%;
       margin: 0 auto;
@@ -35,7 +37,6 @@
       hash: true,
       controlsBackArrows: 'visible',
       transition: 'slide',
-      // Set bahasa Indonesia
       locale: 'id',
     });
   </script>

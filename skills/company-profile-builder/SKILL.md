@@ -53,10 +53,12 @@ Hasil: daftar slide dengan konten yang sudah dipetakan.
 
 ### 4. Assembly HTML
 - Load template `profile-shell.html`
+- Baca `templates/custom.css` dan inject konten mentahnya menggantikan placeholder `/* {{CUSTOM_CSS}} */` di dalam `<style>`
+- Replace `{{COMPANY_NAME}}` pada `<title>` dengan nama perusahaan
 - Inject konten setiap slide ke dalam `<div class="slides">` sebagai `<section>`
-- Konten slide menggunakan format sesuai template (lihat panduan di bawah)
-- Jika ada gambar, inject `<img>` dengan path yang valid
-- Tulis file `index.html` ke output directory
+  - Konten slide menggunakan format sesuai template (lihat panduan di bawah)
+  - Jika ada gambar, inject `<img>` dengan path yang valid
+- Tulis hasil assembly ke `<project>/compros/<name>/index.html` (single-file HTML dengan CSS sudah ter-inline, tanpa `<link>` eksternal yang hilang)
 
 ### 5. Output
 - Create directory: `<project>/compros/<name>/`
