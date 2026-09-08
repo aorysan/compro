@@ -143,12 +143,19 @@ body {
   height: 1080px;
   padding: 60px 80px;
   background-color: var(--brand-surface);
-  display: flex !important;
   flex-direction: column;
   justify-content: center;
   align-items: stretch;
   overflow: hidden;
   box-sizing: border-box;
+}
+
+.reveal .slides section.present {
+  display: flex !important;
+}
+
+.reveal.overview .reveal .slides section {
+  display: flex !important;
 }
 
 .reveal .slides section .slide-content {
