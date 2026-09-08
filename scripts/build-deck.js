@@ -33,10 +33,14 @@ if (!fs.existsSync(CSS)) {
 // 1. Resolve source markdown
 let srcMdPath = '';
 const candidatePaths = [
+  path.join(DRAFTS_DIR, '02-final.md'),
   path.join(DRAFTS_DIR, '02-company-profile-final.md'),
+  path.join(ROOT, 'artifacts', '02-final.md'),
   path.join(ROOT, 'artifacts', '02-company-profile-final.md'),
   path.join(OUT_DIR, 'compro.md'),
+  path.join(DRAFTS_DIR, '01-draft.md'),
   path.join(DRAFTS_DIR, '01-company-profile-draft.md'),
+  path.join(ROOT, 'artifacts', '01-draft.md'),
   path.join(ROOT, 'artifacts', '01-company-profile-draft.md')
 ];
 
@@ -291,10 +295,16 @@ function renderSolutionSlide(slide, brand) {
     }
   }
 
+  const checkSvg = assetGenerator.getIconSvg('checkmark', { size: 14, color: 'var(--color-success)', strokeWidth: 3 });
   const cardsHtml = cards.map(c => `
     <div class="solution-card">
-      <div class="card-icon-brand">
-        ${assetGenerator.getIconSvg(c.icon, { size: 26, color: 'var(--brand-primary-light)' })}
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div class="card-icon-brand">
+          ${assetGenerator.getIconSvg(c.icon, { size: 26, color: 'var(--brand-primary-light)' })}
+        </div>
+        <span class="solution-check" style="width:24px; height:24px; border-radius:50%; background:var(--color-success-subtle); border:1px solid var(--color-success-border); display:flex; align-items:center; justify-content:center;">
+          ${checkSvg}
+        </span>
       </div>
       <h3>${inline(c.title)}</h3>
       <p>${inline(c.body)}</p>
@@ -439,7 +449,7 @@ function renderPricingSlide(slide, brand) {
 
     return `
       <div class="pricing-card${isFeatured ? ' pricing-featured' : ''}">
-        ${isFeatured ? '<div class="badge-ribbon">Paling Populer</div>' : ''}
+        ${isFeatured ? '<div class="badge-ribbon">Best Seller &bull; Paling Populer</div>' : ''}
         <div class="tier-name">${inline(r.tier)}</div>
         <div class="price-strikethrough">${isFeatured ? 'Rp149.000' : ''}</div>
         <div class="tier-price">${inline(priceFormatted)} <span>/ bln</span></div>
@@ -660,7 +670,7 @@ const artifactsDir = path.join(ROOT, 'artifacts');
 const qaDir = path.join(ROOT, 'qa');
 
 // Move drafts
-const draftFiles = ['01-company-profile-draft.md', '02-company-profile-final.md'];
+const draftFiles = ['01-company-profile-draft.md', '02-company-profile-final.md', '01-draft.md', '02-final.md'];
 for (const file of draftFiles) {
   const src = path.join(artifactsDir, file);
   const dest = path.join(DRAFTS_DIR, file);
@@ -668,6 +678,20 @@ for (const file of draftFiles) {
     fs.copyFileSync(src, dest);
     fs.unlinkSync(src);
   }
+}
+
+// Ensure both standard and descriptive filenames exist in drafts
+if (fs.existsSync(path.join(DRAFTS_DIR, '01-company-profile-draft.md')) && !fs.existsSync(path.join(DRAFTS_DIR, '01-draft.md'))) {
+  fs.copyFileSync(path.join(DRAFTS_DIR, '01-company-profile-draft.md'), path.join(DRAFTS_DIR, '01-draft.md'));
+}
+if (fs.existsSync(path.join(DRAFTS_DIR, '01-draft.md')) && !fs.existsSync(path.join(DRAFTS_DIR, '01-company-profile-draft.md'))) {
+  fs.copyFileSync(path.join(DRAFTS_DIR, '01-draft.md'), path.join(DRAFTS_DIR, '01-company-profile-draft.md'));
+}
+if (fs.existsSync(path.join(DRAFTS_DIR, '02-company-profile-final.md')) && !fs.existsSync(path.join(DRAFTS_DIR, '02-final.md'))) {
+  fs.copyFileSync(path.join(DRAFTS_DIR, '02-company-profile-final.md'), path.join(DRAFTS_DIR, '02-final.md'));
+}
+if (fs.existsSync(path.join(DRAFTS_DIR, '02-final.md')) && !fs.existsSync(path.join(DRAFTS_DIR, '02-company-profile-final.md'))) {
+  fs.copyFileSync(path.join(DRAFTS_DIR, '02-final.md'), path.join(DRAFTS_DIR, '02-company-profile-final.md'));
 }
 
 // Move reports
