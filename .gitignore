@@ -1,0 +1,8 @@
+# Runtime artifacts produced by the compro pipeline (per-user working data)
+# These stay out of version control.
+input/
+artifacts/
+compros/
+qa/
+deploy/
+.vercel/
