@@ -1,0 +1,9 @@
+﻿{
+  "name": "compro",
+  "description": "Layer 3 Company Profile Multi-Agent Plugin with Slide Deck Generator & Vercel Deployment",
+  "version": "2.1.0",
+  "author": {
+    "name": "Aryo Adi Putro"
+  },
+  "license": "MIT"
+}
