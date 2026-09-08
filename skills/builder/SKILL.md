@@ -1,4 +1,4 @@
-# Company Profile Builder
+# Builder
 
 > **Skill untuk:** Mengubah Company Profile (Markdown) menjadi HTML presentasi slide-based (Reveal.js) yang siap di-deploy.
 
@@ -10,10 +10,12 @@ Mengkonversi dokumen Markdown company profile menjadi single-file HTML presentas
 - Gambar (opsional): path/URL gambar yang disediakan user, atau jika user ingin tambah gambar, agent boleh mencari/generate
 
 ## Output
-- `<project>/compros/<name>/index.html` — single-file HTML presentasi
-- `<project>/compros/<name>/compro.md` — Markdown asli (copy)
-- `<project>/compros/<name>/assets/` — folder gambar (jika ada)
-- `<project>/compros/<name>/build.log` — log chunking dan image handling
+- `<project>/compros/<slug>/index.html` — single-file HTML presentasi 16:9 Reveal.js interaktif & print-ready
+- `<project>/compros/<slug>/compro.md` — Markdown asli (copy)
+- `<project>/compros/<slug>/assets/` — folder gambar, diagram SVG, dan mockup
+- `<project>/compros/<slug>/reports/build.log` — log chunking dan asset handling
+- `<project>/compros/<slug>/reports/` — folder laporan (`review-report.md`, `seo-report.md`, `build.log`)
+- `<project>/compros/<slug>/drafts/` — riwayat draf kerja (`01-draft.md`, `02-final.md`)
 
 ## Prinsip
 1. **Konsistensi:** Gunakan template statis (`templates/profile-shell.html`) dan CSS statis (`templates/custom.css`). Jangan modifikasi template; hanya inject konten.
@@ -58,18 +60,19 @@ Hasil: daftar slide dengan konten yang sudah dipetakan.
 - Inject konten setiap slide ke dalam `<div class="slides">` sebagai `<section>`
   - Konten slide menggunakan format sesuai template (lihat panduan di bawah)
   - Jika ada gambar, inject `<img>` dengan path yang valid
-- Tulis hasil assembly ke `<project>/compros/<name>/index.html` (single-file HTML dengan CSS sudah ter-inline, tanpa `<link>` eksternal yang hilang)
+- Tulis hasil assembly ke `<project>/compros/<slug>/index.html` (single-file HTML dengan CSS sudah ter-inline, tanpa `<link>` eksternal yang hilang)
 
 ### 5. Output
-- Create directory: `<project>/compros/<name>/`
+- Create directory: `<project>/compros/<slug>/`
 - Tulis `index.html`
-- Copy `compro.md` (Markdown asli)
-- Buat `assets/` folder (kalau ada gambar)
-- Tulis `build.log` dengan:
+- Copy `compro.md` (Markdown final)
+- Buat `assets/` folder (kalau ada gambar/mockup/SVG)
+- Buat `reports/` folder dan tulis `build.log` dengan:
   - Jumlah slide
   - Alasan splitting per slide (jika ada)
   - Path gambar yang di-inject
   - Gambar yang skip (jika ada)
+- Siapkan `drafts/` folder untuk riwayat draf kerja
 
 ## Template Konten per Slide
 
@@ -138,5 +141,5 @@ Hasil: daftar slide dengan konten yang sudah dipetakan.
 2. Parse, chunking → tentukan slide
 3. Handle gambar (jika ada)
 4. Assembly HTML dengan template
-5. Output ke `<project>/compros/acme-inc/index.html`
+5. Output ke `<project>/compros/acme-inc/index.html` (dengan folder `reports/`, `assets/`, `drafts/`)
 6. Return pesan: "Company profile slides dibuat di `<path>/index.html` dengan N slide"
