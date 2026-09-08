@@ -26,7 +26,7 @@
     link.rel = 'stylesheet';
     link.type = 'text/css';
     link.href = window.location.search.match(/print-pdf/gi)
-      ? 'https://cdnjs.cloudflare.com/ajax/libs/reveal.js/3.9.2/css/print/pdf.css'
+      ? 'https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/css/print/pdf.min.css'
       : '';
     if (link.href) {
       document.getElementsByTagName('head')[0].appendChild(link);
@@ -191,7 +191,7 @@ body {
   display: flex !important;
 }
 
-.reveal.overview .reveal .slides section {
+.reveal.overview .slides section {
   display: flex !important;
 }
 

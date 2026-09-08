@@ -1,6 +1,6 @@
 # SEO Audit Report — Venturo Pro / congen
 
-**Tanggal:** 2026-09-08T07:45:20.621Z
+**Tanggal:** 2026-09-08T07:53:20.905Z
 **File:** `compros/congen/index.html`
 
 ## Item yang Dicek

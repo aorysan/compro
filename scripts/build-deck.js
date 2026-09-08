@@ -457,7 +457,7 @@ function renderPricingSlide(slide, brand) {
         <ul class="pricing-features">
           ${r.features.map(f => `<li>${checkSvg} <span>${inline(f)}</span></li>`).join('\n')}
         </ul>
-        <a href="#/6" class="btn ${isFeatured ? 'btn-primary' : 'btn-secondary'}">
+        <a href="#/${slides.length - 1}" class="btn ${isFeatured ? 'btn-primary' : 'btn-secondary'}">
           ${isFree ? 'Mulai Gratis' : isFeatured ? 'Pilih Paket Pro' : 'Hubungi Tim'}
         </a>
       </div>`;
