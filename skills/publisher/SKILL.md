@@ -61,13 +61,13 @@ Sebelum mengeksekusi deploy, tampilkan ringkasan dan minta persetujuan eksplisit
 
 1. Tampilkan summary kepada user:
    - Jumlah slide yang siap dideploy.
-   - Status SEO (item yang di-auto-fix, path `qa/seo-report.md`).
+   - Status SEO (item yang di-auto-fix, path `compros/<slug>/reports/seo-report.md`).
    - Folder deployment bersih yang akan digunakan.
    - Mode deploy (preview atau `--prod`).
 2. **Pause dan tanya** user untuk persetujuan eksplisit (misal: "Lanjutkan deploy ke Vercel? (y/N)").
 3. Jika user tidak menyetujui, batalkan dan jangan jalankan deploy.
 
-### 4. Deploy Execution via `scripts/deploy.js`
+### 4. Deploy Execution via `skills/publisher/scripts/deploy.js`
 Setelah disetujui, jalankan script deploy:
 
 - Cek Vercel CLI tersedia: `vercel --version`
@@ -108,8 +108,8 @@ vercel deploy --yes --no-wait <deployment-directory> [--prod]
 **User request:** "Deploy company profile slides ke Vercel"
 
 **Skill execution:**
-1. Audit & Auto-Fix technical SEO `index.html`, tulis `compros/<slug>/reports/seo-report.md` (legacy: `qa/seo-report.md`)
+1. Audit & Auto-Fix technical SEO `compros/<slug>/index.html`, tulis `compros/<slug>/reports/seo-report.md`
 2. Siapkan folder deployment bersih (hanya `index.html` + `assets/`)
 3. User Confirmation Gate — tampilkan summary, minta persetujuan
-4. Jalankan `scripts/deploy.js`, verifikasi GET 200
+4. Jalankan `skills/publisher/scripts/deploy.js`, verifikasi GET 200
 5. Return: "Company profile berhasil di-deploy ke: https://project-git-branch-user.vercel.app (LIVE)"

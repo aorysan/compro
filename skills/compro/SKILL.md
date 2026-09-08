@@ -2,7 +2,7 @@
 
 > **Skill untuk:** Menjalankan pipeline Layer 3 — Company Profile secara end-to-end dari dokumen bisnis hingga presentasi web live di Vercel.
 
-## State Machine Pipeline
+## State Machine Pipeline (`writer` ➔ `reviewer` ➔ `builder` ➔ `publisher`)
 
 1. **Gate 0 - Intake Check:**
    - Periksa keberadaan:
@@ -39,8 +39,8 @@
 
 6. **Gate 5 - User Confirmation Gate:**
    - Tampilkan ringkasan kesiapan slide ke pengguna:
-     - Lokasi file HTML lokal.
-     - Ringkasan optimasi SEO yang sudah diterapkan.
+     - Lokasi file HTML lokal (`<project>/compros/<slug>/index.html`).
+     - Ringkasan optimasi SEO yang sudah diterapkan (`<project>/compros/<slug>/reports/seo-report.md`).
    - Tanyakan kepada pengguna:
      > *"Company Profile slide deck telah selesai dirakit dan dioptimasi SEO. Anda dapat membuka `<project>/compros/<slug>/index.html` untuk melihat tampilannya. Apakah Anda ingin langsung men-deploy slide ini ke Vercel sekarang?"*
    - Tunggu respon pengguna:
@@ -51,4 +51,5 @@
    - Panggil skill `/publisher` mode deploy.
    - Jalankan `node skills/publisher/scripts/deploy.js <deploy-dir>`.
    - Lakukan verifikasi live URL via HTTP GET 200.
+   - Simpan catatan status ke `<project>/compros/<slug>/reports/deployment-status.md`.
    - Kembalikan URL live Vercel dan status rilis kepada pengguna.
