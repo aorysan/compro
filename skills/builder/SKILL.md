@@ -114,6 +114,15 @@ Petakan setiap bagian Markdown ke dalam arsitektur slide 16:9 yang sesuai:
 - Render masing-masing `<section>` ke dalam `<div class="slides">` dengan class CSS semantik (`.hero-slide`, `.problem-card`, `.solution-card`, `.ecosystem-diagram`, `.phone-frame`, `.pricing-card`, `.closing-banner`).
 - Tulis file keluaran final ke `<project>/compros/<slug>/index.html`.
 
+### Badge-Title Alignment Consistency Rule
+- Badge eyebrow dan slide title HARUS memiliki alignment yang sama:
+  - Centered slides: Ecosystem (Slide 5), Pricing (Slide 9), Social Proof (Slide 8) → badge must also be centered (`margin-left: auto; margin-right: auto;` atau `margin: 0 auto;`)
+  - Left-aligned slides: Hero (Slide 1), Problem (Slide 2), Solution (Slide 3), Traction (Slide 6), Differentiator (Slide 7) → badge also left-aligned
+- Slide yang wajib centered: Ecosystem (Slide 5), Pricing (Slide 9)
+- Slide yang wajib left-aligned: Hero (Slide 1), Problem (Slide 2), Solution (Slide 3), Traction (Slide 6)
+- Slide opsional mengikuti: Differentiator (Slide 7) → left, Social Proof (Slide 8) → centered
+- No slide may have mismatched badge vs title alignment (DILARANG keras mismatch badge vs title alignment pada slide mana pun).
+
 ### 5. Konsolidasi Folder
 - Simpan seluruh hasil kerja secara rapi dalam 1 root folder khusus proyek:
   - `<project>/compros/<slug>/index.html`
