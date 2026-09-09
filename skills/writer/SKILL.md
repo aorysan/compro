@@ -30,6 +30,13 @@ Dokumen yang disediakan di folder `input/`:
    - **Slide 7 (CTA & Contact):** `# Hubungi Kami` + Telepon, Email, Website, Alamat.
 4. **Visual & Asset Directives:**
    - Cantumkan referensi visual jika relevan, misal `![Logo](assets/logo.png)` atau arahan `<!-- image: hero modern office -->`.
+5. **No Verbatim Repetition:**
+   - Dalam satu slide, setiap elemen teks (tagline, deskripsi, bullet point) HARUS menyampaikan informasi yang BERBEDA satu sama lain.
+   - **Tagline** = hook pendek yang punchy, maksimal 1-2 kalimat.
+   - **Deskripsi** = elaborasi value proposition yang menambah detail BARU, BUKAN mengulang kata-kata tagline.
+   - **Statistik** = angka faktual yang memperkuat, bukan memarafrase tagline.
+   - Rule of thumb: jika >40% kata di deskripsi sama dengan tagline, itu repetisi.
+   - Pelanggaran aturan ini merupakan alasan reviewer mengeluarkan REVISION_REQUIRED.
 
 ## Langkah Kerja
 1. Baca ketiga dokumen di `input/`.
