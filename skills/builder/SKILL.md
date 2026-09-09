@@ -76,6 +76,15 @@ Petakan setiap bagian Markdown ke dalam arsitektur slide 16:9 yang sesuai:
   - Jika tidak ada gambar atau gambar gagal dimuat: generate vector SVG inline (SVG device frame, circular orbit diagram, SVG checkmarks & icons) dan simpan ke `compros/<slug>/assets/`.
   - Catat seluruh status penanganan aset ke dalam `reports/build.log`.
 
+### 3a. Inline SVG Enforcement Rule
+- **SEMUA aset SVG yang di-generate builder** (hero banner, ecosystem diagram, smartphone mockup, icon badges, closing banner) WAJIB di-inline langsung ke dalam HTML sebagai tag `<svg>`, BUKAN sebagai `<img src="assets/file.svg">`.
+- File SVG terpisah di `assets/` tetap disimpan sebagai arsip/backup, tetapi HTML TIDAK BOLEH me-reference mereka.
+- Satu-satunya `<img>` yang dibolehkan adalah:
+  - Gambar dari CDN eksternal (URL `https://`)
+  - Gambar raster yang disediakan user (PNG/JPG) yang memang harus jadi file terpisah
+- **Post-build self-check:** Setelah menulis `index.html`, scan semua tag `<img`. Jika ada yang me-reference path lokal relatif (`src="assets/..."` atau `src="./..."`), itu adalah ERROR — baca file tersebut, inline isinya sebagai `<svg>`, dan hapus tag `<img>`.
+- **Constraint Retroaktif:** Aturan ini berlaku retroaktif: jika builder menemukan output lama dengan `<img src="assets/*.svg">`, harus di-fix saat rebuild.
+
 ### 4. HTML Assembly & Inlining
 - Muat template kerangka `profile-shell.html`.
 - Suntikkan Google Fonts (*Plus Jakarta Sans* 600/700/800 & *Inter* 400/500/600).
