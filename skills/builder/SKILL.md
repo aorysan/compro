@@ -103,7 +103,7 @@ Petakan setiap bagian Markdown ke dalam arsitektur slide 16:9 yang sesuai:
 - Satu-satunya `<img>` yang dibolehkan adalah:
   - Gambar dari CDN eksternal (URL `https://`)
   - Gambar raster yang disediakan user (PNG/JPG) yang memang harus jadi file terpisah
-- **Post-build self-check:** Setelah menulis `index.html`, scan semua tag `<img`. Jika ada yang me-reference path lokal relatif (`src="assets/..."` atau `src="./..."`), itu adalah ERROR — baca file tersebut, inline isinya sebagai `<svg>`, dan hapus tag `<img>`.
+- **Post-build self-check:** Setelah menulis `index.html`, scan semua tag `<img>`. Jika ada yang me-reference path lokal relatif (`src="assets/..."` atau `src="./..."`), itu adalah ERROR — baca file tersebut, inline isinya sebagai `<svg>`, dan hapus tag `<img>`.
 - **Constraint Retroaktif:** Aturan ini berlaku retroaktif: jika builder menemukan output lama dengan `<img src="assets/*.svg">`, harus di-fix saat rebuild.
 
 ### 4. HTML Assembly & Inlining

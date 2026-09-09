@@ -31,7 +31,7 @@ Slug adalah identifier unik per proyek company profile. Ditentukan sekali di Gat
 
 ## Pipeline Resumability
 
-Sebelum menjalankan Gate -1, periksa apakah ada artefak dari run sebelumnya untuk slug yang dimaksud:
+Setelah Gate 0 (setelah slug proyek ditentukan dan dikonfirmasi), sebelum memulai Phase 1, periksa apakah ada artefak dari run sebelumnya untuk slug tersebut di `compros/<slug>/`:
 
 ### Auto-detect resume point:
 | Artefak yang ditemukan | Resume point | Prompt ke user |
@@ -40,7 +40,7 @@ Sebelum menjalankan Gate -1, periksa apakah ada artefak dari run sebelumnya untu
 | `compros/<slug>/drafts/02-final.md` ada | Phase 3 (Build) | "Ditemukan draf final. Mau langsung build slide, atau mulai ulang dari drafting?" |
 | `compros/<slug>/drafts/01-draft.md` ada | Phase 2 (Review) | "Ditemukan draf awal. Mau lanjut ke review, atau tulis ulang dari awal?" |
 | `compros/<slug>/reports/review-report.md` ada + status REVISION_REQUIRED | Phase 1 (Re-draft) | "Ditemukan review yang meminta revisi. Mau lanjut revisi, atau mulai baru?" |
-| Tidak ada artefak | Phase 1 (dari awal) | Lanjut ke Gate -1 seperti biasa |
+| Tidak ada artefak | Phase 1 (dari awal) | Lanjut ke Phase 1 seperti biasa |
 
 ### Constraint:
 - Resume HANYA ditawarkan, BUKAN dipaksakan — user selalu boleh pilih "mulai baru"
@@ -49,7 +49,7 @@ Sebelum menjalankan Gate -1, periksa apakah ada artefak dari run sebelumnya untu
 
 ## State Machine Pipeline (`writer` ➔ `reviewer` ➔ `builder` ➔ `publisher`)
 
-0. **Gate -1 — User Intent & Input Confirmation:**
+0. **Gate -1 — User Intent & Input Confirmation** [HARD GATE: Dilarang membaca/mencari file sebelum user konfirmasi]:
    - SEBELUM membaca, mencari, atau mengakses file apapun, tanyakan:
      > "Saya akan membuat Company Profile slide deck. Untuk memulai, saya membutuhkan 3 dokumen input:
      > 1. `business-knowledge-base.md` — data faktual bisnis
@@ -62,15 +62,16 @@ Sebelum menjalankan Gate -1, periksa apakah ada artefak dari run sebelumnya untu
    - Baru setelah user mengonfirmasi, salin/link file ke `input/` dan lanjut ke Gate 0.
    - **Constraint:** Gate -1 WAJIB dijalankan setiap kali plugin dipanggil, tanpa exception. Tidak boleh ada shortcut "auto-detect" yang bypass gate ini.
 
-1. **Gate 0 — Intake Check:**
+1. **Gate 0 — Intake Check & Slug Resolution** [Cek keberadaan dokumen input & tetapkan serta konfirmasi slug proyek]:
    - Periksa keberadaan:
      - `input/business-knowledge-base.md`
      - `input/business-audit-report.md`
      - `input/brand-story-guide.md`
    - Jika ada file yang belum tersedia, hentikan proses dan minta pengguna menyediakan dokumen yang kurang.
    - Jalankan **Slug Resolution Protocol**: tentukan `<slug>` dari nama perusahaan di `business-knowledge-base.md`, konfirmasikan ke pengguna, dan siapkan folder kerja `compros/<slug>/`.
+   - (Resumability Check: jika ada artefak sebelumnya untuk slug ini, tawarkan resume sebelum Phase 1)
 
-2. **Phase 1 — Drafting:**
+2. **Phase 1 — Drafting** (`/writer`):
    - Panggil skill `/writer`.
    - Menghasilkan: `compros/<slug>/drafts/01-draft.md` (legacy: `artifacts/01-company-profile-draft.md`).
 
