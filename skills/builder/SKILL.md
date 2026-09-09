@@ -152,6 +152,20 @@ Petakan setiap bagian Markdown ke dalam arsitektur slide 16:9 yang sesuai:
 </section>
 ```
 
+### Problem Card Icon Variation Rule
+- Setiap problem card WAJIB menggunakan ikon SVG Lucide-style yang BERBEDA dan semantically RELEVAN dengan masalah yang digambarkan.
+- Panduan pemilihan ikon:
+  | Kategori Masalah | Ikon yang Sesuai |
+  |------------------|------------------|
+  | Biaya / Finansial | TrendingUp, DollarSign, CreditCard |
+  | Konsistensi / Kualitas | Palette, Layers, ShieldOff |
+  | Workflow / Fragmentasi | Puzzle, GitBranch, Shuffle |
+  | Kecepatan / Waktu | Clock, Hourglass, Timer |
+  | Keamanan / Risiko | ShieldAlert, Lock, AlertOctagon |
+  | Skalabilitas | BarChart, Activity, Scale |
+- DILARANG menggunakan ikon yang sama untuk >1 problem card dalam satu deck.
+- Jika tidak yakin kategori masalah, default ke ikon yang paling deskriptif berdasarkan kata kunci di heading card.
+
 ### 3. Slide Solution
 ```html
 <section class="slide-solution">
