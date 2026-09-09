@@ -59,6 +59,25 @@ Builder ini dilengkapi modul referensi desain bawaan yang self-contained di dala
 - Analisis struktur heading (`#`, `##`, `###`) dan daftar bullet/tabel.
 - Ekstrak statistik kunci dan angka metrik untuk diposisikan sebagai anchor visual.
 
+### 1a. Brand Color Resolution
+Tentukan warna brand primer dengan urutan prioritas berikut:
+1. **Eksplisit dari brand-story-guide.md:**
+   - Cari section "Brand Color Palette" atau tabel warna
+   - Jika ada HEX warna primer → konversi ke HSL → inject ke `--brand-h/s/l`
+   - Jika ada konflik token yang disebutkan → gunakan yang dilabeli "documented brand" (bukan "runtime token")
+2. **Industri dari business-knowledge-base.md:**
+   - Jika tidak ada warna eksplisit, identifikasi bidang usaha
+   - Cocokkan dengan Industry Preset Palette di `design-tokens.md` §1.2
+3. **Default fallback:**
+   - Jika tidak bisa menentukan → Venturo Teal (H:186, S:100%, L:34%)
+
+- **Wajib log keputusan** di `reports/build.log`:
+  ```
+  [COLOR] Source: brand-story-guide.md → #009BAD (documented brand)
+  [COLOR] HSL: H=186, S=100%, L=34%
+  [COLOR] Conflict noted: runtime token #00A76F differs; using documented brand
+  ```
+
 ### 2. Archetype Mapping & Chunking
 Petakan setiap bagian Markdown ke dalam arsitektur slide 16:9 yang sesuai:
 - **Heading Utama / Pembuka** ➔ **Hero Slide Archetype** (Headline H1 punchy, tagline, 3 chip metrik besar, visual container).
