@@ -1,0 +1,4 @@
+[submodule ".claude/plugins/compro"]
+	path = .claude/plugins/compro
+	url = https://github.com/aorysan/compro.git
+	branch = plugin
