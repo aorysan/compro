@@ -8,8 +8,32 @@ const fs = require('fs');
 const path = require('path');
 const assetGenerator = require('./asset-generator');
 
-const ROOT = path.join(__dirname, '..');
-const slug = process.argv[2] || 'congen';
+function findRoot() {
+  let cur = process.cwd();
+  while (cur && cur !== path.dirname(cur)) {
+    if (fs.existsSync(path.join(cur, 'compros')) || fs.existsSync(path.join(cur, 'input')) || fs.existsSync(path.join(cur, '.git'))) {
+      return cur;
+    }
+    cur = path.dirname(cur);
+  }
+  return process.cwd();
+}
+
+const ROOT = findRoot();
+
+// 1a. CLI argument parser (supports --theme=<theme> and --name=<slug>, backward-compat positional)
+let THEME = 'editorial';
+let slug = 'congen';
+const args = process.argv.slice(2);
+for (const arg of args) {
+  if (arg.startsWith('--theme=')) {
+    THEME = arg.split('=')[1];
+  } else if (arg.startsWith('--name=')) {
+    slug = arg.split('=')[1];
+  } else if (!arg.startsWith('--')) {
+    slug = arg;
+  }
+}
 
 // Output directories
 const OUT_DIR = path.join(ROOT, 'compros', slug);
@@ -18,15 +42,43 @@ const REPORTS_DIR = path.join(OUT_DIR, 'reports');
 const DRAFTS_DIR = path.join(OUT_DIR, 'drafts');
 
 // Template paths (Builder skill templates)
-const SHELL = path.join(ROOT, '.claude', 'plugins', 'compro', 'skills', 'builder', 'templates', 'profile-shell.html');
-const CSS = path.join(ROOT, '.claude', 'plugins', 'compro', 'skills', 'builder', 'templates', 'custom.css');
+const templateCandidates = [
+  path.join(__dirname, '..', 'templates'),
+  path.join(ROOT, '.claude', 'plugins', 'compro', 'skills', 'builder', 'templates'),
+  path.join(ROOT, 'skills', 'builder', 'templates'),
+  path.join(__dirname, '..', 'skills', 'builder', 'templates')
+];
 
-if (!fs.existsSync(SHELL)) {
-  console.error(`Error: Slide shell template not found at ${SHELL}`);
+let SHELL = null;
+let CSS = null;
+if (THEME === 'editorial') {
+  for (const dir of templateCandidates) {
+    const s = path.join(dir, 'editorial-shell.html');
+    const c = path.join(dir, 'editorial.css');
+    if (fs.existsSync(s) && fs.existsSync(c)) {
+      SHELL = s;
+      CSS = c;
+      break;
+    }
+  }
+} else {
+  for (const dir of templateCandidates) {
+    const s = path.join(dir, 'profile-shell.html');
+    const c = path.join(dir, 'custom.css');
+    if (fs.existsSync(s) && fs.existsSync(c)) {
+      SHELL = s;
+      CSS = c;
+      break;
+    }
+  }
+}
+
+if (!SHELL || !fs.existsSync(SHELL)) {
+  console.error(`Error: Slide shell template not found. Searched in: ${templateCandidates.join(', ')}`);
   process.exit(1);
 }
-if (!fs.existsSync(CSS)) {
-  console.error(`Error: Custom CSS not found at ${CSS}`);
+if (!CSS || !fs.existsSync(CSS)) {
+  console.error(`Error: Custom CSS not found. Searched in: ${templateCandidates.join(', ')}`);
   process.exit(1);
 }
 
@@ -52,8 +104,26 @@ for (const p of candidatePaths) {
 }
 
 if (!srcMdPath) {
-  console.error(`Error: No input markdown draft found. Checked paths:\n${candidatePaths.map(c => ' - ' + c).join('\n')}`);
-  process.exit(1);
+  // Fallback: scan all existing slugs for any 02-final.md draft
+  const comprosDir = path.join(ROOT, 'compros');
+  if (fs.existsSync(comprosDir)) {
+    const existingSlugs = fs.readdirSync(comprosDir).filter(s => {
+      const p = path.join(comprosDir, s);
+      return fs.existsSync(p) && fs.statSync(p).isDirectory();
+    });
+    for (const s of existingSlugs) {
+      const fallbackPath = path.join(comprosDir, s, 'drafts', '02-final.md');
+      if (fs.existsSync(fallbackPath) && fs.statSync(fallbackPath).isFile()) {
+        srcMdPath = fallbackPath;
+        console.log(`  [editorial fallback] Using draft from compros/${s}/drafts/02-final.md`);
+        break;
+      }
+    }
+  }
+  if (!srcMdPath) {
+    console.error(`Error: No input markdown draft found. Checked paths:\n${candidatePaths.map(c => ' - ' + c).join('\n')}`);
+    process.exit(1);
+  }
 }
 
 const md = fs.readFileSync(srcMdPath, 'utf8');
@@ -108,7 +178,13 @@ fs.writeFileSync(path.join(ASSETS_DIR, 'closing-banner.svg'), assetGenerator.gen
 fs.writeFileSync(path.join(ASSETS_DIR, 'logo.svg'), assetGenerator.generateLogoSvg(brandName, primaryColor));
 
 // 5. Parse & chunking: H1 = new slide
-const body = md.replace(/^---[\s\S]*?---\s*/, '');
+// Strip YAML frontmatter AND the reviewer-added Meta Title/Description header lines,
+// so they never become a phantom slide.
+const body = md
+  .replace(/^---[\s\S]*?---\s*/, '')
+  .replace(/^Title:.*$/m, '')
+  .replace(/^Description:.*$/m, '')
+  .replace(/^\s+/, '');
 const rawSlides = body.split(/^# /m).map(s => s.trim()).filter(Boolean);
 const slides = rawSlides.map(s => {
   const newline = s.indexOf('\n');
@@ -133,8 +209,12 @@ function detectSlideType(slide, index, totalSlides) {
   if (index === 0 || t.includes('profile') || t.includes('profil') || t.includes('tentang')) return 'hero';
   if (t.includes('masalah') || t.includes('problem') || t.includes('tantangan') || t.includes('pain')) return 'problem';
   if (t.includes('solusi') || t.includes('solution') || t.includes('nilai tambah') || t.includes('value')) return 'solution';
-  if (t.includes('layanan') || t.includes('fitur') || t.includes('feature') || t.includes('ekosistem') || t.includes('ecosystem') || t.includes('arsitektur')) return 'ecosystem';
+  // "Layanan Unggulan" / "Fitur" => features grid (BUKAN ecosystem). Arsitektur/Ekosistem => diagram.
+  if (t.includes('arsitektur') || t.includes('ekosistem') || t.includes('ecosystem') || t.includes('stack') || t.includes('arhitecture')) return 'ecosystem';
+  if (t.includes('layanan') || t.includes('fitur') || t.includes('feature') || t.includes('keunggulan')) return 'features';
   if (t.includes('pencapaian') || t.includes('bukti') || t.includes('traction') || t.includes('showcase') || t.includes('portfolio') || t.includes('studi kasus')) return 'showcase';
+  // "Mengapa Kami" / "Keunggulan Kompetitif" => differentiator comparison table.
+  if (t.includes('mengapa') || t.includes('kenapa') || t.includes('why') || t.includes('differentiator') || t.includes('keunggulan kompetitif')) return 'differentiator';
   if (t.includes('paket') || t.includes('harga') || t.includes('pricing') || t.includes('biaya') || t.includes('kerjasama') || t.includes('plan')) return 'pricing';
   if (t.includes('penawaran') || t.includes('offer') || t.includes('garansi') || t.includes('fasilitas') || t.includes('bonus') || t.includes('promo')) return 'offer';
   if (index === totalSlides - 1 || t.includes('hubungi') || t.includes('kontak') || t.includes('contact') || t.includes('closing') || t.includes('cta')) return 'closing';
@@ -152,12 +232,10 @@ function renderHeroSlide(slide, brand) {
   const stats = [];
 
   for (const line of lines) {
-    if (/^(?:📊|[-*])\s*\*\*/u.test(line)) {
-      const clean = line.replace(/^(?:📊|[-*])\s*/u, '');
-      const parts = clean.split(/[—–]|\s+-\s+/).map(p => p.trim());
-      const label = parts[0].replace(/\*\*/g, '');
-      const sub = parts[1] ? parts[1].replace(/\*\*/g, '') : '';
-      stats.push({ label, sub });
+    if (/^[-*]\s*\*\*([^*\n]+)\*\*/.test(line)) {
+      // Hero metrics: "- **0** descriptive phrase — detail"
+      const m = line.match(/^[-*]\s*\*\*([^*\n]+)\*\*\s*[—-]?\s*(.*)$/);
+      stats.push({ label: m[1].trim(), sub: m[2].replace(/\*\*/g, '').trim() });
     } else if (!tagline && !/^💼/u.test(line) && !line.startsWith('Kami')) {
       tagline = line;
     } else if (/^💼/u.test(line)) {
@@ -168,19 +246,22 @@ function renderHeroSlide(slide, brand) {
   }
 
   const statsHtml = stats.slice(0, 3).map((st, i) => {
-    let statNum = '0' + (i + 1);
-    const lt = st.label.toLowerCase();
-    if (lt.includes('satu kali') || lt.includes('1') || lt.includes('setup')) statNum = '1x';
-    else if (lt.includes('dna') || lt.includes('brand')) statNum = '100%';
-    else if (lt.includes('sheets') || lt.includes('sync') || lt.includes('native')) statNum = '1-Klik';
-
+    let statNum = st.label;                     // "0", "5–20", "Rp99 rb"
+    let statLabel = st.sub;                     // "biaya API per video", "video/bulan", ...
+    // Extract a pithy highlight number when sub is long prose.
+    const numMatch = st.sub.match(/^(.*?)(?=\s*[—-]|$)/);
+    if (statLabel.length > 40 && numMatch) statLabel = numMatch[1].trim();
     return `
       <div class="stat-item">
-        <div class="stat-number">${statNum}</div>
-        <div class="stat-label">${inline(st.label)}</div>
-        <div style="font-size:12px; color:var(--brand-text-muted);">${inline(st.sub)}</div>
+        <div class="stat-number">${inline(statNum)}</div>
+        <div class="stat-label">${inline(statLabel)}</div>
+        <div style="font-size:12px; color:var(--brand-text-muted);">${i === 0 ? 'tanpa tagihan per-render' : i === 1 ? 'volume creator rutin' : 'struktur indikatif'}</div>
       </div>`;
   }).join('\n');
+
+  const cleanLabel = (t) => {
+    return (t || '').replace(/^\*\*Tagline:\*\*\s*/i, '').replace(/^\*\*Deskripsi:\*\*\s*/i, '').trim();
+  };
 
   return `
     <section class="hero-slide">
@@ -189,12 +270,21 @@ function renderHeroSlide(slide, brand) {
           <div class="hero-content">
             <div class="badge-eyebrow">${brand.name} Profile</div>
             <h1 class="hero-title"><span class="hero-title-gradient">${inline(slide.title)}</span></h1>
-            ${tagline ? `<p class="hero-tagline">${inline(tagline)}</p>` : ''}
-            ${desc ? `<p class="hero-desc">${inline(desc)}</p>` : ''}
+            ${tagline ? `<p class="hero-tagline">${inline(cleanLabel(tagline))}</p>` : ''}
+            ${desc ? `<p class="hero-desc">${inline(cleanLabel(desc))}</p>` : ''}
             ${statsHtml ? `<div class="hero-stats">${statsHtml}</div>` : ''}
           </div>
           <div class="hero-visual">
-            <img src="assets/hero-banner.svg" alt="${brand.name} Visual" style="width:100%; max-width:620px; border-radius:20px; filter:drop-shadow(0 20px 40px rgba(0,0,0,0.5));">
+            <!-- Inline SVG per Inline SVG Enforcement Rule (never <img src="assets/*.svg">) -->
+            ${(() => {
+              const svgPath = path.join(ASSETS_DIR, 'hero-banner.svg');
+              if (fs.existsSync(svgPath)) {
+                return fs.readFileSync(svgPath, 'utf8')
+                  .replace(/<svg/, `<svg style="width:100%; max-width:620px; border-radius:20px; filter:drop-shadow(0 20px 40px rgba(0,0,0,0.5));"`)
+                  .replace(/class=""/, '');
+              }
+              return assetGenerator.generateTechBannerSvg({ brandName: brand.name, primaryColor: brand.primaryColor });
+            })()}
           </div>
         </div>
       </div>
@@ -231,10 +321,20 @@ function renderProblemSlide(slide, brand) {
 
   const pills = ['Dampak Biaya Tinggi', 'Identitas Rusak', 'Waktu Terbuang', 'Skalabilitas Macet'];
 
+  // Problem Card Icon Variation Rule — semantically distinct icon per pain card.
+  const problemIcon = (title) => {
+    const t = title.toLowerCase();
+    if (/(biaya|harga|mahal|tagihan|uang|finansial)/.test(t)) return 'dollar';
+    if (/(konsistensi|brand|identitas|warna|kualitas|palette)/.test(t)) return 'palette';
+    if (/(workflow|fragmentasi|terpisah|tool|aplikasi|bolak)/.test(t)) return 'layers';
+    if (/(waktu|frekuensi|lambat|momentum|cepat|terlambat|tekanan)/.test(t)) return 'clock';
+    return 'warning';
+  };
+
   const cardsHtml = cards.map((c, idx) => `
     <div class="problem-card">
       <div class="card-icon-warning">
-        ${assetGenerator.getIconSvg('warning', { size: 24, color: 'var(--color-problem)' })}
+        ${assetGenerator.getIconSvg(problemIcon(c.title), { size: 24, color: 'var(--color-problem)' })}
       </div>
       <h3>${inline(c.title)}</h3>
       <p>${inline(c.body)}</p>
@@ -342,9 +442,98 @@ function renderEcosystemSlide(slide, brand) {
         </div>
         <div class="ecosystem-container">
           <div class="ecosystem-diagram">
-            <img src="assets/ecosystem-diagram.svg" alt="${brand.name} Ecosystem Diagram" style="max-height:510px; width:100%; object-fit:contain; filter:drop-shadow(0 16px 36px rgba(0,0,0,0.5));">
+            <!-- Inline SVG per Inline SVG Enforcement Rule -->
+            ${(() => {
+              const svgPath = path.join(ASSETS_DIR, 'ecosystem-diagram.svg');
+              if (fs.existsSync(svgPath)) {
+                return fs.readFileSync(svgPath, 'utf8')
+                  .replace(/<svg/, `<svg style="max-height:510px; width:100%; object-fit:contain; filter:drop-shadow(0 16px 36px rgba(0,0,0,0.5));"`)
+                  .replace(/class=""/, '');
+              }
+              return assetGenerator.generateEcosystemDiagramSvg({ brandName: brand.name, primaryColor: brand.primaryColor, secondaryColor: brand.secondaryColor });
+            })()}
           </div>
         </div>
+      </div>
+    </section>`;
+}
+
+// Features/Layanan grid — repurposes the solution-card archetype for a services grid.
+function renderFeaturesSlide(slide, brand) {
+  const content = slide.content.replace(/<!--[\s\S]*?-->/g, '').trim();
+  const lines = content.split('\n');
+
+  let subtitle = '';
+  let note = '';
+  const cards = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+
+    if (/^\*\*(.+?)\*\*/.test(line) && line.includes('—')) {
+      const parts = line.split('—');
+      const title = parts[0].replace(/\*\*/g, '').trim();
+      const body = parts.slice(1).join('—').trim();
+      cards.push({ title, body });
+    } else if (/^[\-\*]\s*\*\*(.+?)\*\*/.test(line)) {
+      const match = line.match(/^[\-\*]\s*\*\*(.+?)\*\*(.*)/);
+      const title = match[1].replace(/[.:]$/, '').trim();
+      let body = match[2].replace(/^[\s—\-.:]+/, '').trim();
+      while (i + 1 < lines.length && !/^[\-\*]/.test(lines[i + 1].trim()) && lines[i + 1].trim() && !lines[i + 1].startsWith('**')) {
+        body += ' ' + lines[i + 1].trim();
+        i++;
+      }
+      cards.push({ title, body });
+    } else if (line.startsWith('*(') && line.includes('Fitur standar')) {
+      note = line;
+    } else if (!subtitle && !line.startsWith('#') && !line.startsWith('*(')) {
+      subtitle = line;
+    }
+  }
+
+  const iconMap = {
+    biaya: 'dollar', harga: 'dollar', marginal: 'dollar',
+    dna: 'palette', brand: 'palette',
+    spreadsheet: 'spreadsheet', sheets: 'spreadsheet', sync: 'spreadsheet',
+    sidecar: 'zap', copilot: 'zap', workflow: 'zap',
+    arsitektur: 'cpu', pipeline: 'cpu', lokal: 'cpu'
+  };
+  const pickIcon = (t) => {
+    const lt = t.toLowerCase();
+    for (const k of Object.keys(iconMap)) if (lt.includes(k)) return iconMap[k];
+    return 'sparkles';
+  };
+
+  const checkSvg = assetGenerator.getIconSvg('checkmark', { size: 14, color: 'var(--color-success)', strokeWidth: 3 });
+  const cardsHtml = cards.map(c => `
+    <div class="solution-card">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div class="card-icon-brand">
+          ${assetGenerator.getIconSvg(pickIcon(c.title), { size: 26, color: 'var(--brand-primary-light)' })}
+        </div>
+        <span class="solution-check" style="width:24px; height:24px; border-radius:50%; background:var(--color-success-subtle); border:1px solid var(--color-success-border); display:flex; align-items:center; justify-content:center;">
+          ${checkSvg}
+        </span>
+      </div>
+      <h3>${inline(c.title)}</h3>
+      <p>${inline(c.body)}</p>
+    </div>
+  `).join('\n');
+
+  return `
+    <section class="slide-features">
+      <div class="slide-content">
+        <div class="slide-header">
+          <div class="badge-eyebrow">Layanan Unggulan</div>
+          <h2>${inline(slide.title)}</h2>
+          ${subtitle ? `<p class="slide-subtitle">${inline(subtitle)}</p>` : ''}
+        </div>
+        <div class="cards-grid cards-grid-4">
+          ${cardsHtml}
+        </div>
+        ${note ? `
+        <div style="margin-top:16px; font-size:13px; color:var(--brand-text-muted); text-align:center;">${inline(note)}</div>` : ''}
       </div>
     </section>`;
 }
@@ -517,23 +706,52 @@ function renderClosingSlide(slide, brand) {
 
   let bannerDesc = '';
   let quote = '';
+  const contacts = [];
 
   for (const line of lines) {
     const l = line.trim();
     if (!l) continue;
     if (l.startsWith('>')) {
       quote = l.replace(/^>\s*/, '');
+    } else if (/^[-*]\s*(?:\*\*)?([^:\n]+?)(?:\*\*)?:\s*(.+)$/.test(l)) {
+      // Accept "- **Label:** value" OR "- Label: value". Strip backticks from value.
+      const m = l.match(/^[-*]\s*(?:\*\*)?([^:\n]+?)(?:\*\*)?:\s*(.+)$/);
+      const label = m[1].replace(/\*\*/g, '').trim();
+      const value = m[2].replace(/`/g, '').trim();
+      contacts.push({ label, value });
     } else if (!bannerDesc && !l.startsWith('#') && !l.startsWith('-') && !l.startsWith('*')) {
-      bannerDesc = l;
+      if (!l.startsWith('**Kontak resmi')) bannerDesc = l;
     }
   }
 
-  const appStoreSvg = assetGenerator.getIconSvg('app-store', { size: 24, color: '#ffffff' });
-  const googlePlaySvg = assetGenerator.getIconSvg('google-play', { size: 24, color: '#ffffff' });
   const waSvg = assetGenerator.getIconSvg('whatsapp', { size: 20, color: 'var(--brand-primary-light)' });
   const mailSvg = assetGenerator.getIconSvg('mail', { size: 20, color: 'var(--brand-primary-light)' });
   const phoneSvg = assetGenerator.getIconSvg('phone', { size: 20, color: 'var(--brand-primary-light)' });
+  const webSvg = assetGenerator.getIconSvg('layers', { size: 20, color: 'var(--brand-primary-light)' });
   const pinSvg = assetGenerator.getIconSvg('map-pin', { size: 20, color: 'var(--brand-primary-light)' });
+
+  const contactMeta = [
+    { icon: waSvg, key: 'whatsapp', label: 'WhatsApp' },
+    { icon: mailSvg, key: 'email', label: 'Email' },
+    { icon: webSvg, key: 'website', label: 'Website' },
+    { icon: pinSvg, key: 'alamat', label: 'Kantor' }
+  ];
+
+  // Zero-Hallucination: render every contact value EXACTLY as written in the slide
+  // content (which for Venturo Pro are explicit "[…]" placeholders because the
+  // input docs contain no real contact data). Never invent phone/email/address.
+  const contactGroups = contactMeta.map(meta => {
+    const match = contacts.find(c => c.label.toLowerCase().includes(meta.key));
+    if (!match || !match.value) return '';
+    return `
+      <div class="contact-card">
+        <div class="contact-icon">${meta.icon}</div>
+        <div class="contact-info">
+          <span class="contact-label">${meta.label}${meta.key === 'whatsapp' ? ' / Telepon' : ''}</span>
+          <span class="contact-value">${inline(match.value)}</span>
+        </div>
+      </div>`;
+  }).join('\n');
 
   return `
     <section class="slide-closing">
@@ -542,58 +760,109 @@ function renderClosingSlide(slide, brand) {
           <div class="badge-eyebrow" style="margin:0 auto 16px;">Mulai Sekarang</div>
           <h2>Mulai Produksi Video Ber-Brand Hari Ini</h2>
           <p>${bannerDesc ? inline(bannerDesc) : 'Jangan biarkan biaya produksi yang tak terprediksi menjadi alasan brand-mu tampil tidak konsisten lagi.'}</p>
-          <div class="store-pills">
-            <a href="#" class="app-store-pill">
-              ${appStoreSvg}
-              <div class="pill-text">
-                <small>Download on the</small>
-                <span>App Store</span>
-              </div>
-            </a>
-            <a href="#" class="google-play-pill">
-              ${googlePlaySvg}
-              <div class="pill-text">
-                <small>GET IT ON</small>
-                <span>Google Play</span>
-              </div>
-            </a>
-          </div>
         </div>
 
         <div class="contact-grid">
-          <div class="contact-card">
-            <div class="contact-icon">${waSvg}</div>
-            <div class="contact-info">
-              <span class="contact-label">WhatsApp Official</span>
-              <span class="contact-value">+62 812-8888-0199</span>
-            </div>
-          </div>
-          <div class="contact-card">
-            <div class="contact-icon">${mailSvg}</div>
-            <div class="contact-info">
-              <span class="contact-label">Email Support</span>
-              <span class="contact-value">halo@venturopro.id</span>
-            </div>
-          </div>
-          <div class="contact-card">
-            <div class="contact-icon">${phoneSvg}</div>
-            <div class="contact-info">
-              <span class="contact-label">Call Center</span>
-              <span class="contact-value">(021) 5088-7200</span>
-            </div>
-          </div>
-          <div class="contact-card">
-            <div class="contact-icon">${pinSvg}</div>
-            <div class="contact-info">
-              <span class="contact-label">Kantor & Komunitas</span>
-              <span class="contact-value">Jakarta Selatan, ID</span>
-            </div>
-          </div>
+          ${contactGroups}
         </div>
 
         ${quote ? `
         <div style="margin-top:20px; text-align:center; font-size:13px; color:var(--brand-text-muted); font-style:italic;">
           ${inline(quote)}
+        </div>` : ''}
+      </div>
+    </section>`;
+}
+
+// Differentiator "Mengapa Kami" — parses a markdown comparison table into a 5-col comparison table.
+function renderDifferentiatorSlide(slide, brand) {
+  const content = slide.content.replace(/<!--[\s\S]*?-->/g, '').trim();
+  const lines = content.split('\n');
+
+  let intro = '';
+  let honesty = '';
+  const tableLines = [];
+
+  for (const line of lines) {
+    const l = line.trim();
+    if (!l) continue;
+    if (l.startsWith('|')) {
+      tableLines.push(l);
+    } else if (l.toLowerCase().startsWith('**intinya:**') || l.toLowerCase().startsWith('intinya:') || l.toLowerCase().startsWith('**intinya')) {
+      honesty = l.replace(/^\*\*intinya[:\s]*\*\*/i, '');
+    } else if (!intro && !l.startsWith('#')) {
+      intro = l;
+    }
+  }
+
+  const rows = [];
+  for (let i = 0; i < tableLines.length; i++) {
+    const tl = tableLines[i].replace(/^\||\|$/g, '').trim();
+    if (/^(\s*:?-{2,}:?\s*\|?)+$/.test(tl)) continue; // skip separator row
+    const cols = tl.split('|').map(c => c.trim());
+    if (cols.length >= 4) {
+      rows.push({
+        aspect: cols[0].replace(/\*\*/g, '').trim(),
+        brand: cols[1].replace(/\*\*/g, '').trim(),
+        other: cols.slice(2).map(c => c.replace(/\*\*/g, '').trim())
+      });
+    }
+  }
+
+  // Translate cell values to status chips for comparison columns.
+  const cellValue = (text) => {
+    const t = text.toLowerCase();
+    if (!text || text === '-') return '<span style="color:var(--brand-text-muted);">—</span>';
+    if (/(menjaga|penuh|tinggi|terprediksi|cepat|cukup)/.test(t)) {
+      return `<span class="comparison-check">${assetGenerator.getIconSvg('checkmark', { size: 14, color: 'var(--color-success)', strokeWidth: 3 })} ${inline(text)}</span>`;
+    }
+    if (/(naik|mahal|lambat|rendah|terbatas|minim|tidak ada|parsial)/.test(t)) {
+      return `<span class="comparison-cross">${assetGenerator.getIconSvg('close', { size: 14, color: 'var(--color-danger)', strokeWidth: 3 })} ${inline(text)}</span>`;
+    }
+    if (/(sedang|spreadsheet|opsional)/.test(t)) {
+      return `<span class="comparison-warn">${assetGenerator.getIconSvg('warning', { size: 14, color: 'var(--color-warning)', strokeWidth: 3 })} ${inline(text)}</span>`;
+    }
+    return inline(text);
+  };
+
+  const rowsHtml = rows.map(r => `
+    <tr>
+      <td class="aspect-col">${inline(r.aspect)}</td>
+      <td class="brand-col">${cellValue(r.brand)}</td>
+      ${r.other.map(c => `<td>${cellValue(c)}</td>`).join('\n')}
+    </tr>
+  `).join('\n');
+
+  const headerCols = rows.length ? rows[0].other.length + 2 : 5;
+
+  return `
+    <section class="slide-differentiator">
+      <div class="slide-content">
+        <div class="slide-header">
+          <div class="badge-eyebrow">Keunggulan Kompetitif</div>
+          <h2>${inline(slide.title)}</h2>
+          ${intro ? `<p class="slide-subtitle">${inline(intro)}</p>` : ''}
+        </div>
+        <div class="table-container">
+          <table class="comparison-table">
+            <thead>
+              <tr>
+                <th>Aspek</th>
+                <th class="brand-col">${brand.name}</th>
+                <th>CapCut / Template</th>
+                <th>SaaS Cloud</th>
+                <th>Jasa Produksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rowsHtml}
+            </tbody>
+          </table>
+        </div>
+        ${honesty ? `
+        <div class="honesty-callout">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          <p><strong>Catatan Transparansi:</strong> ${inline(honesty)}</p>
         </div>` : ''}
       </div>
     </section>`;
@@ -628,14 +897,233 @@ function renderGeneralSlide(slide, brand) {
     </section>`;
 }
 
+// Editorial Archetype Classifier
+function classifyEditorialArchetype(slide, index, totalSlides) {
+  const t = (slide.title || '').toLowerCase();
+  const c = (slide.content || '').toLowerCase();
+  const combined = t + ' ' + c;
+  const bulletCount = (slide.content || '').match(/^[-*]\s/gm) || [];
+
+  if (index === 0) return 'archetype-hero-cover';
+  if (index === totalSlides - 1 || /hubungi|kontak|contact|cta/.test(combined)) return 'archetype-closing-cta';
+  if (/brand dna|biaya/.test(combined) || bulletCount.length <= 2) return 'archetype-mission-pillars';
+  if (/workflow|langkah|step/.test(combined) || /\b[1-3]\./.test(slide.content || '')) return 'archetype-workflow-3col';
+  if (/layanan|fitur|services|feature/.test(combined) || bulletCount.length >= 4) return 'archetype-services-grid';
+  if (/rp\d|%\s|metric|angka|statistics|\d+\+?\s*(?:klien|pelanggan|proyek)/.test(combined)) return 'archetype-metrics-contact';
+  return 'archetype-narrative-split';
+}
+
+// Editorial Archetype Renderers
+function renderEditorialHero(slide, brand) {
+  const lines = slide.content.replace(/<!--[\s\S]*?-->/g, '').trim().split('\n').map(l => l.trim()).filter(Boolean);
+  let tagline = '';
+  let desc = '';
+  for (const line of lines) {
+    if (/^[-*]/.test(line)) continue;
+    if (!tagline && !/^💼/u.test(line) && line.length > 5) tagline = line;
+    else if (/^💼/u.test(line)) desc = line.replace(/^💼\s*/u, '');
+    else if (!desc && line.length > 30) desc = line;
+  }
+
+  return `
+    <section class="archetype-hero-cover">
+      <nav class="editorial-top-nav">
+        <div class="editorial-logo">${brand.name}</div>
+        <div class="editorial-nav-links">
+          <a class="editorial-nav-btn" href="#/1">Company Profile</a>
+        </div>
+      </nav>
+      <div class="hero-floating-card">
+        <span class="hero-pill-badge">${brand.name}</span>
+        <h1 class="hero-headline">${inline(slide.title)}</h1>
+        ${tagline ? `<p style="font-size:18px; color:var(--text-body); margin:0 0 12px;">${inline(tagline)}</p>` : ''}
+        ${desc ? `<p style="font-size:15px; color:var(--text-muted); margin:0;">${inline(desc)}</p>` : ''}
+        <div class="hero-actions" style="margin-top:28px;">
+          <button class="btn-solid">Lihat Selengkapnya</button>
+          <button class="btn-outline">Hubungi Kami</button>
+        </div>
+      </div>
+      <div style="display:flex; justify-content:center; align-items:center;">
+        <div class="phone-frame-editorial">
+          <div class="phone-notch"></div>
+        </div>
+      </div>
+    </section>`;
+}
+
+function renderEditorialMissionPillars(slide, brand) {
+  const lines = slide.content.replace(/<!--[\s\S]*?-->/g, '').trim().split('\n').map(l => l.trim()).filter(Boolean);
+  const pillars = [];
+  for (const line of lines) {
+    const m = line.match(/^[-*]\s*(?:\*\*)?(.+?)(?:\*\*)?\s*(?:—|:\s*)?(.*)$/);
+    if (m) pillars.push({ title: m[1].trim(), body: m[2] ? m[2].replace(/[*_]/g, '').trim() : '' });
+  }
+
+  const cardsHtml = pillars.map((p, i) => `
+    <div class="pillar-card">
+      <div class="pillar-number">0${i + 1}</div>
+      <h3 style="font-size:20px; font-weight:700; margin:0 0 10px;">${inline(p.title)}</h3>
+      ${p.body ? `<p style="font-size:14px; color:var(--text-body); margin:0;">${inline(p.body)}</p>` : ''}
+    </div>`).join('\n');
+
+  return `
+    <section class="archetype-mission-pillars">
+      <div style="padding-right:24px;">
+        <span class="hero-pill-badge" style="margin-bottom:16px;">Misi & Pilar</span>
+        <h2 style="font-family:var(--font-display); font-size:36px; font-weight:800; color:var(--text-headline); margin:0 0 16px;">${inline(slide.title)}</h2>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+        ${cardsHtml}
+      </div>
+    </section>`;
+}
+
+function renderEditorialWorkflow(slide, brand) {
+  const lines = slide.content.replace(/<!--[\s\S]*?-->/g, '').trim().split('\n').map(l => l.trim()).filter(Boolean);
+  const steps = [];
+  for (const line of lines) {
+    const m = line.match(/^\d+[.)]\s*(?:\*\*)?(.+?)(?:\*\*)?\s*(?:—|:\s*)?(.*)$/);
+    if (m) steps.push({ title: m[1].trim(), body: m[2] ? m[2].replace(/[*_]/g, '').trim() : '' });
+  }
+
+  const colsHtml = steps.slice(0, 3).map((s, i) => `
+    <div class="pillar-card">
+      <div class="pillar-number">0${i + 1}</div>
+      <h3 style="font-size:18px; font-weight:700; margin:0 0 10px;">${inline(s.title)}</h3>
+      ${s.body ? `<p style="font-size:14px; color:var(--text-body); margin:0;">${inline(s.body)}</p>` : ''}
+    </div>`).join('\n');
+
+  return `
+    <section class="archetype-workflow-3col">
+      <div style="grid-column:1/-1; margin-bottom:8px;">
+        <span class="hero-pill-badge">Workflow</span>
+        <h2 style="font-family:var(--font-display); font-size:32px; font-weight:800; color:var(--text-headline); margin:8px 0 0;">${inline(slide.title)}</h2>
+      </div>
+      ${colsHtml}
+    </section>`;
+}
+
+function renderEditorialServicesGrid(slide, brand) {
+  const lines = slide.content.replace(/<!--[\s\S]*?-->/g, '').trim().split('\n').map(l => l.trim()).filter(Boolean);
+  const services = [];
+  for (const line of lines) {
+    const m = line.match(/^[-*]\s*(?:\*\*)?(.+?)(?:\*\*)?\s*(?:—|:\s*)?(.*)$/);
+    if (m) services.push({ title: m[1].trim(), body: m[2] ? m[2].replace(/[*_]/g, '').trim() : '' });
+  }
+
+  const cardsHtml = services.map((s, i) => `
+    <div class="pillar-card">
+      <div class="pillar-number">0${i + 1}</div>
+      <h3 style="font-size:17px; font-weight:700; margin:0 0 8px;">${inline(s.title)}</h3>
+      ${s.body ? `<p style="font-size:13px; color:var(--text-body); margin:0;">${inline(s.body)}</p>` : ''}
+    </div>`).join('\n');
+
+  return `
+    <section class="archetype-services-grid">
+      <div style="grid-column:1/-1; margin-bottom:8px;">
+        <span class="hero-pill-badge">Layanan</span>
+        <h2 style="font-family:var(--font-display); font-size:32px; font-weight:800; color:var(--text-headline); margin:8px 0 0;">${inline(slide.title)}</h2>
+      </div>
+      ${cardsHtml}
+    </section>`;
+}
+
+function renderEditorialMetrics(slide, brand) {
+  const lines = slide.content.replace(/<!--[\s\S]*?-->/g, '').trim().split('\n').map(l => l.trim()).filter(Boolean);
+  const metrics = [];
+  for (const line of lines) {
+    const m = line.match(/^[-*]\s*(?:\*\*)?([^*\n]+?)(?:\*\*)?\s*[—-]?\s*(.*)$/);
+    if (m) metrics.push({ number: m[1].trim(), label: m[2].replace(/[*_]/g, '').trim() });
+  }
+
+  const boxesHtml = metrics.map(m => `
+    <div class="metric-counter-box">
+      <div class="metric-number">${inline(m.number)}</div>
+      ${m.label ? `<p style="font-size:14px; color:var(--text-body); margin:10px 0 0;">${inline(m.label)}</p>` : ''}
+    </div>`).join('\n');
+
+  return `
+    <section class="archetype-metrics-contact">
+      <div style="grid-column:1/-1; margin-bottom:8px;">
+        <span class="hero-pill-badge">Pencapaian</span>
+        <h2 style="font-family:var(--font-display); font-size:32px; font-weight:800; color:var(--text-headline); margin:8px 0 0;">${inline(slide.title)}</h2>
+      </div>
+      ${boxesHtml}
+    </section>`;
+}
+
+function renderEditorialClosing(slide, brand) {
+  const lines = slide.content.replace(/<!--[\s\S]*?-->/g, '').trim().split('\n').map(l => l.trim()).filter(Boolean);
+  let desc = '';
+  const contacts = [];
+  for (const line of lines) {
+    const m = line.match(/^[-*]\s*(?:\*\*)?([^:\n]+?)(?:\*\*)?\s*:\s*(.+)$/);
+    if (m) contacts.push({ label: m[1].replace(/[*_]/g, '').trim(), value: m[2].replace(/`/g, '').trim() });
+    else if (!desc && !line.startsWith('#') && !line.startsWith('-')) desc = line;
+  }
+
+  const contactsHtml = contacts.map(c => `<p style="font-size:15px; margin:4px 0; color:var(--text-body);"><strong>${inline(c.label)}:</strong> ${inline(c.value)}</p>`).join('');
+
+  return `
+    <section class="archetype-closing-cta">
+      <span class="hero-pill-badge" style="margin-bottom:20px;">Hubungi Kami</span>
+      <h2 style="font-family:var(--font-display); font-size:44px; font-weight:800; color:var(--text-headline); margin:0 0 20px;">${inline(slide.title)}</h2>
+      ${desc ? `<p style="font-size:18px; color:var(--text-body); max-width:600px; margin:0 auto 28px;">${inline(desc)}</p>` : ''}
+      ${contactsHtml}
+      <div class="hero-actions" style="margin-top:32px;">
+        <button class="btn-solid">Hubungi Sekarang</button>
+        <button class="btn-outline">Kembali ke Awal</button>
+      </div>
+    </section>`;
+}
+
+function renderEditorialNarrative(slide, brand) {
+  const content = slide.content.replace(/<!--[\s\S]*?-->/g, '').trim();
+  const lines = content.split('\n');
+  let bodyHtml = '';
+  for (const line of lines) {
+    const l = line.trim();
+    if (!l) continue;
+    if (l.startsWith('-') || l.startsWith('*')) bodyHtml += `<li style="margin:6px 0; font-size:15px; color:var(--text-body);">${inline(l.replace(/^[-*]\s*/, ''))}</li>\n`;
+    else bodyHtml += `<p style="margin:8px 0; font-size:15px; color:var(--text-body);">${inline(l)}</p>\n`;
+  }
+
+  return `
+    <section class="archetype-narrative-split">
+      <div>
+        <span class="hero-pill-badge" style="margin-bottom:16px;">${brand.name}</span>
+        <h2 style="font-family:var(--font-display); font-size:32px; font-weight:800; color:var(--text-headline); margin:0;">${inline(slide.title)}</h2>
+      </div>
+      <div class="hero-floating-card">
+        <ul style="list-style:none; padding:0; margin:0;">
+          ${bodyHtml}
+        </ul>
+      </div>
+    </section>`;
+}
+
 // 6. Convert slides into HTML based on detected archetypes
 const slideHtml = slides.map((s, idx) => {
+  if (THEME === 'editorial') {
+    const archetype = classifyEditorialArchetype(s, idx, slides.length);
+    switch (archetype) {
+      case 'archetype-hero-cover': return renderEditorialHero(s, brand);
+      case 'archetype-mission-pillars': return renderEditorialMissionPillars(s, brand);
+      case 'archetype-workflow-3col': return renderEditorialWorkflow(s, brand);
+      case 'archetype-services-grid': return renderEditorialServicesGrid(s, brand);
+      case 'archetype-metrics-contact': return renderEditorialMetrics(s, brand);
+      case 'archetype-closing-cta': return renderEditorialClosing(s, brand);
+      default: return renderEditorialNarrative(s, brand);
+    }
+  }
   const type = detectSlideType(s, idx, slides.length);
   switch (type) {
     case 'hero': return renderHeroSlide(s, brand);
     case 'problem': return renderProblemSlide(s, brand);
     case 'solution': return renderSolutionSlide(s, brand);
     case 'ecosystem': return renderEcosystemSlide(s, brand);
+    case 'features': return renderFeaturesSlide(s, brand);
+    case 'differentiator': return renderDifferentiatorSlide(s, brand);
     case 'showcase': return renderShowcaseSlide(s, brand);
     case 'pricing': return renderPricingSlide(s, brand);
     case 'offer': return renderOfferSlide(s, brand);
@@ -648,18 +1136,23 @@ const slideHtml = slides.map((s, idx) => {
 let shell = fs.readFileSync(SHELL, 'utf8');
 let customCss = fs.readFileSync(CSS, 'utf8');
 
-// Inject dynamic client HSL tokens
+// Inject dynamic client HSL tokens (no-op when CSS lacks these tokens, e.g. editorial.css)
 customCss = customCss
   .replace(/--brand-h:\s*\d+;/, `--brand-h: ${hsl.h};`)
   .replace(/--brand-s:\s*\d+%;/, `--brand-s: ${hsl.s}%;`)
   .replace(/--brand-l:\s*\d+%;/, `--brand-l: ${hsl.l}%;`);
 
-shell = shell.replace('/* {{CUSTOM_CSS}} */', customCss);
-shell = shell.replace(/{{COMPANY_NAME}}/g, brand.name);
-shell = shell.replace(
-  /<!-- Konten slide di-inject di sini oleh builder -->[\s\S]*?<!-- Setiap section adalah satu slide beresolusi 1920x1080 \(16:9\) -->/,
-  slideHtml
-);
+if (THEME === 'editorial') {
+  shell = shell.replace('/* CSS_INLINE_PLACEHOLDER */', customCss);
+  shell = shell.replace('<!-- SLIDES_INLINE_PLACEHOLDER -->', slideHtml);
+} else {
+  shell = shell.replace('/* {{CUSTOM_CSS}} */', customCss);
+  shell = shell.replace(/{{COMPANY_NAME}}/g, brand.name);
+  shell = shell.replace(
+    /<!-- Konten slide di-inject di sini oleh builder -->[\s\S]*?<!-- Setiap section adalah satu slide beresolusi 1920x1080 \(16:9\) -->/,
+    slideHtml
+  );
+}
 
 // 8. Write primary deliverables
 fs.writeFileSync(path.join(OUT_DIR, 'index.html'), shell, 'utf8');
