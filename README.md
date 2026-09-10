@@ -1,6 +1,6 @@
-# Compro — Layer 3 Company Profile Multi-Agent Plugin (v2.2.0)
+# Compro Plugin v2.3.0 — Multi-Agent Slide Deck Pipeline
 
-Arsitektur multi-agen untuk mengonversi data mentah bisnis menjadi presentasi slide *Company Profile* berbasis web (Reveal.js) yang teroptimasi SEO dan siap di-deploy ke Vercel.
+Plugin otomatisasi pembuatan Company Profile interaktif berbasis Reveal.js dengan sistem desain **Canva Editorial Theme (Gray-White Modern)** dan deployment Vercel.
 
 ## What's New in v2.2.0
 
