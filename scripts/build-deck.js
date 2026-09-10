@@ -898,6 +898,17 @@ function renderGeneralSlide(slide, brand) {
 }
 
 // Editorial Archetype Classifier
+// Order matters — each rule returns before later rules are consulted:
+//   1. hero-cover     (index 0)
+//   2. closing-cta    (final slide / contact keywords) — kept as an early guarded check so
+//                     metrics-heavy closing sections still resolve to closing, not metrics
+//   3. workflow-3col    (REAL ordered-step markers only, never mid-text decimals/thousands;
+//                     checked before metrics so "1. Step" beats the generic number rule)
+//   4. metrics-contact  (checked BEFORE services-grid & mission-pillars so bullet-count
+//                     rules never shadow a metric-bearing section)
+//   5. services-grid
+//   6. mission-pillars
+//   7. narrative-split  (fallback)
 function classifyEditorialArchetype(slide, index, totalSlides) {
   const t = (slide.title || '').toLowerCase();
   const c = (slide.content || '').toLowerCase();
@@ -906,10 +917,14 @@ function classifyEditorialArchetype(slide, index, totalSlides) {
 
   if (index === 0) return 'archetype-hero-cover';
   if (index === totalSlides - 1 || /hubungi|kontak|contact|cta/.test(combined)) return 'archetype-closing-cta';
-  if (/brand dna|biaya/.test(combined) || bulletCount.length <= 2) return 'archetype-mission-pillars';
-  if (/workflow|langkah|step/.test(combined) || /\b[1-3]\./.test(slide.content || '')) return 'archetype-workflow-3col';
+  // Workflow step marker must be a REAL ordered step at line start ("1. Sinopsis bla"),
+  // not a decimal/thousands separator mid-text ("biaya 2.000" / "versi 1.3").
+  if (/workflow|langkah|step/.test(combined) || /(?:^|\n)\s*[1-3][.).]\s/.test(slide.content || '')) return 'archetype-workflow-3col';
+  // Metrics: currency, percentages (incl. end-of-line "100%"), bare numbers/metrics
+  // (thousands/decimals like "2.000", "5–20"), and metric/stat vocabulary.
+  if (/rp\s?\d[\d.,]*|%(?:\s|$)|\b(?:metric|statistik|angka|statistics|pencapaian|achievement|kpi)\b|\d[\d.,]*\b/i.test(combined)) return 'archetype-metrics-contact';
   if (/layanan|fitur|services|feature/.test(combined) || bulletCount.length >= 4) return 'archetype-services-grid';
-  if (/rp\d|%\s|metric|angka|statistics|\d+\+?\s*(?:klien|pelanggan|proyek)/.test(combined)) return 'archetype-metrics-contact';
+  if (/brand dna|biaya/.test(combined) || bulletCount.length <= 2) return 'archetype-mission-pillars';
   return 'archetype-narrative-split';
 }
 
@@ -951,105 +966,108 @@ function renderEditorialHero(slide, brand) {
     </section>`;
 }
 
-function renderEditorialMissionPillars(slide, brand) {
-  const lines = slide.content.replace(/<!--[\s\S]*?-->/g, '').trim().split('\n').map(l => l.trim()).filter(Boolean);
-  const pillars = [];
+// Shared bullet-card parser (lines -> cards). Modes:
+//  - 'bullets'  : "- **Title** — body" (mission-pillars / services-grid)
+//  - 'numbered' : "1. Title — body"     (workflow-3col)
+//  - 'metrics'  : "- number label"      (metrics-contact, number/label split)
+function parseEditorialBulletCards(lines, mode) {
+  const pattern =
+    mode === 'numbered'
+      ? /^\d+[.)]\s*(?:\*\*)?([^*\n]+)(?:\*\*)?\s*(?:—|:\s*)?(.*)$/
+      : mode === 'metrics'
+        ? /^[-*]\s*(?:\*\*)?([^*\n]+)(?:\*\*)?\s*[—-]?\s*(.*)$/
+        : /^[-*]\s*(?:\*\*)?([^*\n]+)(?:\*\*)?\s*(?:—|:\s*)?(.*)$/;
+  const cards = [];
   for (const line of lines) {
-    const m = line.match(/^[-*]\s*(?:\*\*)?(.+?)(?:\*\*)?\s*(?:—|:\s*)?(.*)$/);
-    if (m) pillars.push({ title: m[1].trim(), body: m[2] ? m[2].replace(/[*_]/g, '').trim() : '' });
+    const m = line.match(pattern);
+    if (m) cards.push({ title: m[1].trim(), body: m[2] ? m[2].replace(/[*_]/g, '').trim() : '' });
   }
+  return cards;
+}
 
-  const cardsHtml = pillars.map((p, i) => `
-    <div class="pillar-card">
-      <div class="pillar-number">0${i + 1}</div>
-      <h3 style="font-size:20px; font-weight:700; margin:0 0 10px;">${inline(p.title)}</h3>
-      ${p.body ? `<p style="font-size:14px; color:var(--text-body); margin:0;">${inline(p.body)}</p>` : ''}
-    </div>`).join('\n');
+// One shared grid renderer. All editorial grid archetypes call it with their own options so the
+// card/section body is never copy-pasted between archetype renderers.
+function renderEditorialCardGrid(slide, opts) {
+  const lines = slide.content.replace(/<!--[\s\S]*?-->/g, '').trim().split('\n').map(l => l.trim()).filter(Boolean);
+  const cards = parseEditorialBulletCards(lines, opts.cardMode);
+
+  const cardHtml = cards.slice(0, opts.limit || cards.length).map((card, i) => {
+    if (opts.cardType === 'metric') {
+      return `
+        <div class="metric-counter-box">
+          <div class="metric-number">${inline(card.title)}</div>
+          ${card.body ? `<p style="font-size:14px; color:var(--text-body); margin:10px 0 0;">${inline(card.body)}</p>` : ''}
+        </div>`;
+    }
+    return `
+      <div class="pillar-card">
+        <div class="pillar-number">0${i + 1}</div>
+        <h3 style="font-size:${opts.titleSize}px; font-weight:700; margin:0 0 ${opts.titleMarginBottom}px;">${inline(card.title)}</h3>
+        ${card.body ? `<p style="font-size:${opts.bodySize}px; color:var(--text-body); margin:0;">${inline(card.body)}</p>` : ''}
+      </div>`;
+  }).join('\n');
+
+  const sectionHeader = opts.headerLayout === 'split'
+    ? `
+      <div style="padding-right:24px;">
+        <span class="hero-pill-badge" style="${opts.badgeStyle || ''}">${opts.badge}</span>
+        <h2 style="font-family:var(--font-display); font-size:${opts.headlineSize}px; font-weight:800; color:var(--text-headline); margin:${opts.headlineMargin};">${inline(slide.title)}</h2>
+      </div>`
+    : `
+      <div style="grid-column:1/-1; margin-bottom:8px;">
+        <span class="hero-pill-badge">${opts.badge}</span>
+        <h2 style="font-family:var(--font-display); font-size:${opts.headlineSize}px; font-weight:800; color:var(--text-headline); margin:8px 0 0;">${inline(slide.title)}</h2>
+      </div>`;
+
+  const cardsBlock = opts.wrapGrid
+    ? `<div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">${cardHtml}</div>`
+    : cardHtml;
 
   return `
-    <section class="archetype-mission-pillars">
-      <div style="padding-right:24px;">
-        <span class="hero-pill-badge" style="margin-bottom:16px;">Misi & Pilar</span>
-        <h2 style="font-family:var(--font-display); font-size:36px; font-weight:800; color:var(--text-headline); margin:0 0 16px;">${inline(slide.title)}</h2>
-      </div>
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
-        ${cardsHtml}
-      </div>
+    <section class="${opts.sectionClass}">
+      ${sectionHeader}
+      ${cardsBlock}
     </section>`;
+}
+
+function renderEditorialMissionPillars(slide, brand) {
+  return renderEditorialCardGrid(slide, {
+    sectionClass: 'archetype-mission-pillars', headerLayout: 'split',
+    badge: 'Misi & Pilar', badgeStyle: 'margin-bottom:16px;',
+    headlineSize: 36, headlineMargin: '0 0 16px',
+    cardType: 'pillar', titleSize: 20, bodySize: 14, titleMarginBottom: 10,
+    cardMode: 'bullets', wrapGrid: true
+  });
 }
 
 function renderEditorialWorkflow(slide, brand) {
-  const lines = slide.content.replace(/<!--[\s\S]*?-->/g, '').trim().split('\n').map(l => l.trim()).filter(Boolean);
-  const steps = [];
-  for (const line of lines) {
-    const m = line.match(/^\d+[.)]\s*(?:\*\*)?(.+?)(?:\*\*)?\s*(?:—|:\s*)?(.*)$/);
-    if (m) steps.push({ title: m[1].trim(), body: m[2] ? m[2].replace(/[*_]/g, '').trim() : '' });
-  }
-
-  const colsHtml = steps.slice(0, 3).map((s, i) => `
-    <div class="pillar-card">
-      <div class="pillar-number">0${i + 1}</div>
-      <h3 style="font-size:18px; font-weight:700; margin:0 0 10px;">${inline(s.title)}</h3>
-      ${s.body ? `<p style="font-size:14px; color:var(--text-body); margin:0;">${inline(s.body)}</p>` : ''}
-    </div>`).join('\n');
-
-  return `
-    <section class="archetype-workflow-3col">
-      <div style="grid-column:1/-1; margin-bottom:8px;">
-        <span class="hero-pill-badge">Workflow</span>
-        <h2 style="font-family:var(--font-display); font-size:32px; font-weight:800; color:var(--text-headline); margin:8px 0 0;">${inline(slide.title)}</h2>
-      </div>
-      ${colsHtml}
-    </section>`;
+  return renderEditorialCardGrid(slide, {
+    sectionClass: 'archetype-workflow-3col', headerLayout: 'full',
+    badge: 'Workflow',
+    headlineSize: 32, headlineMargin: '8px 0 0',
+    cardType: 'pillar', titleSize: 18, bodySize: 14, titleMarginBottom: 10,
+    cardMode: 'numbered', limit: 3
+  });
 }
 
 function renderEditorialServicesGrid(slide, brand) {
-  const lines = slide.content.replace(/<!--[\s\S]*?-->/g, '').trim().split('\n').map(l => l.trim()).filter(Boolean);
-  const services = [];
-  for (const line of lines) {
-    const m = line.match(/^[-*]\s*(?:\*\*)?(.+?)(?:\*\*)?\s*(?:—|:\s*)?(.*)$/);
-    if (m) services.push({ title: m[1].trim(), body: m[2] ? m[2].replace(/[*_]/g, '').trim() : '' });
-  }
-
-  const cardsHtml = services.map((s, i) => `
-    <div class="pillar-card">
-      <div class="pillar-number">0${i + 1}</div>
-      <h3 style="font-size:17px; font-weight:700; margin:0 0 8px;">${inline(s.title)}</h3>
-      ${s.body ? `<p style="font-size:13px; color:var(--text-body); margin:0;">${inline(s.body)}</p>` : ''}
-    </div>`).join('\n');
-
-  return `
-    <section class="archetype-services-grid">
-      <div style="grid-column:1/-1; margin-bottom:8px;">
-        <span class="hero-pill-badge">Layanan</span>
-        <h2 style="font-family:var(--font-display); font-size:32px; font-weight:800; color:var(--text-headline); margin:8px 0 0;">${inline(slide.title)}</h2>
-      </div>
-      ${cardsHtml}
-    </section>`;
+  return renderEditorialCardGrid(slide, {
+    sectionClass: 'archetype-services-grid', headerLayout: 'full',
+    badge: 'Layanan',
+    headlineSize: 32, headlineMargin: '8px 0 0',
+    cardType: 'pillar', titleSize: 17, bodySize: 13, titleMarginBottom: 8,
+    cardMode: 'bullets'
+  });
 }
 
 function renderEditorialMetrics(slide, brand) {
-  const lines = slide.content.replace(/<!--[\s\S]*?-->/g, '').trim().split('\n').map(l => l.trim()).filter(Boolean);
-  const metrics = [];
-  for (const line of lines) {
-    const m = line.match(/^[-*]\s*(?:\*\*)?([^*\n]+?)(?:\*\*)?\s*[—-]?\s*(.*)$/);
-    if (m) metrics.push({ number: m[1].trim(), label: m[2].replace(/[*_]/g, '').trim() });
-  }
-
-  const boxesHtml = metrics.map(m => `
-    <div class="metric-counter-box">
-      <div class="metric-number">${inline(m.number)}</div>
-      ${m.label ? `<p style="font-size:14px; color:var(--text-body); margin:10px 0 0;">${inline(m.label)}</p>` : ''}
-    </div>`).join('\n');
-
-  return `
-    <section class="archetype-metrics-contact">
-      <div style="grid-column:1/-1; margin-bottom:8px;">
-        <span class="hero-pill-badge">Pencapaian</span>
-        <h2 style="font-family:var(--font-display); font-size:32px; font-weight:800; color:var(--text-headline); margin:8px 0 0;">${inline(slide.title)}</h2>
-      </div>
-      ${boxesHtml}
-    </section>`;
+  return renderEditorialCardGrid(slide, {
+    sectionClass: 'archetype-metrics-contact', headerLayout: 'full',
+    badge: 'Pencapaian',
+    headlineSize: 32, headlineMargin: '8px 0 0',
+    cardType: 'metric',
+    cardMode: 'metrics'
+  });
 }
 
 function renderEditorialClosing(slide, brand) {
