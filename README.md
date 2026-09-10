@@ -2,6 +2,17 @@
 
 Plugin otomatisasi pembuatan Company Profile interaktif berbasis Reveal.js dengan sistem desain **Canva Editorial Theme (Gray-White Modern)** dan deployment Vercel.
 
+## What's New in v2.3.0
+
+Rilis v2.3.0 menghadirkan sistem desain editorial baru dan peningkatan pipeline build:
+
+- **Canva Editorial Theme (Gray-White Modern System)**: Sistem desain slide baru `editorial` dengan kanvas abu-abu lembut `#F4F5F7`, kartu putih `#FFFFFF`, charcoal `#232220`, dan aksen Venturo Teal `#009BAD`.
+- **10 Layout Archetypes Dinamis**: Classifier otomatis memetakan konten Markdown ke 10 arketipe layout (`hero-cover`, `narrative-split`, `mission-pillars`, `workflow-3col`, `features-staggered`, `persona-cards`, `services-grid`, `portfolio-gallery`, `metrics-contact`, `closing-cta`) tanpa hardcode jumlah slide.
+- **Dynamic Markdown Chunking**: Jumlah slide diturunkan dari konten intake; tidak ada slide dummy/forced.
+- **Theme Selector CLI**: `node scripts/build-deck.js --name=<slug> --theme=editorial` (editorial adalah default).
+- **Asset Pipeline Integration**: Font Plus Jakarta Sans & Inter, phone-frame mockup 9:16, dan warna brand Venturo terintegrasi.
+- **Manifest v2.3.0**: Validasi manifest diperbarui untuk memastikan kompatibilitas seluruh 5 Layer 3 skills.
+
 ## What's New in v2.2.0
 
 Rilis v2.2.0 menghadirkan peningkatan signifikan pada stabilitas arsitektur, kualitas konten, fidelitas visual, dan developer experience:
