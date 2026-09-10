@@ -181,7 +181,7 @@ fs.writeFileSync(path.join(ASSETS_DIR, 'logo.svg'), assetGenerator.generateLogoS
 // Strip YAML frontmatter AND the reviewer-added Meta Title/Description header lines,
 // so they never become a phantom slide.
 const body = md
-  .replace(/^---([\s\S]*?)---\s*$/, (_m, inner) => inner.replace(/^Title:.*$/m, '').replace(/^Description:.*$/m, ''))
+  .replace(/^---([\s\S]*?)---\s*/, (_m, inner) => inner.replace(/^Meta Title:.*$/m, '').replace(/^Meta Description:.*$/m, ''))
   .replace(/^\s+/, '');
 const rawSlides = body.split(/^# /m).map(s => s.trim()).filter(Boolean);
 const slides = rawSlides.map(s => {
