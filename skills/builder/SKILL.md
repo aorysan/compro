@@ -502,12 +502,12 @@ Tema editorial menawarkan estetika majalah/corporate light dengan palette terang
 | `--brand-dark` | `#006D79` | Variasi gelap untuk hover/aktif |
 
 **Typography:**
-- **Display / Heading:** Plus Jakarta Sans (600/700/800)
+- **Display / Heading:** Plus Jakarta Sans (700/800)
 - **Body / Keterangan:** Inter (400/500/600)
 
 ### Layout Archetypes (10 tipe)
 
-Builder mengklasifikasikan setiap slide ke dalam salah satu dari 10 archetype berdasarkan konten Markdown:
+Builder mengklasifikasikan setiap slide ke dalam salah satu dari 10 archetype berdasarkan konten Markdown. 7 archetype aktif dipancarkan oleh classifier (`classifyEditorialArchetype`); 3 lainnya (`features-staggered`, `persona-cards`, `portfolio-gallery`) berstatus reserved — CSS-nya sudah didefinisikan di `editorial.css` tetapi classifier path belum diwiring.
 
 | Archetype Class | Fungsi | Sinyal Pemicu |
 |-----------------|--------|---------------|
@@ -515,10 +515,10 @@ Builder mengklasifikasikan setiap slide ke dalam salah satu dari 10 archetype be
 | `.archetype-narrative-split` | Narasi 2-kolom | Deskripsi panjang / story |
 | `.archetype-mission-pillars` | Pilar misi / nilai | Brand DNA / 2 bullet poin / "Biaya" |
 | `.archetype-workflow-3col` | Alur kerja 3 langkah | 3 step / proses |
-| `.archetype-features-staggered` | Fitur bertingkat | Daftar fitur 4–6 item |
-| `.archetype-persona-cards` | Kartu persona/role | Tim / profil orang |
+| `.archetype-features-staggered` | Fitur bertingkat | _reserved — CSS defined, classifier path not yet wired_ |
+| `.archetype-persona-cards` | Kartu persona/role | _reserved — CSS defined, classifier path not yet wired_ |
 | `.archetype-services-grid` | Grid layanan | 4+ poin layanan |
-| `.archetype-portfolio-gallery` | Galeri portofolio | Portofolio / showcase |
+| `.archetype-portfolio-gallery` | Galeri portofolio | _reserved — CSS defined, classifier path not yet wired_ |
 | `.archetype-metrics-contact` | Metrik & kontak | Angka statistik / data |
 | `.archetype-closing-cta` | CTA penutup | Penutup / kontak akhir |
 
