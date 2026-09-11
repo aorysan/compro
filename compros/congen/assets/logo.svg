@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 60" width="240" height="60" fill="none">
+  <defs>
+    <linearGradient id="logoEmblem" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#009BAD"/>
+      <stop offset="100%" stop-color="#38bdf8"/>
+    </linearGradient>
+  </defs>
+  <!-- Emblem Mark (V + Play Aperture) -->
+  <rect x="6" y="6" width="48" height="48" rx="14" fill="url(#logoEmblem)"/>
+  <path d="M20 18L30 36L40 18" stroke="#ffffff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="30" cy="24" r="3" fill="#ffffff"/>
+
+  <!-- Wordmark -->
+  <text x="68" y="34" fill="#f8fafc" font-family="'Plus Jakarta Sans', sans-serif" font-size="20" font-weight="800" letter-spacing="-0.02em">Venturo</text>
+  <text x="68" y="48" fill="#009BAD" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="700" letter-spacing="0.12em">Pro</text>
+</svg>
