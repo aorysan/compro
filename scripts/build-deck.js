@@ -944,17 +944,19 @@ function renderGeneralSlide(slide, brand) {
 }
 
 // Editorial Archetype Classifier
-// Order matters — each rule returns before later rules are consulted:
-//   1. hero-cover     (index 0)
-//   2. closing-cta    (final slide / contact keywords) — kept as an early guarded check so
-//                     metrics-heavy closing sections still resolve to closing, not metrics
-//   3. workflow-3col    (REAL ordered-step markers only, never mid-text decimals/thousands;
-//                     checked before metrics so "1. Step" beats the generic number rule)
-//   4. metrics-contact  (checked BEFORE services-grid & mission-pillars so bullet-count
-//                     rules never shadow a metric-bearing section)
-//   5. services-grid
-//   6. mission-pillars
-//   7. narrative-split  (fallback)
+// Returns ONE of the 8 spec archetypes. Priority order:
+//   1. hero-cover       (index 0)
+//   2. closing-cta      (final slide / contact keywords)
+//   3. ecosystem-orbit  (architecture / ecosystem keywords — guarded: pipeline alone is NOT
+//                        enough; must co-occur with ecosystem context to avoid false hits on
+//                        slides that mention pipeline in a services/features context)
+//   4. narrative-split  (problem OR solution — determined later in dispatch)
+//   5. pricing-cards    (package / pricing keywords — biaya is excluded because it appears
+//                        in comparison tables on non-pricing slides)
+//   6. differentiator   (why-us / competitive advantage)
+//   7. metrics-contact  (traction / metrics / KPI)
+//   8. services-grid    (services / features / 4+ bullets)
+//   fallback:           narrative-split
 function classifyEditorialArchetype(slide, index, totalSlides) {
   const t = (slide.title || '').toLowerCase();
   const c = (slide.content || '').toLowerCase();
@@ -963,14 +965,20 @@ function classifyEditorialArchetype(slide, index, totalSlides) {
 
   if (index === 0) return 'archetype-hero-cover';
   if (index === totalSlides - 1 || /hubungi|kontak|contact|cta/.test(combined)) return 'archetype-closing-cta';
-  // Workflow step marker must be a REAL ordered step at line start ("1. Sinopsis bla"),
-  // not a decimal/thousands separator mid-text ("biaya 2.000" / "versi 1.3").
-  if (/workflow|langkah|step/.test(combined) || /(?:^|\n)\s*[1-3][.).]\s/.test(slide.content || '')) return 'archetype-workflow-3col';
-  // Metrics: currency, percentages (incl. end-of-line "100%"), bare numbers/metrics
-  // (thousands/decimals like "2.000", "5–20"), and metric/stat vocabulary.
-  if (/rp\s?\d[\d.,]*|%(?:\s|$)|\b(?:metric|statistik|angka|statistics|pencapaian|achievement|kpi)\b|\d[\d.,]*\b/i.test(combined)) return 'archetype-metrics-contact';
-  if (/layanan|fitur|services|feature/.test(combined) || bulletCount.length >= 4) return 'archetype-services-grid';
-  if (/brand dna|biaya/.test(combined) || bulletCount.length <= 2) return 'archetype-mission-pillars';
+  // Ecosystem: require "pipeline" to co-occur with explicit ecosystem context words,
+  // otherwise slides that merely mention "pipeline" in features/services context would collide.
+  // "multi-ai" and "satu state" are unique to the ecosystem/architecture slide.
+  if (/arsitektur|ekosistem|ecosystem|stack|architecture/.test(combined) ||
+      (/pipeline/.test(combined) && /multi-ai|satu state|clientlayout/.test(combined))) return 'archetype-ecosystem-orbit';
+  if (/masalah|tantangan|pain|problem/.test(t)) return 'archetype-narrative-split';
+  if (/solusi|solution|nilai tambah|value/.test(t)) return 'archetype-narrative-split';
+  // Pricing: title-only check (content-level "harga"/"biaya" appears in comparison tables on
+  // non-pricing slides like the differentiator slide, causing false matches).
+  if (/paket|pricing|harga|kerjasama|plan/.test(t)) return 'archetype-pricing-cards';
+  if (/mengapa|kenapa|why|differentiator|keunggulan kompetitif/.test(t)) return 'archetype-differentiator';
+  // Metrics: title-only check ("angka" appears as a substring in unrelated slide content).
+  if (/pencapaian|bukti|traction|showcase|metric|statistik|angka|kpi/.test(t)) return 'archetype-metrics-contact';
+  if (/layanan|fitur|services|keunggulan/.test(combined) || bulletCount.length >= 4) return 'archetype-services-grid';
   return 'archetype-narrative-split';
 }
 
@@ -1096,14 +1104,220 @@ function renderEditorialWorkflow(slide, brand) {
   });
 }
 
+// Inline SVG line-icon picker for services. Returns a simple stroked icon (44x44 box,
+// brand color) selected semantically by content keywords, index as fallback.
+function serviceIcon(name, color, idx) {
+  const n = (name || '').toLowerCase();
+  let svg = '';
+  if (/dna|brand|warna|identitas|palette/.test(n)) {
+    svg = '<circle cx="12" cy="12" r="3"/><path d="M12 2a10 10 0 0 1 10 10 10 10 0 0 1-10 10z"/>';
+  } else if (/copilot|ai|chat|asisten|konteks/.test(n)) {
+    svg = '<path d="M13 2L3 14h7l-1 8 10-12h-7z"/>';
+  } else if (/pipeline|gpu|lokal|render|produksi|comfy|workflow/.test(n)) {
+    svg = '<rect x="7" y="2" width="10" height="18" rx="2"/><path d="M10 6h4M9 10h6M10 14h4"/>';
+  } else if (/sheets|spreadsheet|sync|google|data/.test(n)) {
+    svg = '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 3v18"/>';
+  } else {
+    const icons = [
+      '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><line x1="12" y1="3" x2="12" y2="6"/>',
+      '<rect x="3" y="7" width="18" height="12" rx="2"/><path d="M3 10l8 5 8-5"/>',
+      '<path d="M4 20V8m0 0a8 8 0 0 1 16 0M4 8l16 12"/>',
+      '<circle cx="12" cy="8" r="4"/><path d="M4 22a8 8 0 0 1 16 0"/>'
+    ];
+    svg = icons[(idx || 0) % 4];
+  }
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${svg}</svg>`;
+}
+
 function renderEditorialServicesGrid(slide, brand) {
-  return renderEditorialCardGrid(slide, {
-    sectionClass: 'archetype-services-grid', headerLayout: 'full',
-    badge: 'Layanan',
-    headlineSize: 32, headlineMargin: '8px 0 0',
-    cardType: 'pillar', titleSize: 17, bodySize: 13, titleMarginBottom: 8,
-    cardMode: 'bullets'
-  });
+  const lines = slide.content.replace(/<!--[\s\S]*?-->/g, '').trim().split('\n').map(l => l.trim()).filter(Boolean);
+  const { cards } = parseEditorialCards(slide.content);
+  const parsed = cards.length > 0 ? cards : parseEditorialBulletCards(lines, 'bullets');
+
+  const cardHtml = parsed.slice(0, 4).map((card, i) => {
+    const iconColor = i % 2 === 0 ? brand.primaryColor : brand.secondaryColor;
+    return `
+      <div class="service-card">
+        <div class="editorial-icon-box">${serviceIcon(card.title, iconColor, i)}</div>
+        <h3 style="font-size:18px; font-weight:700; color:var(--text-headline); margin:0 0 8px;">${inline(card.title)}</h3>
+        <p style="font-size:13px; color:var(--text-body); line-height:1.5; margin:0;">${inline(card.desc)}</p>
+      </div>`;
+  }).join('\n');
+
+  return `
+    <section class="archetype-services-grid">
+      <div style="grid-column:1/-1; margin-bottom:8px;">
+        <span class="hero-pill-badge">Layanan</span>
+        <h2 style="font-family:var(--font-display); font-size:32px; font-weight:800; color:var(--text-headline); margin:8px 0 0;">${inline(slide.title)}</h2>
+      </div>
+      <div class="services-grid-2x2">
+        ${cardHtml}
+      </div>
+    </section>`;
+}
+
+// Ecosystem orbit: 50/50 split — left inline circular orbit SVG (center node + 4 satellites),
+// right feature-list detail cards parsed from the slide.
+function renderEditorialEcosystem(slide, brand) {
+  const content = slide.content.replace(/<!--[\s\S]*?-->/g, '').trim();
+  const { cards } = parseEditorialCards(content);
+  const defaultLabels = ['Brand DNA', 'GPU Pipeline', 'Google Sheets Sync', 'AI Copilot'];
+  const labels = cards.length > 0 ? cards.slice(0, 4).map(c => c.title) : defaultLabels;
+  const features = cards.length > 0 ? cards : defaultLabels.map(l => ({ title: l, desc: l }));
+
+  const cx = 200, cy = 200, ring = 130;
+  const satellites = [
+    { x: cx, y: cy - ring, label: labels[0] },
+    { x: cx + ring, y: cy, label: labels[1] },
+    { x: cx, y: cy + ring, label: labels[2] },
+    { x: cx - ring, y: cy, label: labels[3] }
+  ];
+
+  const satelliteNodes = satellites.map((s, i) => {
+    const angle = i * (Math.PI / 2);
+    const textX = cx + Math.cos(angle) * (ring + 46);
+    const textY = cy + Math.sin(angle) * (ring + 46);
+    return `
+      <g>
+        <line x1="${cx}" y1="${cy}" x2="${s.x}" y2="${s.y}" stroke="${brand.primaryColor}" stroke-width="2" opacity="0.5"/>
+        <circle cx="${s.x}" cy="${s.y}" r="26" fill="${i === 1 ? brand.primaryColor : '#ffffff'}" stroke="${brand.primaryColor}" stroke-width="2"/>
+        <text x="${textX}" y="${textY}" text-anchor="middle" font-size="12" font-weight="600" fill="${brand.primaryColor}">${inline(s.label)}</text>
+      </g>`;
+  }).join('\n');
+
+  const ringCircle = `<circle cx="${cx}" cy="${cy}" r="${ring}" fill="none" stroke="${brand.primaryColor}" stroke-width="1.5" stroke-dasharray="6 6" opacity="0.35"/>`;
+
+  const orbitSvg = `
+    <svg class="ecosystem-orbit-diagram" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+      ${ringCircle}
+      ${satelliteNodes}
+      <text x="${cx}" y="${cy + 6}" text-anchor="middle" font-size="16" font-weight="800" fill="${brand.primaryColor}">${inline(brand.name)}</text>
+    </svg>`;
+
+  const featureHtml = features.slice(0, 4).map((f, i) => `
+    <div class="ecosystem-feature-card">
+      <span style="display:inline-block; min-width:26px; font-weight:800; color:${brand.primaryColor};">${String(i + 1).padStart(2, '0')}</span>
+      <div>
+        <h3 style="font-size:15px; font-weight:700; color:var(--text-headline); margin:0 0 4px;">${inline(f.title)}</h3>
+        <p style="font-size:13px; color:var(--text-body); line-height:1.5; margin:0;">${inline(f.desc)}</p>
+      </div>
+    </div>`).join('\n');
+
+  return `
+    <section class="archetype-ecosystem-orbit">
+      <div style="grid-column:1/-1; margin-bottom:8px;">
+        <span class="hero-pill-badge">Ekosistem</span>
+        <h2 style="font-family:var(--font-display); font-size:32px; font-weight:800; color:var(--text-headline); margin:8px 0 0;">${inline(slide.title)}</h2>
+      </div>
+      <div class="ecosystem-split">
+        <div class="ecosystem-orbit-diagram-wrap">${orbitSvg}</div>
+        <div class="ecosystem-feature-list">${featureHtml}</div>
+      </div>
+    </section>`;
+}
+
+// Differentiator: "Mengapa Kami" comparison. Parses markdown table if present into a
+// conventional column vs a highlighted Venturo Pro column; falls back to split cards.
+function renderEditorialDifferentiator(slide, brand) {
+  const content = slide.content.replace(/<!--[\s\S]*?-->/g, '').trim();
+  const lines = content.split('\n').map(l => l.trim()).filter(Boolean);
+  const tableLines = lines.filter(l => l.startsWith('|'));
+
+  if (tableLines.length > 0) {
+    const rows = [];
+    for (const tl of tableLines) {
+      const cleaned = tl.replace(/^\||\|$/g, '').trim();
+      if (/^(\s*:?-{2,}:?\s*\|?)+$/.test(cleaned)) continue;
+      const cols = cleaned.split('|').map(c => c.replace(/\*\*/g, '').trim());
+      if (cols.length >= 2) rows.push(cols);
+    }
+    // Header row is rows[0] ("| | CapCut | SaaS | Jasa | Venturo Pro |"), data rows follow.
+    const header = rows.length > 0 ? rows[0] : [];
+    const data = rows.slice(1);
+    const venturoIdx = header.findIndex(h => /venturo|kami|pro/.test(h.toLowerCase()));
+
+    // Conventional column: concatenate every non-Venturo column per row into one summary.
+    const conventionalHtml = data.map(r => {
+      const others = r.map((val, ci) => ci === 0 || ci === venturoIdx ? null : val).filter(Boolean);
+      return `<li><strong>${inline(r[0])}:</strong> ${inline(others.join(' / '))}</li>`;
+    }).join('\n');
+    const venturoHtml = data.map(r => `<li><strong>${inline(r[0])}:</strong> ${inline(r[venturoIdx])}</li>`).join('\n');
+
+    return `
+      <section class="archetype-differentiator">
+        <div class="comparison-col">
+          <h3>Cara Konvensional / SaaS Cloud</h3>
+          <ul>${conventionalHtml}</ul>
+        </div>
+        <div class="comparison-col-venturo">
+          <h3>Cara Venturo Pro</h3>
+          <ul>${venturoHtml}</ul>
+        </div>
+      </section>`;
+  }
+
+  // Bullets fallback: split parsed cards into halves.
+  const { cards } = parseEditorialCards(content);
+  const half = Math.ceil(cards.length / 2);
+  const left = cards.slice(0, half);
+  const right = cards.slice(half);
+  const fallbackList = (list) => list.map(c => `<li><strong>${inline(c.title)}</strong> — ${inline(c.desc)}</li>`).join('\n');
+
+  return `
+    <section class="archetype-differentiator">
+      <div class="comparison-col">
+        <h3>Cara Konvensional / SaaS Cloud</h3>
+        <ul>${fallbackList(left)}</ul>
+      </div>
+      <div class="comparison-col-venturo">
+        <h3>Cara Venturo Pro</h3>
+        <ul>${fallbackList(right)}</ul>
+      </div>
+    </section>`;
+}
+
+// Pricing: 3 tier cards parsed from bullets, middle tier featured with a ribbon.
+function renderEditorialPricing(slide, brand) {
+  const content = slide.content.replace(/<!--[\s\S]*?-->/g, '').trim();
+  const { cards } = parseEditorialCards(content);
+
+  const tierCards = cards.length >= 3 ? cards.slice(0, 3) : cards.concat(
+    Array.from({ length: 3 - cards.length }, (_, i) => ({ title: 'Paket ' + (i + 1), desc: '—' }))
+  );
+
+  const priceOf = (tier) => {
+    const m = tier.title.match(/\(([^)]+)\)/);
+    return m ? m[1] : tier.title.replace(/^.*?[–—-]\s*/, '');
+  };
+  const nameOf = (tier) => tier.title.split(/[({–—-]/)[0].trim();
+
+  const cardHtml = tierCards.map((tier, i) => {
+    const isFeatured = i === 1;
+    const features = tier.desc.split(/[;]/).map(f => f.trim()).filter(Boolean);
+    const price = priceOf(tier);
+    const name = nameOf(tier);
+    return `
+      <div class="pricing-card${isFeatured ? ' pricing-card-featured' : ''}">
+        ${isFeatured ? '<div class="pricing-ribbon">Best Seller</div>' : ''}
+        <h3 style="font-size:20px; font-weight:800; color:var(--text-headline); margin:0 0 10px;">${inline(name)}</h3>
+        <div style="font-size:26px; font-weight:800; color:${brand.primaryColor}; margin-bottom:16px;">${inline(price)}</div>
+        <ul style="list-style:none; padding:0; margin:0 0 24px; display:flex; flex-direction:column; gap:8px;">
+          ${features.map(f => `<li style="font-size:13px; color:var(--text-body); display:flex; gap:8px;"><span style="color:${brand.primaryColor};">✓</span> ${inline(f)}</li>`).join('\n')}
+        </ul>
+        <button class="btn-solid">${isFeatured ? 'Pilih Paket Pro' : i === 0 ? 'Mulai Gratis' : 'Hubungi Tim'}</button>
+      </div>`;
+  }).join('\n');
+
+  return `
+    <section class="archetype-pricing-cards">
+      <div style="grid-column:1/-1; margin-bottom:8px;">
+        <span class="hero-pill-badge">Paket</span>
+        <h2 style="font-family:var(--font-display); font-size:32px; font-weight:800; color:var(--text-headline); margin:8px 0 0;">${inline(slide.title)}</h2>
+      </div>
+      <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:24px; align-items:stretch;">
+        ${cardHtml}
+      </div>
+    </section>`;
 }
 
 function renderEditorialMetrics(slide, brand) {
@@ -1117,52 +1331,83 @@ function renderEditorialMetrics(slide, brand) {
 }
 
 function renderEditorialClosing(slide, brand) {
-  const lines = slide.content.replace(/<!--[\s\S]*?-->/g, '').trim().split('\n').map(l => l.trim()).filter(Boolean);
+  const content = slide.content.replace(/<!--[\s\S]*?-->/g, '').trim();
+  const lines = content.split('\n').map(l => l.trim()).filter(Boolean);
   let desc = '';
   const contacts = [];
   for (const line of lines) {
     const m = line.match(/^[-*]\s*(?:\*\*)?([^:\n]+?)(?:\*\*)?\s*:\s*(.+)$/);
     if (m) contacts.push({ label: m[1].replace(/[*_]/g, '').trim(), value: m[2].replace(/`/g, '').trim() });
-    else if (!desc && !line.startsWith('#') && !line.startsWith('-')) desc = line;
+    else if (!desc && !line.startsWith('#') && !line.startsWith('-') && !line.startsWith('*')) desc = line;
   }
 
-  const contactsHtml = contacts.map(c => `<p style="font-size:15px; margin:4px 0; color:var(--text-body);"><strong>${inline(c.label)}:</strong> ${inline(c.value)}</p>`).join('');
+  const contactCards = contacts.slice(0, 4).map((c, i) => `
+    <div class="contact-grid-item">
+      <span style="font-size:12px; text-transform:uppercase; letter-spacing:1px; opacity:0.7; color:#fff;">${inline(c.label)}</span>
+      <span style="font-size:15px; font-weight:600; color:#fff; margin:6px 0 0;">${inline(c.value)}</span>
+    </div>`).join('\n');
 
   return `
-    <section class="archetype-closing-cta">
-      <span class="hero-pill-badge" style="margin-bottom:20px;">Hubungi Kami</span>
-      <h2 style="font-family:var(--font-display); font-size:44px; font-weight:800; color:var(--text-headline); margin:0 0 20px;">${inline(slide.title)}</h2>
-      ${desc ? `<p style="font-size:18px; color:var(--text-body); max-width:600px; margin:0 auto 28px;">${inline(desc)}</p>` : ''}
-      ${contactsHtml}
-      <div class="hero-actions" style="margin-top:32px;">
-        <button class="btn-solid">Hubungi Sekarang</button>
-        <button class="btn-outline">Kembali ke Awal</button>
+    <section class="archetype-closing-cta" style="display:flex; align-items:center; justify-content:center;">
+      <div class="closing-charcoal-container" style="background:#232220; border-radius:16px; padding:48px; color:#ffffff; max-width:960px; width:100%; text-align:center;">
+        <span class="hero-pill-badge" style="margin-bottom:16px;">Hubungi Kami</span>
+        <h2 style="font-family:var(--font-display); font-size:40px; font-weight:800; color:#ffffff; margin:0 0 16px;">${inline(slide.title)}</h2>
+        ${desc ? `<p style="font-size:17px; color:rgba(255,255,255,0.85); max-width:640px; margin:0 auto 28px;">${inline(desc)}</p>` : ''}
+        ${contactCards ? `<div class="contact-grid-4col" style="display:grid; grid-template-columns:repeat(4, 1fr); gap:16px; margin-bottom:32px;">${contactCards}</div>` : ''}
+        <div class="hero-actions" style="display:flex; justify-content:center; gap:16px; margin-top:8px;">
+          <button class="btn-solid">Hubungi Sekarang</button>
+          <button class="btn-outline" style="border-color:rgba(255,255,255,0.4); color:#ffffff;">Kembali ke Awal</button>
+        </div>
       </div>
     </section>`;
 }
 
-function renderEditorialNarrative(slide, brand) {
+function renderEditorialNarrativeSplit(slide, brand, type) {
   const content = slide.content.replace(/<!--[\s\S]*?-->/g, '').trim();
-  const lines = content.split('\n');
-  let bodyHtml = '';
-  for (const line of lines) {
-    const l = line.trim();
-    if (!l) continue;
-    if (l.startsWith('-') || l.startsWith('*')) bodyHtml += `<li style="margin:6px 0; font-size:15px; color:var(--text-body);">${inline(l.replace(/^[-*]\s*/, ''))}</li>\n`;
-    else bodyHtml += `<p style="margin:8px 0; font-size:15px; color:var(--text-body);">${inline(l)}</p>\n`;
-  }
+  const { introText, cards } = parseEditorialCards(content);
+
+  // Left column: pill badge, H2, intro paragraph, status SVG
+  const pillLabel = type === 'problem' ? 'Tantangan' : 'Solusi';
+  const statusSvg = type === 'problem'
+    ? `<svg class="narrative-status-svg" width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M60 10 L110 100 Q112 105 107 108 L13 108 Q8 105 10 100 Z" fill="${brand.primaryColor}" opacity="0.12" stroke="${brand.primaryColor}" stroke-width="2"/>
+        <text x="60" y="72" text-anchor="middle" font-size="32" font-weight="700" fill="${brand.primaryColor}">!</text>
+       </svg>`
+    : `<svg class="narrative-status-svg" width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="60" cy="60" r="50" fill="${brand.primaryColor}" opacity="0.1" stroke="${brand.primaryColor}" stroke-width="2"/>
+        <path d="M60 20 L65 55 L95 50 L70 65 L80 95 L60 75 L40 95 L50 65 L25 50 L55 55 Z" fill="${brand.primaryColor}" opacity="0.7"/>
+       </svg>`;
+
+  const leftHtml = `
+    <div style="flex: 0 0 35%;">
+      <span class="hero-pill-badge">${pillLabel}</span>
+      <h2 style="font-family:var(--font-display); font-size:32px; font-weight:800; color:var(--text-headline); margin:16px 0 12px;">${inline(slide.title)}</h2>
+      ${introText ? `<p style="font-size:15px; color:var(--text-body); line-height:1.6; margin:0 0 20px;">${inline(introText)}</p>` : ''}
+      <div style="display:flex; justify-content:center;">${statusSvg}</div>
+    </div>`;
+
+  // Right column: numbered cards
+  const cardsHtml = cards.map((card, i) => {
+    const num = String(i + 1).padStart(2, '0');
+    return `
+      <div class="editorial-card-numbered">
+        <div class="editorial-num-badge">${num}</div>
+        <div class="editorial-num-body">
+          <h3 class="editorial-card-title">${inline(card.title)}</h3>
+          <p class="editorial-card-desc">${inline(card.desc)}</p>
+        </div>
+      </div>`;
+  }).join('\n');
+
+  const rightHtml = `
+    <div style="flex: 0 0 65%; display:flex; flex-direction:column; gap:16px;">
+      ${cardsHtml}
+    </div>`;
 
   return `
-    <section class="archetype-narrative-split">
-      <div>
-        <span class="hero-pill-badge" style="margin-bottom:16px;">${brand.name}</span>
-        <h2 style="font-family:var(--font-display); font-size:32px; font-weight:800; color:var(--text-headline); margin:0;">${inline(slide.title)}</h2>
-      </div>
-      <div class="hero-floating-card">
-        <ul style="list-style:none; padding:0; margin:0;">
-          ${bodyHtml}
-        </ul>
-      </div>
+    <section class="archetype-narrative-split" style="display:flex; gap:40px; padding:40px;">
+      ${leftHtml}
+      ${rightHtml}
     </section>`;
 }
 
@@ -1171,13 +1416,17 @@ const slideHtml = slides.map((s, idx) => {
   if (THEME === 'editorial') {
     const archetype = classifyEditorialArchetype(s, idx, slides.length);
     switch (archetype) {
+      case 'archetype-narrative-split': {
+        const type = /masalah|tantangan|pain|problem/.test((s.title || '').toLowerCase()) ? 'problem' : 'solution';
+        return renderEditorialNarrativeSplit(s, brand, type);
+      }
       case 'archetype-hero-cover': return renderEditorialHero(s, brand);
-      case 'archetype-mission-pillars': return renderEditorialMissionPillars(s, brand);
-      case 'archetype-workflow-3col': return renderEditorialWorkflow(s, brand);
       case 'archetype-services-grid': return renderEditorialServicesGrid(s, brand);
+      case 'archetype-ecosystem-orbit': return renderEditorialEcosystem(s, brand);
       case 'archetype-metrics-contact': return renderEditorialMetrics(s, brand);
-      case 'archetype-closing-cta': return renderEditorialClosing(s, brand);
-      default: return renderEditorialNarrative(s, brand);
+      case 'archetype-differentiator': return renderEditorialDifferentiator(s, brand);
+      case 'archetype-pricing-cards': return renderEditorialPricing(s, brand);
+      default: return renderEditorialClosing(s, brand);
     }
   }
   const type = detectSlideType(s, idx, slides.length);
@@ -1335,5 +1584,5 @@ console.log(`  Reports: build.log, review-report, and seo-report consolidated in
 console.log(`  Drafts : source drafts consolidated in ${DRAFTS_DIR}\n`);
 
 if (typeof module !== 'undefined' && typeof require !== 'undefined') {
-  module.exports = { parseAndSanitizeMarkdown, parseEditorialCards };
+  module.exports = { parseAndSanitizeMarkdown, parseEditorialCards, renderEditorialNarrativeSplit, renderEditorialEcosystem, renderEditorialDifferentiator, renderEditorialPricing, renderEditorialServicesGrid };
 }
