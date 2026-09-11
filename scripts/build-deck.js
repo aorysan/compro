@@ -8,6 +8,65 @@ const fs = require('fs');
 const path = require('path');
 const assetGenerator = require('./asset-generator');
 
+// Frontmatter sanitization + slide split (spec §3.1). Strips the YAML frontmatter block,
+// the reviewer-added Meta Title/Meta Description header lines ANYWHERE in the document,
+// and splits on H1 titles into { title, content } slides.
+function parseAndSanitizeMarkdown(md) {
+  let cleaned = md.replace(/^---[\s\S]*?---\s*/m, '');
+  cleaned = cleaned.replace(/^Meta Title:.*$/gim, '').replace(/^Meta Description:.*$/gim, '');
+  cleaned = cleaned.trim();
+  const rawSlides = cleaned.split(/^# /m).map(s => s.trim()).filter(Boolean);
+  return rawSlides.map(s => {
+    const newline = s.indexOf('\n');
+    const title = newline === -1 ? s.trim() : s.slice(0, newline).trim();
+    const content = newline === -1 ? '' : s.slice(newline + 1).trim();
+    return { title, content };
+  });
+}
+
+// Editorial card parser: "**Bold.** body" bullet cards become { title, desc }, with an
+// intro-text capture and a paragraph fallback when no bullet cards exist.
+function parseEditorialCards(content) {
+  const lines = content.replace(/<!--[\s\S]*?-->/g, '').split('\n').map(l => l.trim()).filter(Boolean);
+  let introText = '';
+  const cards = [];
+
+  for (const line of lines) {
+    const bulletMatch = line.match(/^[-*]\s+(.*)$/);
+    if (bulletMatch) {
+      const text = bulletMatch[1].trim();
+      const boldMatch = text.match(/^\*\*([^*]+)\*\*\s*[:—–-]?\s*(.*)$/);
+      if (boldMatch) {
+        cards.push({
+          title: boldMatch[1].trim(),
+          desc: boldMatch[2].trim() || boldMatch[1].trim()
+        });
+      } else {
+        const parts = text.split(/[—–:-]/);
+        if (parts.length > 1) {
+          cards.push({ title: parts[0].trim(), desc: parts.slice(1).join(' ').trim() });
+        } else {
+          cards.push({ title: text.slice(0, 40), desc: text });
+        }
+      }
+    } else if (!introText && !line.startsWith('#') && !line.startsWith('Tagline:')) {
+      introText = line;
+    }
+  }
+
+  // Fallback: if no bullet cards found, treat non-empty paragraphs as cards
+  if (cards.length === 0 && lines.length > 0) {
+    const paragraphs = content.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
+    for (const p of paragraphs) {
+      if (!p.startsWith('Tagline:') && p !== introText) {
+        cards.push({ title: p.slice(0, 35) + '...', desc: p });
+      }
+    }
+  }
+
+  return { introText, cards };
+}
+
 function findRoot() {
   let cur = process.cwd();
   while (cur && cur !== path.dirname(cur)) {
@@ -177,19 +236,8 @@ fs.writeFileSync(path.join(ASSETS_DIR, 'hero-banner.svg'), assetGenerator.genera
 fs.writeFileSync(path.join(ASSETS_DIR, 'closing-banner.svg'), assetGenerator.generateClosingBannerSvg({ brandName, primaryColor, secondaryColor }));
 fs.writeFileSync(path.join(ASSETS_DIR, 'logo.svg'), assetGenerator.generateLogoSvg(brandName, primaryColor));
 
-// 5. Parse & chunking: H1 = new slide
-// Strip YAML frontmatter AND the reviewer-added Meta Title/Description header lines,
-// so they never become a phantom slide.
-const body = md
-  .replace(/^---([\s\S]*?)---\s*/, (_m, inner) => inner.replace(/^Meta Title:.*$/m, '').replace(/^Meta Description:.*$/m, ''))
-  .replace(/^\s+/, '');
-const rawSlides = body.split(/^# /m).map(s => s.trim()).filter(Boolean);
-const slides = rawSlides.map(s => {
-  const newline = s.indexOf('\n');
-  const title = newline === -1 ? s.trim() : s.slice(0, newline).trim();
-  const content = newline === -1 ? '' : s.slice(newline + 1).trim();
-  return { title, content };
-});
+// 5. Parse & chunking: H1 = new slide — now via shared parseAndSanitizeMarkdown()
+const slides = parseAndSanitizeMarkdown(md);
 
 // Markdown inline helper
 function inline(mdtext) {
@@ -1285,3 +1333,7 @@ console.log(`  Slides : ${slides.length} slides compiled`);
 console.log(`  Assets : 5 SVG vector assets generated in ${ASSETS_DIR}`);
 console.log(`  Reports: build.log, review-report, and seo-report consolidated in ${REPORTS_DIR}`);
 console.log(`  Drafts : source drafts consolidated in ${DRAFTS_DIR}\n`);
+
+if (typeof module !== 'undefined' && typeof require !== 'undefined') {
+  module.exports = { parseAndSanitizeMarkdown, parseEditorialCards };
+}
