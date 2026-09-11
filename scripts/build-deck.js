@@ -19,7 +19,8 @@ function parseAndSanitizeMarkdown(md) {
   return rawSlides.map(s => {
     const newline = s.indexOf('\n');
     const title = newline === -1 ? s.trim() : s.slice(0, newline).trim();
-    const content = newline === -1 ? '' : s.slice(newline + 1).trim();
+    let content = newline === -1 ? '' : s.slice(newline + 1).trim();
+    content = content.replace(/^---+\s*$/gm, '').trim();
     return { title, content };
   });
 }
@@ -1033,6 +1034,7 @@ function parseEditorialBulletCards(lines, mode) {
         : /^[-*]\s*(?:\*\*)?([^*\n]+)(?:\*\*)?\s*(?:—|:\s*)?(.*)$/;
   const cards = [];
   for (const line of lines) {
+    if (/^---+$/.test(line.trim())) continue;
     const m = line.match(pattern);
     if (m) cards.push({ title: m[1].trim(), body: m[2] ? m[2].replace(/[*_]/g, '').trim() : '' });
   }
@@ -1336,8 +1338,8 @@ function renderEditorialClosing(slide, brand) {
   let desc = '';
   const contacts = [];
   for (const line of lines) {
-    const m = line.match(/^[-*]\s*(?:\*\*)?([^:\n]+?)(?:\*\*)?\s*:\s*(.+)$/);
-    if (m) contacts.push({ label: m[1].replace(/[*_]/g, '').trim(), value: m[2].replace(/`/g, '').trim() });
+    const m = line.match(/^[-*]\s*(.+?)\s*:\s*(.+)$/);
+    if (m) contacts.push({ label: m[1].replace(/[*_`]/g, '').trim(), value: m[2].replace(/[*_`]/g, '').trim() });
     else if (!desc && !line.startsWith('#') && !line.startsWith('-') && !line.startsWith('*')) desc = line;
   }
 
@@ -1456,6 +1458,7 @@ customCss = customCss
   .replace(/--brand-l:\s*\d+%;/, `--brand-l: ${hsl.l}%;`);
 
 if (THEME === 'editorial') {
+  shell = shell.replace(/<title>.*?<\/title>/, `<title>${brand.name} — Company Profile</title>`);
   shell = shell.replace('/* CSS_INLINE_PLACEHOLDER */', customCss);
   shell = shell.replace('<!-- SLIDES_INLINE_PLACEHOLDER -->', slideHtml);
 } else {

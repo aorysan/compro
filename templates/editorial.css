@@ -412,7 +412,7 @@ html, body, .reveal {
 
 .metric-number {
   font-family: var(--font-display);
-  font-size: 54px;
+  font-size: 40px;
   font-weight: 800;
   color: var(--brand-primary);
 }
