@@ -2,3 +2,6 @@
 	path = .claude/plugins/compro
 	url = https://github.com/aorysan/compro.git
 	branch = plugin
+[submodule ".claude/marketplace"]
+	path = .claude/marketplace
+	url = https://github.com/aorysan/marketplace.git
