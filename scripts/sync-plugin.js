@@ -4,7 +4,7 @@ const os = require('os');
 
 const ROOT = path.resolve(__dirname, '..');
 const LOCAL_PLUGIN = path.join(ROOT, '.claude', 'plugins', 'compro');
-const CACHE_PLUGIN = path.join(os.homedir(), '.claude', 'plugins', 'cache', 'aorysan-marketplace', 'compro', '2.3.0');
+const CACHE_PLUGIN = path.join(os.homedir(), '.claude', 'plugins', 'cache', 'aorysan-marketplace', 'compro', '2.4.0');
 
 const filesToSync = [
   { src: path.join(ROOT, 'scripts', 'build-deck.js'), subpath: 'skills/builder/scripts/build-deck.js' },
