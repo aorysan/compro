@@ -7,6 +7,7 @@
 const fs = require('fs');
 const path = require('path');
 const assetGenerator = require('./asset-generator');
+const imageFetcher = require('./image-fetcher');
 
 function sanitizeSlideContent(text) {
   if (!text) return '';
@@ -31,14 +32,21 @@ function sanitizeContactDetails(text, brandSlug = 'venturo-pro') {
 }
 
 function extractBigNumberMetric(bulletLine) {
+  if (!bulletLine || typeof bulletLine !== 'string') {
+    return {
+      number: '100%',
+      title: '',
+      desc: ''
+    };
+  }
   const boldMatch = bulletLine.match(/\*\*(.+?)\*\*/);
   const rawTitle = boldMatch ? boldMatch[1].trim() : '';
   const title = rawTitle ? (rawTitle.endsWith('.') ? rawTitle : `${rawTitle}.`) : '';
   const cleanLine = bulletLine.replace(/^[-*]\s*/, '').replace(/\*\*.+?\*\*/, '').trim();
 
-  // Metric regex: extracts ratio, percentage, currency, or version
-  const numMatch = cleanLine.match(/\b(Rp[\d\.]+|v\d+\.\d+\.\d+|\d+:\d+|\d+(?::\d+)?%?)(?=\b|\s|$|[.,—–-])/);
-  const number = numMatch ? numMatch[1] : '100%';
+  // Metric regex: extracts currency (Rp...), percentage, ratio, or version
+  const numMatch = cleanLine.match(/\b(Rp\s*[\d\.]+(?:\s*(?:rb|ribu|jt|juta|k|m))?|v\d+\.\d+\.\d+|\d+:\d+|\d+(?::\d+)?%?)(?=\b|\s|$|[.,—–-])/i);
+  const number = numMatch ? numMatch[1].trim() : '100%';
   const desc = cleanLine.replace(number, '').replace(/^[—–-]\s*/, '').trim();
 
   return {
@@ -170,6 +178,25 @@ function copyRecursiveSync(src, dest) {
 }
 
 let ASSETS_DIR = '';
+
+// Helper to resolve slide image URL accommodating .svg fallback or .jpg
+function resolveSlideImageUrl(slideNum, slot, assetsDir) {
+  if (assetsDir) {
+    const jpgName = `slide-${slideNum}-${slot}.jpg`;
+    const svgName = `slide-${slideNum}-${slot}.svg`;
+    if (fs.existsSync(path.join(assetsDir, jpgName))) {
+      return `assets/${jpgName}`;
+    }
+    if (fs.existsSync(path.join(assetsDir, svgName))) {
+      return `assets/${svgName}`;
+    }
+    const fallbackFile = `${slot}-fallback.svg`;
+    if (fs.existsSync(path.join(assetsDir, fallbackFile))) {
+      return `assets/${fallbackFile}`;
+    }
+  }
+  return `assets/slide-${slideNum}-${slot}.jpg`;
+}
 
 // Markdown inline helper
 function inline(mdtext) {
@@ -1344,7 +1371,549 @@ function renderEditorialNarrativeSplit(slide, brand, type) {
     </section>`;
 }
 
-function runMain(customArgs) {
+// ==========================================================================
+// 8 Distinct Canva Layout Archetypes (Canva Editorial Engine v2.5.0)
+// ==========================================================================
+
+function renderCanvaCover(slide, brand, index = 0, assetsDir = '') {
+  const content = sanitizeSlideContent(slide.content || '').replace(/<!--[\s\S]*?-->/g, '').trim();
+  const lines = content.split('\n').map(l => l.trim()).filter(Boolean);
+  let tagline = '';
+  let desc = '';
+  for (const line of lines) {
+    if (/^[-*]/.test(line)) continue;
+    if (!tagline && !/^💼/u.test(line) && line.length > 5) {
+      tagline = line;
+    } else if (/^💼/u.test(line)) {
+      desc = line.replace(/^💼\s*/u, '');
+    } else if (!desc && line.length > 25) {
+      desc = line;
+    }
+  }
+
+  const slotInfo = imageFetcher.mapCommentToSlot(slide.content);
+  const targetSlot = (slotInfo && slotInfo.slot !== 'closing') ? slotInfo.slot : 'hero';
+  const imgSrc = resolveSlideImageUrl(index + 1, targetSlot, assetsDir);
+
+  return `
+    <section class="archetype-canva-cover archetype-hero-cover">
+      <nav class="editorial-top-nav">
+        <div class="editorial-logo">${brand.name}</div>
+        <div class="editorial-nav-links">
+          <span class="editorial-nav-badge">Company Profile</span>
+        </div>
+      </nav>
+      <div class="canva-cover-body">
+        <div class="canva-cover-left">
+          <div class="cover-card hero-floating-card">
+            <span class="hero-pill-badge">${brand.name}</span>
+            <h1 class="cover-title hero-headline">${inline(slide.title)}</h1>
+            ${tagline ? `<p class="cover-subtitle">${inline(tagline)}</p>` : ''}
+            ${desc ? `<p class="cover-desc">${inline(desc)}</p>` : ''}
+            <div class="cover-buttons hero-actions">
+              <button class="btn-charcoal btn-solid">Lihat Selengkapnya</button>
+              <button class="btn-outline-brand btn-outline">Hubungi Kami</button>
+            </div>
+          </div>
+        </div>
+        <div class="canva-cover-right">
+          <div class="editorial-image-frame">
+            <img src="${imgSrc}" alt="${brand.name} Hero Presentation" />
+          </div>
+        </div>
+      </div>
+    </section>`;
+}
+
+function renderCanvaWelcome(slide, brand, index = 1, type = 'problem', assetsDir = '') {
+  const content = sanitizeSlideContent(slide.content || '').trim();
+  const { introText, cards } = parseEditorialCards(content);
+  const isProblem = type === 'problem' || /masalah|tantangan|pain|problem/i.test(slide.title);
+  const badgeText = isProblem ? 'Tantangan Industri' : 'Solusi & Nilai Tambah';
+  const slot = isProblem ? 'problem' : 'solution';
+  const slotInfo = imageFetcher.mapCommentToSlot(slide.content);
+  const targetSlot = (slotInfo && slotInfo.slot !== 'hero') ? slotInfo.slot : slot;
+  const imgSrc = resolveSlideImageUrl(index + 1, targetSlot, assetsDir);
+
+  const fallbackCards = isProblem
+    ? [
+        { title: 'Biaya Operasional Membengkak', desc: 'Tagihan cloud API pihak ketiga membengkak seiring kenaikan volume video harian.' },
+        { title: 'Inkonsistensi Identitas Brand', desc: 'Aset visual kehilangan pedoman warna dan tipografi saat diproduksi manual.' },
+        { title: 'Workflow Terfragmentasi', desc: 'Bolak-balik antar berbagai aplikasi editor memperlambat peluncuran konten kampanye.' }
+      ]
+    : [
+        { title: 'Infrastruktur GPU Lokal Terisolasi', desc: 'Render video berkualitas tinggi dengan biaya marginal nol rupiah per render.' },
+        { title: 'Brand DNA Kit Terkunci', desc: 'Warna, font, dan elemen visual otomatis disematkan konsisten pada setiap frame.' },
+        { title: 'Integrasi Spreadsheet Satu Pintu', desc: '1-klik sinkronisasi data dari Google Sheets langsung memicu batch render massal.' }
+      ];
+
+  const activeCards = cards.length > 0 ? cards : fallbackCards;
+
+  const cardsHtml = activeCards.slice(0, 4).map((card, i) => {
+    const num = String(i + 1).padStart(2, '0');
+    return `
+      <div class="welcome-card">
+        <div class="welcome-num">${num}</div>
+        <div class="welcome-card-content">
+          <h3 class="welcome-card-title">${inline(card.title)}</h3>
+          <p class="welcome-card-desc">${inline(card.desc)}</p>
+        </div>
+      </div>`;
+  }).join('\n');
+
+  return `
+    <section class="archetype-canva-welcome ${isProblem ? 'canva-welcome-problem' : 'canva-welcome-solution'}">
+      <div class="welcome-left">
+        <div class="charcoal-backdrop">
+          <div class="editorial-image-frame">
+            <img src="${imgSrc}" alt="${inline(slide.title)}" />
+          </div>
+        </div>
+      </div>
+      <div class="welcome-right">
+        <div class="welcome-header">
+          <span class="hero-pill-badge">${badgeText}</span>
+          <h2 class="section-title">${inline(slide.title)}</h2>
+          ${introText ? `<p class="section-intro">${inline(introText)}</p>` : ''}
+        </div>
+        <div class="welcome-cards">
+          ${cardsHtml}
+        </div>
+      </div>
+    </section>`;
+}
+
+function renderCanvaServices(slide, brand, index = 3, assetsDir = '') {
+  const content = sanitizeSlideContent(slide.content || '').trim();
+  const { introText, cards } = parseEditorialCards(content);
+  const slotInfo = imageFetcher.mapCommentToSlot(slide.content);
+  const targetSlot = (slotInfo && slotInfo.slot !== 'hero') ? slotInfo.slot : 'services';
+  const imgSrc = resolveSlideImageUrl(index + 1, targetSlot, assetsDir);
+
+  const defaultServices = [
+    { title: 'Brand DNA Engine', desc: 'Konfigurasi otomatis font, palette warna, dan tata letak watermark brand.' },
+    { title: 'GPU Local Pipeline', desc: 'Render video resolusi tinggi tanpa biaya per render di mesin lokal.' },
+    { title: 'Google Sheets Sync', desc: '1-klik sinkronisasi brief dan spreadsheet konten untuk produksi massal.' },
+    { title: 'AI Copilot Assistant', desc: 'Asisten kontekstual untuk variasi skrip kreatif dan prompt visual.' }
+  ];
+  const activeCards = cards.length >= 4 ? cards.slice(0, 4) : cards.concat(defaultServices.slice(cards.length, 4));
+
+  const cardsHtml = activeCards.map((card, i) => `
+    <div class="service-canva-card">
+      <div class="service-card-top">
+        <span class="service-num">0${i + 1}</span>
+        <span class="service-pill-charcoal">Fitur Utama</span>
+      </div>
+      <h3 class="service-card-title">${inline(card.title)}</h3>
+      <p class="service-card-desc">${inline(card.desc)}</p>
+    </div>
+  `).join('\n');
+
+  return `
+    <section class="archetype-canva-services">
+      <div class="services-left">
+        <div class="services-intro">
+          <span class="hero-pill-badge">Layanan Unggulan</span>
+          <h2 class="section-title">${inline(slide.title)}</h2>
+          ${introText ? `<p class="services-desc">${inline(introText)}</p>` : '<p class="services-desc">Solusi terintegrasi untuk produksi konten video ber-brand secara masif dan konsisten.</p>'}
+        </div>
+        <div class="editorial-image-frame services-photo">
+          <img src="${imgSrc}" alt="${inline(slide.title)}" />
+        </div>
+      </div>
+      <div class="services-right">
+        <div class="services-grid-2x2">
+          ${cardsHtml}
+        </div>
+      </div>
+    </section>`;
+}
+
+function renderCanvaEcosystem(slide, brand, index = 4, assetsDir = '') {
+  const content = sanitizeSlideContent(slide.content || '').trim();
+  const { introText, cards } = parseEditorialCards(content);
+  const slotInfo = imageFetcher.mapCommentToSlot(slide.content);
+  const targetSlot = (slotInfo && slotInfo.slot !== 'hero') ? slotInfo.slot : 'ecosystem';
+  const imgSrc = resolveSlideImageUrl(index + 1, targetSlot, assetsDir);
+
+  const cx = 250, cy = 250, r = 160;
+  const nodes = [
+    { name: 'Groq', role: 'Fast LLM' },
+    { name: 'Gemini', role: 'Multimodal' },
+    { name: 'Cloudflare', role: 'CDN & Edge' },
+    { name: 'ComfyUI', role: 'GPU Render' },
+    { name: 'Supabase', role: 'Auth & DB' }
+  ];
+  const numNodes = nodes.length;
+
+  const satellitesSvg = nodes.map((node, i) => {
+    const angle = -Math.PI / 2 + (i * 2 * Math.PI) / numNodes;
+    const x = Math.round(cx + r * Math.cos(angle));
+    const y = Math.round(cy + r * Math.sin(angle));
+    return `
+      <g class="orbit-node">
+        <line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="${brand.primaryColor}" stroke-opacity="0.35" stroke-width="2" stroke-dasharray="6 6"/>
+        <circle cx="${x}" cy="${y}" r="32" fill="#FFFFFF" stroke="${brand.primaryColor}" stroke-width="2.5" filter="drop-shadow(0 4px 12px rgba(0,0,0,0.06))"/>
+        <text x="${x}" y="${y - 4}" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="700" fill="#1A1D20">${node.name}</text>
+        <text x="${x}" y="${y + 12}" text-anchor="middle" font-family="'Inter', sans-serif" font-size="9.5" font-weight="500" fill="#718096">${node.role}</text>
+      </g>`;
+  }).join('\n');
+
+  const orbitSvg = `
+    <svg class="ecosystem-orbit-svg" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${brand.primaryColor}" stroke-opacity="0.25" stroke-width="2" stroke-dasharray="8 8"/>
+      ${satellitesSvg}
+      <circle cx="${cx}" cy="${cy}" r="48" fill="${brand.primaryColor}" filter="drop-shadow(0 8px 24px rgba(0,155,173,0.35))"/>
+      <text x="${cx}" y="${cy - 6}" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="13" font-weight="800" fill="#FFFFFF">${inline(brand.name)}</text>
+      <text x="${cx}" y="${cy + 12}" text-anchor="middle" font-family="'Inter', sans-serif" font-size="10" font-weight="600" fill="rgba(255,255,255,0.85)">AI Core</text>
+    </svg>`;
+
+  const gpuTitle = cards.length > 0 ? cards[0].title : 'Local GPU Pipeline & Multi-AI Gateway';
+  const gpuDesc = cards.length > 0 ? cards[0].desc : 'Render video ber-brand langsung pada infrastruktur GPU lokal tanpa tagihan API per-menit. Menggabungkan LLM penalaran cepat dan model visual terisolasi.';
+
+  return `
+    <section class="archetype-canva-ecosystem">
+      <div class="ecosystem-header">
+        <span class="hero-pill-badge">Arsitektur & Ekosistem</span>
+        <h2 class="section-title">${inline(slide.title)}</h2>
+      </div>
+      <div class="ecosystem-body">
+        <div class="ecosystem-left">
+          <div class="ecosystem-orbit-wrapper">
+            ${orbitSvg}
+          </div>
+        </div>
+        <div class="ecosystem-right">
+          <div class="editorial-image-frame ecosystem-photo">
+            <img src="${imgSrc}" alt="Workspace Arsitektur" />
+          </div>
+          <div class="ecosystem-gpu-card">
+            <div class="gpu-badge">Pipeline GPU Lokal & Multi-AI</div>
+            <h3 class="gpu-title">${inline(gpuTitle)}</h3>
+            <p class="gpu-desc">${inline(gpuDesc)}</p>
+          </div>
+        </div>
+      </div>
+    </section>`;
+}
+
+function renderCanvaMetrics(slide, brand, index = 5, assetsDir = '') {
+  const content = sanitizeSlideContent(slide.content || '').trim();
+  const lines = content.split('\n').map(l => l.trim()).filter(Boolean);
+  const slotInfo = imageFetcher.mapCommentToSlot(slide.content);
+  const targetSlot = (slotInfo && slotInfo.slot !== 'hero') ? slotInfo.slot : 'metrics';
+  const imgSrc = resolveSlideImageUrl(index + 1, targetSlot, assetsDir);
+
+  const bulletLines = lines.filter(l => /^[-*]\s/.test(l));
+  const defaultMetrics = [
+    { number: '20:1', title: 'LTV:CAC Ratio.', desc: 'Jauh melampaui ambang standar industri video SaaS.' },
+    { number: '80%', title: 'Efisiensi Biaya.', desc: 'Pengurangan biaya produksi bulanan dibanding opsi agensi.' },
+    { number: '100+', title: 'Batch Render.', desc: 'Kapasitas produksi harian tanpa hambatan kuota cloud.' },
+    { number: 'Rp10.000', title: 'Biaya Marginal.', desc: 'Biaya indikatif per video yang sangat terprediksi.' }
+  ];
+
+  let metrics = [];
+  if (bulletLines.length > 0) {
+    metrics = bulletLines.slice(0, 4).map(b => extractBigNumberMetric(b));
+  }
+  while (metrics.length < 4) {
+    metrics.push(defaultMetrics[metrics.length]);
+  }
+
+  const metricsCardsHtml = metrics.slice(0, 4).map(m => `
+    <div class="metric-canva-card">
+      <div class="metric-big-number">${inline(m.number)}</div>
+      <div class="metric-title">${inline(m.title)}</div>
+      <div class="metric-desc">${inline(m.desc)}</div>
+    </div>
+  `).join('\n');
+
+  return `
+    <section class="archetype-canva-metrics">
+      <div class="metrics-left">
+        <div class="editorial-image-frame metrics-photo">
+          <img src="${imgSrc}" alt="Pencapaian ${brand.name}" />
+        </div>
+      </div>
+      <div class="metrics-right">
+        <div class="metrics-header">
+          <span class="hero-pill-badge">Pencapaian & Bukti</span>
+          <h2 class="section-title">${inline(slide.title)}</h2>
+        </div>
+        <div class="metrics-grid-2x2">
+          ${metricsCardsHtml}
+        </div>
+      </div>
+    </section>`;
+}
+
+function renderCanvaDifferentiator(slide, brand, index = 6, assetsDir = '') {
+  const content = sanitizeSlideContent(slide.content || '').trim();
+  const lines = content.split('\n').map(l => l.trim()).filter(Boolean);
+  let intro = '';
+  let honesty = '';
+  const tableLines = [];
+
+  for (const line of lines) {
+    if (line.startsWith('|')) {
+      tableLines.push(line);
+    } else if (/^\*\*intinya[:\s]*/i.test(line) || /^intinya[:\s]*/i.test(line)) {
+      honesty = line.replace(/^\*\*intinya[:\s]*\*\*/i, '').replace(/^intinya[:\s]*/i, '').trim();
+    } else if (!intro && !line.startsWith('#') && !line.startsWith('<!--')) {
+      intro = line;
+    }
+  }
+
+  let headers = ['Aspek', brand.name, 'CapCut / Template', 'SaaS Cloud', 'Jasa Produksi'];
+  let rows = [];
+
+  if (tableLines.length > 0) {
+    const rawRows = [];
+    for (const tl of tableLines) {
+      const cleaned = tl.replace(/^\||\|$/g, '').trim();
+      if (/^(\s*:?-{2,}:?\s*\|?)+$/.test(cleaned)) continue;
+      const cols = cleaned.split('|').map(c => c.replace(/\*\*/g, '').trim());
+      if (cols.length >= 2) rawRows.push(cols);
+    }
+    if (rawRows.length > 0) {
+      const firstRow = rawRows[0];
+      if (firstRow.length >= 2) {
+        headers = firstRow.map(h => h || 'Aspek');
+        rows = rawRows.slice(1);
+      }
+    }
+  }
+
+  if (rows.length === 0) {
+    headers = ['Aspek', brand.name, 'CapCut / Template', 'SaaS Cloud'];
+    rows = [
+      ['Biaya Per Render', 'Rp0 (Flat GPU)', 'Murah', 'Mahal ($$$ per menit)'],
+      ['Konsistensi Brand', 'Terkunci 100%', 'Manual / Rawan Lepas', 'Terbatas'],
+      ['Integrasi Sheet', 'Otomatis 1-Klik', 'Tidak Ada', 'Opsional'],
+      ['Kontrol Data', 'Lokal & Aman', 'Tersimpan di Cloud', 'Tersimpan di Cloud']
+    ];
+  }
+
+  const brandIdx = headers.findIndex(h => new RegExp(brand.name.replace(/[^a-z0-9]/gi, '|'), 'i').test(h) || /kami|pro|venturo/i.test(h));
+  const activeBrandIdx = brandIdx !== -1 ? brandIdx : 1;
+
+  const headerHtml = headers.map((h, i) => `
+    <th class="${i === activeBrandIdx ? 'col-brand' : ''}">${inline(h)}</th>
+  `).join('\n');
+
+  const rowsHtml = rows.map(r => `
+    <tr>
+      ${r.map((cell, ci) => `
+        <td class="${ci === activeBrandIdx ? 'col-brand' : ''}">${inline(cell)}</td>
+      `).join('\n')}
+    </tr>
+  `).join('\n');
+
+  return `
+    <section class="archetype-canva-differentiator">
+      <div class="differentiator-header">
+        <span class="hero-pill-badge">Keunggulan Kompetitif</span>
+        <h2 class="section-title">${inline(slide.title)}</h2>
+        ${intro ? `<p class="section-intro">${inline(intro)}</p>` : ''}
+      </div>
+      <div class="comparison-table-wrapper">
+        <table class="canva-comparison-table">
+          <thead>
+            <tr>
+              ${headerHtml}
+            </tr>
+          </thead>
+          <tbody>
+            ${rowsHtml}
+          </tbody>
+        </table>
+      </div>
+      ${honesty ? `
+      <div class="honesty-callout">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="${brand.primaryColor}" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        <p><strong>Catatan Transparansi:</strong> ${inline(honesty)}</p>
+      </div>` : ''}
+    </section>`;
+}
+
+function renderCanvaPricing(slide, brand, index = 7, assetsDir = '') {
+  const content = sanitizeSlideContent(slide.content || '').trim();
+  const { cards } = parseEditorialCards(content);
+
+  const defaultTiers = [
+    { name: 'Lite', price: 'Rp0', features: ['5 Video Batch / bln', 'Brand DNA Standar', 'Resolusi 720p'] },
+    { name: 'Pro', price: 'Rp99.000', features: ['Unlimited Batch Render', 'Full Brand DNA Kit', 'Resolusi 1080p 60FPS', 'Google Sheets 1-Klik', 'Prioritas Render Lokal'] },
+    { name: 'Team', price: 'Rp299.000', features: ['Multi-User Seat', 'Custom Workflow Model', 'Dedicated Local Pipeline', 'Dukungan Setup On-Site'] }
+  ];
+
+  let tiers = [];
+  if (cards.length >= 3) {
+    tiers = cards.slice(0, 3).map(c => {
+      const priceMatch = c.title.match(/\(([^)]+)\)/);
+      const price = priceMatch ? priceMatch[1] : c.title.replace(/^.*?[–—-]\s*/, '').trim();
+      const name = c.title.split(/[({–—-]/)[0].trim();
+      const feats = c.desc.split(/[,;]/).map(f => f.trim()).filter(Boolean);
+      return { name: name || 'Paket', price: price || 'Hubungi Kami', features: feats.length > 0 ? feats : [c.desc] };
+    });
+  } else {
+    tiers = defaultTiers;
+  }
+
+  const cardsHtml = tiers.map((t, i) => {
+    const isElevated = i === 1 || t.name.toLowerCase().includes('pro');
+    const btnLabel = isElevated ? 'Pilih Paket Pro' : i === 0 ? 'Mulai Gratis' : 'Hubungi Tim';
+    return `
+      <div class="pricing-card ${isElevated ? 'pricing-card-elevated' : ''}">
+        ${isElevated ? '<div class="badge-ribbon">Best Seller</div>' : ''}
+        <div>
+          <div class="pricing-tier-name">${inline(t.name)}</div>
+          <div class="pricing-tier-price">${inline(t.price)}</div>
+          <ul class="pricing-feature-list">
+            ${t.features.map(f => `<li><span class="check">✓</span> <span>${inline(f)}</span></li>`).join('\n')}
+          </ul>
+        </div>
+        <div>
+          <button class="${isElevated ? 'btn-charcoal' : 'btn-outline-brand'}" style="width:100%; justify-content:center;">${btnLabel}</button>
+        </div>
+      </div>`;
+  }).join('\n');
+
+  return `
+    <section class="archetype-canva-pricing">
+      <div class="pricing-header">
+        <span class="hero-pill-badge">Paket & Kerjasama</span>
+        <h2 class="section-title">${inline(slide.title)}</h2>
+      </div>
+      <div class="canva-pricing-grid">
+        ${cardsHtml}
+      </div>
+    </section>`;
+}
+
+function renderCanvaClosing(slide, brand, index = 8, assetsDir = '') {
+  const brandSlug = (brand && brand.name ? brand.name : 'venturo-pro').toLowerCase().replace(/\s+/g, '-');
+  const sanitized = sanitizeContactDetails(slide.content || '', brandSlug);
+  const lines = sanitized.split('\n').map(l => l.trim()).filter(Boolean);
+
+  let desc = '';
+  const contacts = [];
+  for (const line of lines) {
+    const m = line.match(/^[-*]\s*(.+?)\s*:\s*(.+)$/);
+    if (m) {
+      contacts.push({
+        label: m[1].replace(/[*_`]/g, '').trim(),
+        value: m[2].replace(/[*_`]/g, '').trim()
+      });
+    } else if (!desc && !line.startsWith('#') && !line.startsWith('-') && !line.startsWith('*') && !line.startsWith('<!--')) {
+      desc = line;
+    }
+  }
+
+  if (contacts.length === 0) {
+    contacts.push({ label: 'WhatsApp', value: '+62 812-9000-8899' });
+    contacts.push({ label: 'Email', value: `contact@${brandSlug.replace(/-pro$/, '')}.pro` });
+    contacts.push({ label: 'Kantor', value: 'Jakarta Selatan, DKI Jakarta' });
+  }
+
+  const imgLeft = resolveSlideImageUrl(1, 'hero', assetsDir);
+  const imgRight = resolveSlideImageUrl(index + 1, 'closing', assetsDir);
+
+  const waSvg = assetGenerator.getIconSvg('whatsapp', { size: 20, color: 'var(--brand-light)' });
+  const mailSvg = assetGenerator.getIconSvg('mail', { size: 20, color: 'var(--brand-light)' });
+  const mapSvg = assetGenerator.getIconSvg('map-pin', { size: 20, color: 'var(--brand-light)' });
+
+  const getIcon = (label) => {
+    const l = label.toLowerCase();
+    if (l.includes('whatsapp') || l.includes('telepon')) return waSvg;
+    if (l.includes('email') || l.includes('surat')) return mailSvg;
+    return mapSvg;
+  };
+
+  const contactItemsHtml = contacts.slice(0, 4).map(c => `
+    <div class="closing-contact-item">
+      <div class="closing-contact-icon">${getIcon(c.label)}</div>
+      <div class="closing-contact-info">
+        <span class="closing-contact-label">${inline(c.label)}</span>
+        <span class="closing-contact-val">${inline(c.value)}</span>
+      </div>
+    </div>
+  `).join('\n');
+
+  return `
+    <section class="archetype-canva-closing">
+      <div class="closing-photo-col">
+        <div class="editorial-image-frame closing-frame">
+          <img src="${imgLeft}" alt="Architecture Visual" />
+        </div>
+      </div>
+      <div class="closing-center-card">
+        <span class="hero-pill-badge" style="background:rgba(255,255,255,0.12); color:#FFFFFF; border-color:rgba(255,255,255,0.25);">Hubungi Kami</span>
+        <h2 class="closing-title">${inline(slide.title)}</h2>
+        <p class="closing-desc">${inline(desc || 'Mulai produksi video brand konsisten hari ini bersama ' + (brand ? brand.name : 'Venturo Pro') + '.')}</p>
+        <div class="closing-contact-list">
+          ${contactItemsHtml}
+        </div>
+        <div class="closing-actions">
+          <a href="#/0" class="btn-solid-teal">Mulai Sekarang</a>
+        </div>
+      </div>
+      <div class="closing-photo-col">
+        <div class="editorial-image-frame closing-frame">
+          <img src="${imgRight}" alt="Corporate Team Visual" />
+        </div>
+      </div>
+    </section>`;
+}
+
+function classifyCanvaArchetype(slide, index, totalSlides) {
+  const t = (slide.title || '').toLowerCase();
+  const c = (slide.content || '').toLowerCase();
+  const combined = t + ' ' + c;
+  if (index === 0 || /profile|profil|hero/i.test(t)) return 'cover';
+  if (index === totalSlides - 1 || /hubungi|kontak|contact|closing|cta/i.test(combined)) return 'closing';
+  if (/arsitektur|ekosistem|ecosystem|stack|architecture/i.test(combined) || (/pipeline/i.test(combined) && /multi-ai|gpu/i.test(combined))) return 'ecosystem';
+  if (/layanan|fitur|feature|services/i.test(t)) return 'services';
+  if (/pencapaian|bukti|traction|showcase|metric|statistik|angka|kpi/i.test(t)) return 'metrics';
+  if (/mengapa|kenapa|why|differentiator|keunggulan kompetitif/i.test(t) || (slide.content.includes('|') && slide.content.includes('---'))) return 'differentiator';
+  if (/paket|pricing|harga|kerjasama|plan/i.test(t)) return 'pricing';
+  if (/masalah|tantangan|pain|problem/i.test(t)) return 'welcome-problem';
+  if (/solusi|solution|nilai tambah|value/i.test(t)) return 'welcome-solution';
+  return index === 1 ? 'welcome-problem' : index === 2 ? 'welcome-solution' : 'welcome-solution';
+}
+
+function renderSlide(slide, index, totalSlides, brand, theme = 'editorial', assetsDir = '') {
+  if (theme === 'editorial') {
+    const arch = classifyCanvaArchetype(slide, index, totalSlides);
+    switch (arch) {
+      case 'cover': return renderCanvaCover(slide, brand, index, assetsDir);
+      case 'welcome-problem': return renderCanvaWelcome(slide, brand, index, 'problem', assetsDir);
+      case 'welcome-solution': return renderCanvaWelcome(slide, brand, index, 'solution', assetsDir);
+      case 'services': return renderCanvaServices(slide, brand, index, assetsDir);
+      case 'ecosystem': return renderCanvaEcosystem(slide, brand, index, assetsDir);
+      case 'metrics': return renderCanvaMetrics(slide, brand, index, assetsDir);
+      case 'differentiator': return renderCanvaDifferentiator(slide, brand, index, assetsDir);
+      case 'pricing': return renderCanvaPricing(slide, brand, index, assetsDir);
+      case 'closing': return renderCanvaClosing(slide, brand, index, assetsDir);
+      default: return renderCanvaWelcome(slide, brand, index, 'solution', assetsDir);
+    }
+  }
+  const type = detectSlideType(slide, index, totalSlides);
+  switch (type) {
+    case 'hero': return renderHeroSlide(slide, brand);
+    case 'problem': return renderProblemSlide(slide, brand);
+    case 'solution': return renderSolutionSlide(slide, brand);
+    case 'ecosystem': return renderEcosystemSlide(slide, brand);
+    case 'features': return renderFeaturesSlide(slide, brand);
+    case 'differentiator': return renderDifferentiatorSlide(slide, brand);
+    case 'showcase': return renderShowcaseSlide(slide, brand);
+    case 'pricing': return renderPricingSlide(slide, brand);
+    case 'offer': return renderOfferSlide(slide, brand);
+    case 'closing': return renderClosingSlide(slide, brand);
+    default: return renderGeneralSlide(slide, brand);
+  }
+}
+
+async function runMain(customArgs) {
   const argv = customArgs || process.argv.slice(2);
   const ROOT = detectProjectRoot(argv);
 
@@ -1362,19 +1931,26 @@ function runMain(customArgs) {
   }
 
   // Worktree detection for output directory:
-  // If running in an isolated worktree directory, output locally to worktree first,
-  // then postBuildSyncGuarantee will mirror it to the resolved project root.
+  // Search upwards for .git file to correctly identify isolated worktrees
   let isWorktree = false;
-  let cur = process.cwd();
-  const gitPath = path.join(cur, '.git');
-  if (fs.existsSync(gitPath) && fs.statSync(gitPath).isFile()) {
-    try {
-      const content = fs.readFileSync(gitPath, 'utf8');
-      if (/gitdir:\s*.*worktrees/i.test(content) || (cur !== ROOT && !content.includes('.git/modules/'))) {
-        isWorktree = true;
-      }
-    } catch (e) {}
-  } else if (cur !== ROOT && cur.includes('worktrees')) {
+  let checkDir = process.cwd();
+  while (checkDir && checkDir !== path.dirname(checkDir)) {
+    const gitPath = path.join(checkDir, '.git');
+    if (fs.existsSync(gitPath)) {
+      try {
+        const stat = fs.statSync(gitPath);
+        if (stat.isFile()) {
+          const content = fs.readFileSync(gitPath, 'utf8');
+          if (/gitdir:\s*.*worktrees/i.test(content) || (checkDir !== ROOT && !content.includes('.git/modules/'))) {
+            isWorktree = true;
+          }
+        }
+      } catch (e) {}
+      break;
+    }
+    checkDir = path.dirname(checkDir);
+  }
+  if (!isWorktree && process.cwd() !== ROOT && process.cwd().includes('worktrees')) {
     isWorktree = true;
   }
 
@@ -1533,38 +2109,37 @@ function runMain(customArgs) {
   // 5. Parse & chunking: H1 = new slide — now via shared parseAndSanitizeMarkdown()
   const slides = parseAndSanitizeMarkdown(md);
 
-  // 6. Convert slides into HTML based on detected archetypes
-  const slideHtml = slides.map((s, idx) => {
-    if (THEME === 'editorial') {
-      const archetype = classifyEditorialArchetype(s, idx, slides.length);
-      switch (archetype) {
-        case 'archetype-narrative-split': {
-          const type = /masalah|tantangan|pain|problem/.test((s.title || '').toLowerCase()) ? 'problem' : 'solution';
-          return renderEditorialNarrativeSplit(s, brand, type);
-        }
-        case 'archetype-hero-cover': return renderEditorialHero(s, brand);
-        case 'archetype-services-grid': return renderEditorialServicesGrid(s, brand);
-        case 'archetype-ecosystem-orbit': return renderEditorialEcosystem(s, brand);
-        case 'archetype-metrics-contact': return renderEditorialMetrics(s, brand);
-        case 'archetype-differentiator': return renderEditorialDifferentiator(s, brand);
-        case 'archetype-pricing-cards': return renderEditorialPricing(s, brand);
-        default: return renderEditorialClosing(s, brand);
+  // 5b. Wire slide image downloads inside build lifecycle with fallback handling
+  for (let i = 0; i < slides.length; i++) {
+    const s = slides[i];
+    const slotInfo = imageFetcher.mapCommentToSlot(s.content);
+    const destPathJpg = path.join(ASSETS_DIR, `slide-${i + 1}-${slotInfo.slot}.jpg`);
+    const destPathSvg = path.join(ASSETS_DIR, `slide-${i + 1}-${slotInfo.slot}.svg`);
+    try {
+      await imageFetcher.fetchImageWithFallback({
+        category: slotInfo.category,
+        destPath: destPathJpg,
+        slot: slotInfo.slot
+      });
+    } catch (err) {
+      console.warn(`[WARN] Failed downloading image for slide ${i + 1}: ${err.message}`);
+    }
+    // Accommodate .svg when fallback is used
+    const fallbackFile = slotInfo.fallback || `${slotInfo.slot}-fallback.svg`;
+    const localFallbackPath = path.join(__dirname, '..', 'templates', 'assets', 'fallback', fallbackFile);
+    if (fs.existsSync(localFallbackPath)) {
+      if (!fs.existsSync(destPathSvg)) {
+        try { fs.copyFileSync(localFallbackPath, destPathSvg); } catch (e) {}
+      }
+      if (!fs.existsSync(destPathJpg)) {
+        try { fs.copyFileSync(localFallbackPath, destPathJpg); } catch (e) {}
       }
     }
-    const type = detectSlideType(s, idx, slides.length);
-    switch (type) {
-      case 'hero': return renderHeroSlide(s, brand);
-      case 'problem': return renderProblemSlide(s, brand);
-      case 'solution': return renderSolutionSlide(s, brand);
-      case 'ecosystem': return renderEcosystemSlide(s, brand);
-      case 'features': return renderFeaturesSlide(s, brand);
-      case 'differentiator': return renderDifferentiatorSlide(s, brand);
-      case 'showcase': return renderShowcaseSlide(s, brand);
-      case 'pricing': return renderPricingSlide(s, brand);
-      case 'offer': return renderOfferSlide(s, brand);
-      case 'closing': return renderClosingSlide(s, brand);
-      default: return renderGeneralSlide(s, brand);
-    }
+  }
+
+  // 6. Convert slides into HTML based on detected archetypes
+  const slideHtml = slides.map((s, idx) => {
+    return renderSlide(s, idx, slides.length, brand, THEME, ASSETS_DIR);
   }).join('\n');
 
   // 7. Inject into HTML Shell with dynamic CSS variables
@@ -1654,7 +2229,7 @@ function runMain(customArgs) {
     `Total Slides    : ${slides.length}`,
     ...slides.map((s, i) => {
       const type = THEME === 'editorial'
-        ? classifyEditorialArchetype(s, i, slides.length).replace(/^archetype-/, '')
+        ? classifyCanvaArchetype(s, i, slides.length)
         : detectSlideType(s, i, slides.length);
       const wordCount = s.content.split(/\s+/).filter(Boolean).length;
       return `  Slide ${i + 1} [${type.toUpperCase().padEnd(9)}]: ${s.title} (${wordCount} words)`;
@@ -1711,7 +2286,10 @@ function runMain(customArgs) {
 }
 
 if (require.main === module) {
-  runMain();
+  runMain().catch(err => {
+    console.error('Fatal build error:', err);
+    process.exit(1);
+  });
 }
 
 if (typeof module !== 'undefined' && typeof require !== 'undefined') {
@@ -1722,6 +2300,17 @@ if (typeof module !== 'undefined' && typeof require !== 'undefined') {
     runMain,
     parseAndSanitizeMarkdown,
     parseEditorialCards,
+    renderCanvaCover,
+    renderCanvaWelcome,
+    renderCanvaServices,
+    renderCanvaEcosystem,
+    renderCanvaMetrics,
+    renderCanvaDifferentiator,
+    renderCanvaPricing,
+    renderCanvaClosing,
+    renderSlide,
+    classifyCanvaArchetype,
+    resolveSlideImageUrl,
     renderEditorialNarrativeSplit,
     renderEditorialEcosystem,
     renderEditorialDifferentiator,
