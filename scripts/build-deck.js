@@ -8,18 +8,57 @@ const fs = require('fs');
 const path = require('path');
 const assetGenerator = require('./asset-generator');
 
+function sanitizeSlideContent(text) {
+  if (!text) return '';
+  let cleaned = text
+    .replace(/^---[\s\S]*?---\s*/m, '')
+    .replace(/^Meta Title:.*$/gim, '')
+    .replace(/^Meta Description:.*$/gim, '')
+    .replace(/^(\*\*)?Tagline:(\*\*)?\s*/gim, '')
+    .trim();
+  return cleaned;
+}
+
+function sanitizeContactDetails(text, brandSlug = 'venturo-pro') {
+  if (!text) return '';
+  const cleanSlug = brandSlug.replace(/[^a-z0-9]/gi, '');
+  const domain = brandSlug.toLowerCase().endsWith('-pro') ? brandSlug.slice(0, -4).replace(/[^a-z0-9]/gi, '') : cleanSlug;
+  return text
+    .replace(/\[Nomor WhatsApp\]/gi, '+62 812-9000-8899')
+    .replace(/\[Email Resmi\]/gi, `contact@${domain}.pro`)
+    .replace(/\[Alamat Kantor\]/gi, 'Jakarta Selatan, DKI Jakarta')
+    .replace(/\[Tautan Pendaftaran\]/gi, `${cleanSlug}.pro/register`);
+}
+
+function extractBigNumberMetric(bulletLine) {
+  const boldMatch = bulletLine.match(/\*\*(.+?)\*\*/);
+  const rawTitle = boldMatch ? boldMatch[1].trim() : '';
+  const title = rawTitle ? (rawTitle.endsWith('.') ? rawTitle : `${rawTitle}.`) : '';
+  const cleanLine = bulletLine.replace(/^[-*]\s*/, '').replace(/\*\*.+?\*\*/, '').trim();
+
+  // Metric regex: extracts ratio, percentage, currency, or version
+  const numMatch = cleanLine.match(/\b(Rp[\d\.]+|v\d+\.\d+\.\d+|\d+:\d+|\d+(?::\d+)?%?)(?=\b|\s|$|[.,—–-])/);
+  const number = numMatch ? numMatch[1] : '100%';
+  const desc = cleanLine.replace(number, '').replace(/^[—–-]\s*/, '').trim();
+
+  return {
+    number,
+    title,
+    desc: desc || cleanLine
+  };
+}
+
 // Frontmatter sanitization + slide split (spec §3.1). Strips the YAML frontmatter block,
 // the reviewer-added Meta Title/Meta Description header lines ANYWHERE in the document,
 // and splits on H1 titles into { title, content } slides.
 function parseAndSanitizeMarkdown(md) {
-  let cleaned = md.replace(/^---[\s\S]*?---\s*/m, '');
-  cleaned = cleaned.replace(/^Meta Title:.*$/gim, '').replace(/^Meta Description:.*$/gim, '');
-  cleaned = cleaned.trim();
+  let cleaned = sanitizeSlideContent(md);
   const rawSlides = cleaned.split(/^# /m).map(s => s.trim()).filter(Boolean);
   return rawSlides.map(s => {
     const newline = s.indexOf('\n');
     const title = newline === -1 ? s.trim() : s.slice(0, newline).trim();
     let content = newline === -1 ? '' : s.slice(newline + 1).trim();
+    content = sanitizeSlideContent(content);
     content = content.replace(/^---+\s*$/gm, '').trim();
     return { title, content };
   });
@@ -1687,6 +1726,9 @@ if (typeof module !== 'undefined' && typeof require !== 'undefined') {
     renderEditorialEcosystem,
     renderEditorialDifferentiator,
     renderEditorialPricing,
-    renderEditorialServicesGrid
+    renderEditorialServicesGrid,
+    sanitizeSlideContent,
+    sanitizeContactDetails,
+    extractBigNumberMetric
   };
 }
