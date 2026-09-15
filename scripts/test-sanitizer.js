@@ -18,13 +18,16 @@ assert.ok(cleaned.includes('Deskripsi produk kami.'), 'Body text preserved');
 // Test 2: Contact bracket sanitization
 const rawContact = `- WhatsApp: [Nomor WhatsApp]
 - Email: [Email Resmi]
-- Kantor: [Alamat Kantor]`;
+- Kantor: [Alamat Kantor]
+- Pendaftaran: [Tautan Pendaftaran]`;
 const sanitizedContact = buildDeck.sanitizeContactDetails(rawContact, 'venturo-pro');
 assert.ok(!sanitizedContact.includes('[Nomor WhatsApp]'), 'Bracket WhatsApp replaced');
 assert.ok(sanitizedContact.includes('+62 812-9000-8899'), 'Has formatted WhatsApp');
 assert.ok(sanitizedContact.includes('contact@venturo.pro') || sanitizedContact.includes('halo@venturo-pro.id'), 'Has formatted email');
 assert.ok(!sanitizedContact.includes('[Alamat Kantor]'), 'Bracket Alamat replaced');
 assert.ok(sanitizedContact.includes('Jakarta Selatan'), 'Has formatted address');
+assert.ok(!sanitizedContact.includes('[Tautan Pendaftaran]'), 'Bracket Tautan Pendaftaran replaced');
+assert.ok(sanitizedContact.includes('venturo.pro/register'), 'Registration link uses domain');
 
 // Test 3: Big Number regex extraction
 const metricItem = `- **LTV:CAC jauh di atas standar.** Dengan asumsi churn rendah, estimasi rasio LTV:CAC di atas 20:1 — lebih dari 6 kali.`;
