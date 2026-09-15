@@ -26,23 +26,24 @@ async function runTests() {
     const testDest = path.join(tmpDir, 'test-fallback.jpg');
     if (fs.existsSync(testDest)) fs.unlinkSync(testDest);
     
-    await imageFetcher.fetchImageWithFallback({
+    const resultDest = await imageFetcher.fetchImageWithFallback({
       category: 'non-existent-category',
       destPath: testDest,
       slot: 'hero',
       forceFallback: true
     });
-    assert.ok(fs.existsSync(testDest), 'Fallback image must exist on destination');
-    assert.ok(fs.statSync(testDest).size > 100, 'Image size should be > 100 bytes');
+    assert.ok(fs.existsSync(resultDest), 'Fallback image must exist on destination');
+    assert.ok(resultDest.endsWith('.svg'), 'Fallback image must retain .svg extension');
+    assert.ok(fs.statSync(resultDest).size > 100, 'Image size should be > 100 bytes');
 
     // Test 3: Idempotency check (existing file skipped)
-    const statsBefore = fs.statSync(testDest).mtimeMs;
-    await imageFetcher.fetchImageWithFallback({
+    const statsBefore = fs.statSync(resultDest).mtimeMs;
+    const rerunDest = await imageFetcher.fetchImageWithFallback({
       category: 'architecture-portrait',
       destPath: testDest,
       slot: 'hero'
     });
-    const statsAfter = fs.statSync(testDest).mtimeMs;
+    const statsAfter = fs.statSync(resultDest).mtimeMs;
     assert.strictEqual(statsBefore, statsAfter, 'Existing valid file must not be redownloaded');
 
     // Test 4: Verify local SVG fallbacks exist for all slots

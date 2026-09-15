@@ -124,4 +124,45 @@ assert.ok(routedCover.includes('archetype-canva-cover'), 'renderSlide routes sli
 const routedClosing = buildDeck.renderSlide(closingSlide, 7, 8, brand, 'editorial');
 assert.ok(routedClosing.includes('archetype-canva-closing'), 'renderSlide routes last slide to canva closing');
 
+// Test Review Findings: Title archetype precedence & resolveSlideSlot synchronization
+const congenSlide3 = {
+  title: 'Solusi & Nilai Tambah',
+  content: 'Setelah setup GPU lokal, generate video tambahan. Pipeline komposisi multi-ai berjalan lokal.'
+};
+assert.strictEqual(
+  buildDeck.classifyCanvaArchetype(congenSlide3, 2, 7),
+  'welcome-solution',
+  'Title "Solusi & Nilai Tambah" must classify as welcome-solution even if body mentions GPU pipeline'
+);
+assert.strictEqual(
+  buildDeck.resolveSlideSlot(congenSlide3, 2, 7),
+  'solution',
+  'Slot for congen Slide 3 must resolve to solution'
+);
+
+const congenSlide6 = {
+  title: 'Paket & Kerjasama',
+  content: '| Paket | Harga | Yang Kamu Dapat |\n|---|---|---|\n| Lite | Rp0 | Free |'
+};
+assert.strictEqual(
+  buildDeck.classifyCanvaArchetype(congenSlide6, 5, 7),
+  'pricing',
+  'Title "Paket & Kerjasama" must classify as pricing even if content contains a markdown table'
+);
+assert.strictEqual(
+  buildDeck.resolveSlideSlot(congenSlide6, 5, 7),
+  'pricing',
+  'Slot for congen Slide 6 must resolve to pricing'
+);
+
+const commentOverrideSlide = {
+  title: 'Pencapaian Kami',
+  content: '<!-- image: creative-meeting -->\n- **100%** Keberhasilan'
+};
+assert.strictEqual(
+  buildDeck.resolveSlideSlot(commentOverrideSlide, 5, 8),
+  'creative-meeting',
+  'resolveSlideSlot honors HTML comment image override'
+);
+
 console.log('PASS: canva-archetypes tests passed');

@@ -1375,7 +1375,63 @@ function renderEditorialNarrativeSplit(slide, brand, type) {
 // 8 Distinct Canva Layout Archetypes (Canva Editorial Engine v2.5.0)
 // ==========================================================================
 
-function renderCanvaCover(slide, brand, index = 0, assetsDir = '') {
+function classifyCanvaArchetype(slide, index, totalSlides) {
+  const t = (slide.title || '').toLowerCase();
+  const c = (slide.content || '').toLowerCase();
+  const combined = t + ' ' + c;
+
+  // 1. Cover / Hero (slide 0 or explicit title)
+  if (index === 0 || /profile|profil|hero/i.test(t)) return 'cover';
+
+  // 2. Closing / Contact (last slide or explicit title)
+  if (index === totalSlides - 1 || /hubungi|kontak|contact|closing|cta/i.test(t)) return 'closing';
+
+  // 3. Explicit title-based checks (prioritized before greedy body matches)
+  if (/masalah|tantangan|pain|problem/i.test(t)) return 'welcome-problem';
+  if (/solusi|solution|nilai tambah|value/i.test(t)) return 'welcome-solution';
+  if (/layanan|fitur|feature|services/i.test(t)) return 'services';
+  if (/pencapaian|bukti|traction|showcase|metric|statistik|angka|kpi/i.test(t)) return 'metrics';
+  if (/paket|pricing|harga|kerjasama|plan/i.test(t)) return 'pricing';
+  if (/mengapa|kenapa|why|differentiator|keunggulan kompetitif/i.test(t)) return 'differentiator';
+  if (/arsitektur|ekosistem|ecosystem|stack|architecture/i.test(t)) return 'ecosystem';
+
+  // 4. Body & combined keyword fallbacks
+  if (/hubungi|kontak|contact|closing|cta/i.test(combined)) return 'closing';
+  if (/arsitektur|ekosistem|ecosystem|stack|architecture/i.test(combined) || (/pipeline/i.test(combined) && /multi-ai|gpu/i.test(combined))) return 'ecosystem';
+  if (slide.content && slide.content.includes('|') && slide.content.includes('---')) return 'differentiator';
+  if (/masalah|tantangan|pain|problem/i.test(combined)) return 'welcome-problem';
+  if (/solusi|solution|nilai tambah|value/i.test(combined)) return 'welcome-solution';
+
+  // 5. Positional fallback
+  return index === 1 ? 'welcome-problem' : 'welcome-solution';
+}
+
+function resolveSlideSlot(slide, index, totalSlides, defaultSlot) {
+  if (slide && slide.content) {
+    const match = slide.content.match(/<!--\s*image:\s*([a-zA-Z0-9_-]+)/i);
+    if (match) {
+      return match[1].toLowerCase();
+    }
+  }
+  if (defaultSlot) {
+    return defaultSlot;
+  }
+  const arch = classifyCanvaArchetype(slide, index, totalSlides);
+  switch (arch) {
+    case 'cover': return 'hero';
+    case 'welcome-problem': return 'problem';
+    case 'welcome-solution': return 'solution';
+    case 'services': return 'services';
+    case 'ecosystem': return 'ecosystem';
+    case 'metrics': return 'metrics';
+    case 'differentiator': return 'differentiator';
+    case 'pricing': return 'pricing';
+    case 'closing': return 'closing';
+    default: return 'hero';
+  }
+}
+
+function renderCanvaCover(slide, brand, index = 0, assetsDir = '', totalSlides = 8) {
   const content = sanitizeSlideContent(slide.content || '').replace(/<!--[\s\S]*?-->/g, '').trim();
   const lines = content.split('\n').map(l => l.trim()).filter(Boolean);
   let tagline = '';
@@ -1391,8 +1447,7 @@ function renderCanvaCover(slide, brand, index = 0, assetsDir = '') {
     }
   }
 
-  const slotInfo = imageFetcher.mapCommentToSlot(slide.content);
-  const targetSlot = (slotInfo && slotInfo.slot !== 'closing') ? slotInfo.slot : 'hero';
+  const targetSlot = resolveSlideSlot(slide, index, totalSlides, 'hero');
   const imgSrc = resolveSlideImageUrl(index + 1, targetSlot, assetsDir);
 
   return `
@@ -1425,14 +1480,13 @@ function renderCanvaCover(slide, brand, index = 0, assetsDir = '') {
     </section>`;
 }
 
-function renderCanvaWelcome(slide, brand, index = 1, type = 'problem', assetsDir = '') {
+function renderCanvaWelcome(slide, brand, index = 1, type = 'problem', assetsDir = '', totalSlides = 8) {
   const content = sanitizeSlideContent(slide.content || '').trim();
   const { introText, cards } = parseEditorialCards(content);
   const isProblem = type === 'problem' || /masalah|tantangan|pain|problem/i.test(slide.title);
   const badgeText = isProblem ? 'Tantangan Industri' : 'Solusi & Nilai Tambah';
-  const slot = isProblem ? 'problem' : 'solution';
-  const slotInfo = imageFetcher.mapCommentToSlot(slide.content);
-  const targetSlot = (slotInfo && slotInfo.slot !== 'hero') ? slotInfo.slot : slot;
+  const defaultSlot = isProblem ? 'problem' : 'solution';
+  const targetSlot = resolveSlideSlot(slide, index, totalSlides, defaultSlot);
   const imgSrc = resolveSlideImageUrl(index + 1, targetSlot, assetsDir);
 
   const fallbackCards = isProblem
@@ -1483,11 +1537,10 @@ function renderCanvaWelcome(slide, brand, index = 1, type = 'problem', assetsDir
     </section>`;
 }
 
-function renderCanvaServices(slide, brand, index = 3, assetsDir = '') {
+function renderCanvaServices(slide, brand, index = 3, assetsDir = '', totalSlides = 8) {
   const content = sanitizeSlideContent(slide.content || '').trim();
   const { introText, cards } = parseEditorialCards(content);
-  const slotInfo = imageFetcher.mapCommentToSlot(slide.content);
-  const targetSlot = (slotInfo && slotInfo.slot !== 'hero') ? slotInfo.slot : 'services';
+  const targetSlot = resolveSlideSlot(slide, index, totalSlides, 'services');
   const imgSrc = resolveSlideImageUrl(index + 1, targetSlot, assetsDir);
 
   const defaultServices = [
@@ -1529,11 +1582,10 @@ function renderCanvaServices(slide, brand, index = 3, assetsDir = '') {
     </section>`;
 }
 
-function renderCanvaEcosystem(slide, brand, index = 4, assetsDir = '') {
+function renderCanvaEcosystem(slide, brand, index = 4, assetsDir = '', totalSlides = 8) {
   const content = sanitizeSlideContent(slide.content || '').trim();
   const { introText, cards } = parseEditorialCards(content);
-  const slotInfo = imageFetcher.mapCommentToSlot(slide.content);
-  const targetSlot = (slotInfo && slotInfo.slot !== 'hero') ? slotInfo.slot : 'ecosystem';
+  const targetSlot = resolveSlideSlot(slide, index, totalSlides, 'ecosystem');
   const imgSrc = resolveSlideImageUrl(index + 1, targetSlot, assetsDir);
 
   const cx = 250, cy = 250, r = 160;
@@ -1597,11 +1649,10 @@ function renderCanvaEcosystem(slide, brand, index = 4, assetsDir = '') {
     </section>`;
 }
 
-function renderCanvaMetrics(slide, brand, index = 5, assetsDir = '') {
+function renderCanvaMetrics(slide, brand, index = 5, assetsDir = '', totalSlides = 8) {
   const content = sanitizeSlideContent(slide.content || '').trim();
   const lines = content.split('\n').map(l => l.trim()).filter(Boolean);
-  const slotInfo = imageFetcher.mapCommentToSlot(slide.content);
-  const targetSlot = (slotInfo && slotInfo.slot !== 'hero') ? slotInfo.slot : 'metrics';
+  const targetSlot = resolveSlideSlot(slide, index, totalSlides, 'metrics');
   const imgSrc = resolveSlideImageUrl(index + 1, targetSlot, assetsDir);
 
   const bulletLines = lines.filter(l => /^[-*]\s/.test(l));
@@ -1647,7 +1698,7 @@ function renderCanvaMetrics(slide, brand, index = 5, assetsDir = '') {
     </section>`;
 }
 
-function renderCanvaDifferentiator(slide, brand, index = 6, assetsDir = '') {
+function renderCanvaDifferentiator(slide, brand, index = 6, assetsDir = '', totalSlides = 8) {
   const content = sanitizeSlideContent(slide.content || '').trim();
   const lines = content.split('\n').map(l => l.trim()).filter(Boolean);
   let intro = '';
@@ -1736,7 +1787,7 @@ function renderCanvaDifferentiator(slide, brand, index = 6, assetsDir = '') {
     </section>`;
 }
 
-function renderCanvaPricing(slide, brand, index = 7, assetsDir = '') {
+function renderCanvaPricing(slide, brand, index = 7, assetsDir = '', totalSlides = 8) {
   const content = sanitizeSlideContent(slide.content || '').trim();
   const { cards } = parseEditorialCards(content);
 
@@ -1790,7 +1841,7 @@ function renderCanvaPricing(slide, brand, index = 7, assetsDir = '') {
     </section>`;
 }
 
-function renderCanvaClosing(slide, brand, index = 8, assetsDir = '') {
+function renderCanvaClosing(slide, brand, index = 8, assetsDir = '', totalSlides = 8) {
   const brandSlug = (brand && brand.name ? brand.name : 'venturo-pro').toLowerCase().replace(/\s+/g, '-');
   const sanitized = sanitizeContactDetails(slide.content || '', brandSlug);
   const lines = sanitized.split('\n').map(l => l.trim()).filter(Boolean);
@@ -1816,7 +1867,8 @@ function renderCanvaClosing(slide, brand, index = 8, assetsDir = '') {
   }
 
   const imgLeft = resolveSlideImageUrl(1, 'hero', assetsDir);
-  const imgRight = resolveSlideImageUrl(index + 1, 'closing', assetsDir);
+  const targetSlot = resolveSlideSlot(slide, index, totalSlides, 'closing');
+  const imgRight = resolveSlideImageUrl(index + 1, targetSlot, assetsDir);
 
   const waSvg = assetGenerator.getIconSvg('whatsapp', { size: 20, color: 'var(--brand-light)' });
   const mailSvg = assetGenerator.getIconSvg('mail', { size: 20, color: 'var(--brand-light)' });
@@ -1865,36 +1917,20 @@ function renderCanvaClosing(slide, brand, index = 8, assetsDir = '') {
     </section>`;
 }
 
-function classifyCanvaArchetype(slide, index, totalSlides) {
-  const t = (slide.title || '').toLowerCase();
-  const c = (slide.content || '').toLowerCase();
-  const combined = t + ' ' + c;
-  if (index === 0 || /profile|profil|hero/i.test(t)) return 'cover';
-  if (index === totalSlides - 1 || /hubungi|kontak|contact|closing|cta/i.test(combined)) return 'closing';
-  if (/arsitektur|ekosistem|ecosystem|stack|architecture/i.test(combined) || (/pipeline/i.test(combined) && /multi-ai|gpu/i.test(combined))) return 'ecosystem';
-  if (/layanan|fitur|feature|services/i.test(t)) return 'services';
-  if (/pencapaian|bukti|traction|showcase|metric|statistik|angka|kpi/i.test(t)) return 'metrics';
-  if (/mengapa|kenapa|why|differentiator|keunggulan kompetitif/i.test(t) || (slide.content.includes('|') && slide.content.includes('---'))) return 'differentiator';
-  if (/paket|pricing|harga|kerjasama|plan/i.test(t)) return 'pricing';
-  if (/masalah|tantangan|pain|problem/i.test(t)) return 'welcome-problem';
-  if (/solusi|solution|nilai tambah|value/i.test(t)) return 'welcome-solution';
-  return index === 1 ? 'welcome-problem' : index === 2 ? 'welcome-solution' : 'welcome-solution';
-}
-
 function renderSlide(slide, index, totalSlides, brand, theme = 'editorial', assetsDir = '') {
   if (theme === 'editorial') {
     const arch = classifyCanvaArchetype(slide, index, totalSlides);
     switch (arch) {
-      case 'cover': return renderCanvaCover(slide, brand, index, assetsDir);
-      case 'welcome-problem': return renderCanvaWelcome(slide, brand, index, 'problem', assetsDir);
-      case 'welcome-solution': return renderCanvaWelcome(slide, brand, index, 'solution', assetsDir);
-      case 'services': return renderCanvaServices(slide, brand, index, assetsDir);
-      case 'ecosystem': return renderCanvaEcosystem(slide, brand, index, assetsDir);
-      case 'metrics': return renderCanvaMetrics(slide, brand, index, assetsDir);
-      case 'differentiator': return renderCanvaDifferentiator(slide, brand, index, assetsDir);
-      case 'pricing': return renderCanvaPricing(slide, brand, index, assetsDir);
-      case 'closing': return renderCanvaClosing(slide, brand, index, assetsDir);
-      default: return renderCanvaWelcome(slide, brand, index, 'solution', assetsDir);
+      case 'cover': return renderCanvaCover(slide, brand, index, assetsDir, totalSlides);
+      case 'welcome-problem': return renderCanvaWelcome(slide, brand, index, 'problem', assetsDir, totalSlides);
+      case 'welcome-solution': return renderCanvaWelcome(slide, brand, index, 'solution', assetsDir, totalSlides);
+      case 'services': return renderCanvaServices(slide, brand, index, assetsDir, totalSlides);
+      case 'ecosystem': return renderCanvaEcosystem(slide, brand, index, assetsDir, totalSlides);
+      case 'metrics': return renderCanvaMetrics(slide, brand, index, assetsDir, totalSlides);
+      case 'differentiator': return renderCanvaDifferentiator(slide, brand, index, assetsDir, totalSlides);
+      case 'pricing': return renderCanvaPricing(slide, brand, index, assetsDir, totalSlides);
+      case 'closing': return renderCanvaClosing(slide, brand, index, assetsDir, totalSlides);
+      default: return renderCanvaWelcome(slide, brand, index, 'solution', assetsDir, totalSlides);
     }
   }
   const type = detectSlideType(slide, index, totalSlides);
@@ -2112,27 +2148,28 @@ async function runMain(customArgs) {
   // 5b. Wire slide image downloads inside build lifecycle with fallback handling
   for (let i = 0; i < slides.length; i++) {
     const s = slides[i];
-    const slotInfo = imageFetcher.mapCommentToSlot(s.content);
-    const destPathJpg = path.join(ASSETS_DIR, `slide-${i + 1}-${slotInfo.slot}.jpg`);
-    const destPathSvg = path.join(ASSETS_DIR, `slide-${i + 1}-${slotInfo.slot}.svg`);
+    const slot = resolveSlideSlot(s, i, slides.length);
+    const slotConfig = (imageFetcher.SLOT_MAP && imageFetcher.SLOT_MAP[slot]) || {
+      category: 'architecture-portrait',
+      orientation: 'portrait',
+      fallback: `${slot}-fallback.svg`
+    };
+    const destPathJpg = path.join(ASSETS_DIR, `slide-${i + 1}-${slot}.jpg`);
     try {
       await imageFetcher.fetchImageWithFallback({
-        category: slotInfo.category,
+        category: slotConfig.category,
         destPath: destPathJpg,
-        slot: slotInfo.slot
+        slot: slot
       });
     } catch (err) {
       console.warn(`[WARN] Failed downloading image for slide ${i + 1}: ${err.message}`);
-    }
-    // Accommodate .svg when fallback is used
-    const fallbackFile = slotInfo.fallback || `${slotInfo.slot}-fallback.svg`;
-    const localFallbackPath = path.join(__dirname, '..', 'templates', 'assets', 'fallback', fallbackFile);
-    if (fs.existsSync(localFallbackPath)) {
-      if (!fs.existsSync(destPathSvg)) {
-        try { fs.copyFileSync(localFallbackPath, destPathSvg); } catch (e) {}
-      }
-      if (!fs.existsSync(destPathJpg)) {
-        try { fs.copyFileSync(localFallbackPath, destPathJpg); } catch (e) {}
+      const destPathSvg = path.join(ASSETS_DIR, `slide-${i + 1}-${slot}.svg`);
+      if (!fs.existsSync(destPathJpg) && !fs.existsSync(destPathSvg)) {
+        const fallbackFile = slotConfig.fallback || `${slot}-fallback.svg`;
+        const localFallbackPath = path.join(__dirname, '..', 'templates', 'assets', 'fallback', fallbackFile);
+        if (fs.existsSync(localFallbackPath)) {
+          try { fs.copyFileSync(localFallbackPath, destPathSvg); } catch (e) {}
+        }
       }
     }
   }
@@ -2310,6 +2347,7 @@ if (typeof module !== 'undefined' && typeof require !== 'undefined') {
     renderCanvaClosing,
     renderSlide,
     classifyCanvaArchetype,
+    resolveSlideSlot,
     resolveSlideImageUrl,
     renderEditorialNarrativeSplit,
     renderEditorialEcosystem,

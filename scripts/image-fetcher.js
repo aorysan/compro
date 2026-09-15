@@ -35,6 +35,8 @@ const SLOT_MAP = {
   'ecosystem': { category: 'tech-workspace', orientation: 'landscape', fallback: 'services-fallback.svg' },
   'traction': { category: 'architecture-portrait', orientation: 'portrait', fallback: 'metrics-fallback.svg' },
   'metrics': { category: 'architecture-portrait', orientation: 'portrait', fallback: 'metrics-fallback.svg' },
+  'differentiator': { category: 'architecture-portrait', orientation: 'portrait', fallback: 'problem-fallback.svg' },
+  'pricing': { category: 'tech-workspace', orientation: 'portrait', fallback: 'services-fallback.svg' },
   'closing': { category: 'corporate-team', orientation: 'portrait', fallback: 'closing-fallback.svg' }
 };
 
@@ -88,19 +90,34 @@ async function fetchImageWithFallback(options = {}) {
   const { category, destPath, slot = 'hero', forceFallback = false } = options;
   fs.mkdirSync(path.dirname(destPath), { recursive: true });
 
-  // Idempotency: skip if already valid (> 1024 bytes)
-  if (fs.existsSync(destPath) && fs.statSync(destPath).size > 1024) {
-    return destPath;
-  }
-
   const fallbackFile = (SLOT_MAP[slot] && SLOT_MAP[slot].fallback) || 'hero-fallback.svg';
   const localFallbackPath = path.join(__dirname, '..', 'templates', 'assets', 'fallback', fallbackFile);
 
-  if (forceFallback) {
+  const applyFallback = () => {
     if (fs.existsSync(localFallbackPath)) {
-      fs.copyFileSync(localFallbackPath, destPath);
-      return destPath;
+      // Ensure SVG fallback retains .svg extension; do not save SVG XML into a .jpg file
+      const svgDestPath = destPath.replace(/\.jpe?g$/i, '.svg');
+      fs.copyFileSync(localFallbackPath, svgDestPath);
+      if (fs.existsSync(destPath) && destPath !== svgDestPath) {
+        try { fs.unlinkSync(destPath); } catch (e) {}
+      }
+      return svgDestPath;
     }
+    throw new Error(`Fallback SVG not found at ${localFallbackPath}`);
+  };
+
+  const svgDestPath = destPath.replace(/\.jpe?g$/i, '.svg');
+
+  // Idempotency: skip if already valid (> 1024 bytes for jpg, > 100 bytes for svg)
+  if (fs.existsSync(destPath) && fs.statSync(destPath).size > 1024) {
+    return destPath;
+  }
+  if (fs.existsSync(svgDestPath) && fs.statSync(svgDestPath).size > 100) {
+    return svgDestPath;
+  }
+
+  if (forceFallback) {
+    return applyFallback();
   }
 
   const urls = CURATED_IMAGE_CATALOG[category] || CURATED_IMAGE_CATALOG['architecture-portrait'];
@@ -119,11 +136,7 @@ async function fetchImageWithFallback(options = {}) {
       return destPath;
     } catch (picsumErr) {
       console.warn(`[WARN] Picsum fallback failed: ${picsumErr.message}. Applying local SVG fallback.`);
-      if (fs.existsSync(localFallbackPath)) {
-        fs.copyFileSync(localFallbackPath, destPath);
-        return destPath;
-      }
-      throw new Error(`Failed all image fetch attempts for ${slot}`);
+      return applyFallback();
     }
   }
 }

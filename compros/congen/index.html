@@ -3,1781 +3,1423 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Venturo Pro membantu creator & brand kecil Indonesia membuat video pendek ber-brand konsisten dengan biaya terprediksi — satu setup Brand DNA, tanpa tagihan per-render.">
-  <script type="application/ld+json">{"@context":"https://schema.org","@type":"Organization","name":"Venturo Pro","url":"https://venturo-pro.vercel.app","description":"Venturo Pro membantu creator & brand kecil Indonesia membuat video pendek ber-brand konsisten dengan biaya terprediksi — satu setup Brand DNA, tanpa tagihan per-render.","slogan":"Video ber-brand konsisten — tanpa biaya per-video yang tak terduga","areaServed":"ID","knowsAbout":["AI video production","Brand DNA","local-first video pipeline"]}</script>
-  <meta property="og:title" content="Venturo Pro — Video Ber-Brand Konsisten & Biaya Terprediksi">
-  <meta property="og:description" content="Venturo Pro membantu creator & brand kecil Indonesia membuat video pendek ber-brand konsisten dengan biaya terprediksi — satu setup Brand DNA, tanpa tagihan per-render.">
-  <meta property="og:type" content="website">
-  <meta property="og:url" content="https://venturo-pro.vercel.app">
-  <title>Venturo Pro — Video Ber-Brand Konsisten & Biaya Terprediksi</title>
+  <title>Venturo Pro — Company Profile</title>
 
-  <!-- Google Fonts: Plus Jakarta Sans (600, 700, 800) & Inter (400, 500, 600) -->
+  <!-- Google Fonts Preconnect & Styles -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
 
   <!-- Reveal.js CDN -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/reveal.min.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/theme/black.min.css" id="theme-link">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/theme/white.min.css" id="theme-link">
 
-  <!-- PDF Print Stylesheet Loader per Reveal.js standard -->
-  <script>
-    var link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.type = 'text/css';
-    link.href = window.location.search.match(/print-pdf/gi)
-      ? 'https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/css/print/pdf.min.css'
-      : '';
-    if (link.href) {
-      document.getElementsByTagName('head')[0].appendChild(link);
-    }
-  </script>
-
-  <!-- Inlined Custom CSS for self-contained single-file HTML -->
+  <!-- Inlined Editorial Custom CSS -->
   <style>
 /* ==========================================================================
-   Company Profile Slides — Modern Corporate 16:9 Design System
-   Self-contained presentation styling matching design-tokens.md & visual-hierarchy.md
+   Compro Plugin v2.5.0 — Canva Editorial Theme (Gray-White Modern System)
+   Inspired by Canva "Gray White Modern Company Profile" (Salford & Co.)
+   Integrated with Venturo Pro Documented Brand Identity (#009BAD)
+   1920x1080 Native Presentation Resolution & Zero-Void Architecture
    ========================================================================== */
 
 :root {
-  /* =======================================================
-     BRAND HSL PARAMETERS (Dynamic theming per client)
-     Default: Venturo Teal (#009BAD) -> H: 186, S: 100%, L: 34%
-     ======================================================= */
-  --brand-h: 186;
-  --brand-s: 100%;
-  --brand-l: 34%;
+  /* Canvas & Surface System */
+  --canvas-bg: #F4F5F7;
+  --canvas-surface: #FFFFFF;
+  --surface-border: rgba(0, 0, 0, 0.08);
+  --surface-border-subtle: rgba(0, 0, 0, 0.04);
+  --surface-shadow: 0 12px 32px rgba(0, 0, 0, 0.04);
+  --surface-shadow-hover: 0 20px 40px rgba(0, 0, 0, 0.08);
 
-  /* Dynamic Brand Tokens */
-  --brand-primary: hsl(var(--brand-h), var(--brand-s), var(--brand-l));
-  --brand-primary-light: hsl(var(--brand-h), var(--brand-s), calc(var(--brand-l) + 18%));
-  --brand-primary-dark: hsl(var(--brand-h), var(--brand-s), calc(var(--brand-l) - 12%));
-  --brand-primary-subtle: hsla(var(--brand-h), var(--brand-s), var(--brand-l), 0.12);
-  --brand-primary-glow: hsla(var(--brand-h), var(--brand-s), var(--brand-l), 0.28);
+  /* Contrast Blocks */
+  --charcoal-solid: #232220;
+  --charcoal-hover: #171615;
+  --charcoal-subtle: rgba(35, 34, 32, 0.05);
 
-  /* Secondary & Complementary Accents */
-  --brand-secondary: hsl(calc(var(--brand-h) + 35), 90%, 52%);
-  --brand-secondary-light: hsl(calc(var(--brand-h) + 35), 95%, 65%);
-  --brand-secondary-subtle: hsla(calc(var(--brand-h) + 35), 90%, 52%, 0.15);
+  /* Typography Colors */
+  --text-headline: #1A1D20;
+  --text-body: #4A5568;
+  --text-muted: #718096;
+  --text-inverse: #FFFFFF;
 
-  /* Canvas & Surface Tones (Deep Corporate Tech Slate) */
-  --brand-dark: #090d16;
-  --brand-surface: #0f172a;
-  --brand-surface-elevated: #1e293b;
-  --brand-card-bg: rgba(255, 255, 255, 0.04);
-  --brand-card-bg-hover: rgba(255, 255, 255, 0.07);
-  --brand-card-border: rgba(255, 255, 255, 0.08);
-  --brand-border: rgba(255, 255, 255, 0.08);
-  --brand-card-border-hover: hsla(var(--brand-h), var(--brand-s), 50%, 0.4);
+  /* Brand Colors (Venturo Pro Documented) */
+  --brand-primary: #009BAD;
+  --brand-dark: #006D79;
+  --brand-light: #38BDF8;
+  --brand-tint: rgba(0, 155, 173, 0.10);
+  --brand-border: rgba(0, 155, 173, 0.35);
 
-  /* Text & Typography Hierarchy */
-  --brand-text-primary: #f8fafc;
-  --brand-text-secondary: #cbd5e1;
-  --brand-text-muted: #94a3b8;
-  --brand-muted: #94a3b8;
-  --brand-text-inverse: #0f172a;
+  /* Status Colors */
+  --color-success: #16A34A;
+  --color-danger: #DC2626;
+  --color-warning: #D97706;
 
-  /* Functional Semantic Status Colors */
-  --color-problem: #ef4444;
-  --color-problem-subtle: rgba(239, 68, 68, 0.12);
-  --color-problem-border: rgba(239, 68, 68, 0.35);
-
-  --color-success: #10b981;
-  --color-success-subtle: rgba(16, 185, 129, 0.12);
-  --color-success-border: rgba(16, 185, 129, 0.35);
-
-  --color-warning: #f59e0b;
-  --color-warning-subtle: rgba(245, 158, 11, 0.12);
-  --color-warning-border: rgba(245, 158, 11, 0.35);
-
-  /* Typography Scale */
-  --font-display: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-
-  /* Spacing Scale (8-Point Base System) */
-  --space-1: 4px;
-  --space-2: 8px;
-  --space-3: 12px;
-  --space-4: 16px;
-  --space-5: 20px;
-  --space-6: 24px;
-  --space-8: 32px;
-  --space-10: 40px;
-  --space-12: 48px;
-  --space-16: 64px;
-  --space-20: 80px;
-
-  /* Border Radius */
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 16px;
-  --radius-xl: 24px;
-  --radius-2xl: 36px;
-  --radius-full: 9999px;
-
-  /* Elevation & 3D Shadows */
-  --border-rim: 1px solid rgba(255, 255, 255, 0.08);
-  --border-rim-highlight: 1px solid hsla(var(--brand-h), var(--brand-s), 55%, 0.4);
-
-  --shadow-resting: 
-    0 4px 12px -2px rgba(0, 0, 0, 0.3),
-    0 1px 3px 0 rgba(0, 0, 0, 0.2),
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
-
-  --shadow-hover: 
-    0 16px 32px -6px rgba(0, 0, 0, 0.45),
-    0 6px 12px -2px rgba(0, 0, 0, 0.25),
-    0 0 24px -2px hsla(var(--brand-h), var(--brand-s), var(--brand-l), 0.2),
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
-
-  --shadow-featured: 
-    0 24px 48px -8px rgba(0, 0, 0, 0.55),
-    0 12px 24px -4px hsla(var(--brand-h), var(--brand-s), var(--brand-l), 0.35),
-    inset 0 1px 0 0 hsla(var(--brand-h), var(--brand-s), 70%, 0.4);
-
-  --shadow-device: 
-    0 32px 64px -12px rgba(0, 0, 0, 0.65),
-    0 16px 32px -8px rgba(0, 0, 0, 0.4),
-    0 0 0 1px rgba(255, 255, 255, 0.12),
-    0 0 40px -8px hsla(var(--brand-h), var(--brand-s), var(--brand-l), 0.25);
-
-  --shadow-card: 0 4px 12px -2px rgba(0, 0, 0, 0.3), 0 1px 3px 0 rgba(0, 0, 0, 0.2);
-  --glow-radial: radial-gradient(circle at 50% 30%, hsla(var(--brand-h), var(--brand-s), var(--brand-l), 0.15) 0%, transparent 70%);
+  /* Fonts */
+  --font-display: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
-/* ==========================================================================
-   Global Reset & Reveal.js Canvas Setup (1920x1080 16:9 Safe Zone)
-   ========================================================================== */
-
-*, *::before, *::after {
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-  padding: 0;
-  background-color: var(--brand-dark);
+/* Base Reveal Overrides */
+html, body, .reveal {
+  background-color: var(--canvas-bg) !important;
+  color: var(--text-body);
   font-family: var(--font-body);
-  color: var(--brand-text-primary);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-.reveal {
-  font-family: var(--font-body);
-  color: var(--brand-text-primary);
-  background-color: var(--brand-dark);
 }
 
 .reveal .slides {
   text-align: left;
 }
 
-/* 1920x1080 Slide Canvas Safe Zone */
+/* Container Height Enforcement (1080p full height, zero void, zero overflow) */
 .reveal .slides section {
-  width: 1920px;
-  height: 1080px;
-  padding: 60px 80px;
-  background-color: var(--brand-surface);
-  flex-direction: column;
-  justify-content: center;
-  align-items: stretch;
+  box-sizing: border-box;
+  padding: 0;
+  height: 1080px !important;
+  max-height: 1080px;
   overflow: hidden;
+  background: var(--canvas-bg);
+}
+
+.editorial-slide-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+  padding: 36px 48px;
   box-sizing: border-box;
 }
 
-.reveal .slides section.present {
-  display: flex !important;
-}
-
-.reveal.overview .slides section {
-  display: flex !important;
-}
-
-.reveal .slides section .slide-content {
+/* Image Frame Constraints */
+.editorial-image-frame {
+  position: relative;
   width: 100%;
-  max-width: 1760px;
-  margin: 0 auto;
   height: 100%;
+  min-height: 580px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: var(--surface-shadow);
+  background: #E2E8F0;
+}
+
+.editorial-image-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Global Navigation Header */
+.editorial-top-nav {
   display: flex;
-  flex-direction: column;
-  justify-content: center;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 48px;
+  border-bottom: 1px solid var(--surface-border);
+  background: var(--canvas-bg);
+  height: 72px;
+  box-sizing: border-box;
 }
 
-/* ==========================================================================
-   Typography Hierarchy
-   ========================================================================== */
-
-.reveal h1, .reveal h2, .reveal h3, .reveal h4 {
+.editorial-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   font-family: var(--font-display);
-  color: var(--brand-text-primary);
-  font-weight: 700;
-  text-transform: none;
-  letter-spacing: -0.02em;
-  margin: 0;
-  line-height: 1.2;
-}
-
-.reveal h1, .slide-title {
-  font-size: 44px;
   font-weight: 800;
-  line-height: 1.18;
+  font-size: 20px;
+  color: var(--text-headline);
+  letter-spacing: -0.01em;
 }
 
-.reveal h2, .section-title {
-  font-size: 32px;
-  font-weight: 700;
-  line-height: 1.25;
+.editorial-nav-links {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-muted);
 }
 
-.reveal h3, .card-title {
-  font-size: 22px;
-  font-weight: 700;
-  line-height: 1.30;
-}
-
-.reveal p {
-  font-size: 16px;
-  line-height: 1.6;
-  color: var(--brand-text-secondary);
-  margin: 0 0 12px;
-}
-
-.reveal a {
-  color: var(--brand-primary-light);
+.editorial-nav-badge,
+.editorial-nav-btn {
+  background: var(--charcoal-solid);
+  color: var(--text-inverse) !important;
+  padding: 8px 18px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
   text-decoration: none;
-  transition: color 0.2s ease;
+  transition: background 0.2s;
+  display: inline-block;
 }
 
-.reveal a:hover {
-  color: #ffffff;
+.editorial-nav-btn:hover {
+  background: var(--brand-primary);
 }
 
-/* Eyebrow Pill Badges */
-.badge-eyebrow {
+/* Common Pill Badge & Typography */
+.hero-pill-badge {
+  display: inline-block;
+  background: var(--brand-tint);
+  color: var(--brand-primary);
+  border: 1px solid var(--brand-border);
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+
+.section-title {
+  font-family: var(--font-display);
+  font-size: 38px;
+  font-weight: 800;
+  line-height: 1.15;
+  color: var(--text-headline);
+  margin: 0 0 16px 0;
+  letter-spacing: -0.02em;
+}
+
+.section-intro {
+  font-size: 16px;
+  color: var(--text-body);
+  line-height: 1.6;
+  margin: 0 0 24px 0;
+}
+
+/* Button System */
+.btn-charcoal,
+.btn-solid {
+  background: var(--charcoal-solid);
+  color: var(--text-inverse);
+  padding: 13px 26px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 15px;
+  border: none;
+  cursor: pointer;
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-family: var(--font-display);
-  font-size: 12px;
+  text-decoration: none;
+}
+
+.btn-charcoal:hover,
+.btn-solid:hover {
+  background: var(--charcoal-hover);
+}
+
+.btn-outline,
+.btn-outline-brand {
+  background: transparent;
+  color: var(--brand-primary);
+  border: 1.5px solid var(--brand-primary);
+  padding: 13px 26px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+}
+
+.btn-outline-brand:hover {
+  background: var(--brand-tint);
+}
+
+.btn-solid-teal {
+  background: var(--brand-primary);
+  color: var(--text-inverse);
+  padding: 14px 32px;
+  border-radius: 6px;
   font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--brand-primary-light);
-  background: var(--brand-primary-subtle);
-  border: 1px solid hsla(var(--brand-h), var(--brand-s), var(--brand-l), 0.3);
-  padding: 5px 14px;
-  border-radius: var(--radius-full);
-  margin-bottom: 16px;
-  align-self: flex-start;
+  font-size: 16px;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
 }
 
-.badge-eyebrow.badge-danger {
-  color: var(--color-problem);
-  background: var(--color-problem-subtle);
-  border-color: var(--color-problem-border);
+.btn-solid-teal:hover {
+  background: var(--brand-dark);
 }
 
-.badge-eyebrow.badge-success {
-  color: var(--color-success);
-  background: var(--color-success-subtle);
-  border-color: var(--color-success-border);
-}
-
-.badge-eyebrow.badge-warning {
-  color: var(--color-warning);
-  background: var(--color-warning-subtle);
-  border-color: var(--color-warning-border);
-}
-
-/* Slide Header standard */
-.slide-header {
+/* ==========================================================================
+   ARCHETYPE 1: archetype-canva-cover (Slide 1 Hero Presentation)
+   Top Nav Bar + Split 55/45 (Floating white card left, full-height photo right)
+   ========================================================================== */
+.archetype-canva-cover {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  margin-bottom: 36px;
+  height: 1080px !important;
+  box-sizing: border-box;
+}
+
+.canva-cover-body {
+  display: grid;
+  grid-template-columns: 55% 45%;
+  height: calc(1080px - 72px);
+  padding: 36px 48px 48px;
+  gap: 40px;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+.canva-cover-left {
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+
+.cover-card {
+  background: var(--canvas-surface);
+  border: 1px solid var(--surface-border);
+  border-radius: 16px;
+  padding: 56px 48px;
+  box-shadow: var(--surface-shadow);
   width: 100%;
+  box-sizing: border-box;
 }
 
-.slide-header h2 {
-  font-size: 40px;
+.cover-title {
+  font-family: var(--font-display);
+  font-size: 46px;
   font-weight: 800;
+  line-height: 1.14;
+  color: var(--text-headline);
+  margin: 0 0 20px 0;
+  text-transform: uppercase;
   letter-spacing: -0.02em;
-  color: var(--brand-text-primary);
-  margin-bottom: 8px;
 }
 
-.slide-header p, .slide-subtitle {
+.cover-subtitle {
   font-size: 18px;
-  color: var(--brand-text-muted);
-  max-width: 65ch;
+  font-weight: 600;
+  color: var(--text-headline);
+  margin: 0 0 14px 0;
+  line-height: 1.5;
+}
+
+.cover-desc {
+  font-size: 15px;
+  color: var(--text-body);
+  line-height: 1.65;
+  margin: 0 0 32px 0;
+}
+
+.cover-buttons {
+  display: flex;
+  gap: 16px;
+}
+
+.canva-cover-right {
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.canva-cover-right .editorial-image-frame {
+  height: 100%;
+  max-height: 880px;
+}
+
+/* ==========================================================================
+   ARCHETYPE 2: archetype-canva-welcome (Slide 2 Problem & Slide 3 Solution)
+   Split 45/55 (Charcoal panel + photo left, numbered cards 01/02/03 right)
+   ========================================================================== */
+.archetype-canva-welcome {
+  display: grid;
+  grid-template-columns: 45% 55%;
+  height: 1080px !important;
+  box-sizing: border-box;
+  padding: 48px;
+  gap: 48px;
+  align-items: center;
+}
+
+.welcome-left {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.charcoal-backdrop {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  max-height: 980px;
+  background: var(--charcoal-solid);
+  border-radius: 16px;
+  padding: 14px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.charcoal-backdrop .editorial-image-frame {
+  width: 100%;
+  height: 100%;
+  min-height: auto;
+  border-radius: 10px;
+}
+
+.welcome-right {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+  max-height: 980px;
+  box-sizing: border-box;
+}
+
+.welcome-header {
+  margin-bottom: 24px;
+}
+
+.welcome-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex: 1;
+  justify-content: space-between;
+}
+
+.welcome-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  background: var(--canvas-surface);
+  border: 1px solid var(--surface-border);
+  border-radius: 12px;
+  padding: 24px 28px;
+  box-shadow: var(--surface-shadow);
+  box-sizing: border-box;
+}
+
+.welcome-num {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--brand-primary);
+  line-height: 1;
+  flex-shrink: 0;
+  width: 44px;
+}
+
+.welcome-card-content {
+  flex: 1;
+}
+
+.welcome-card-title {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0 0 6px 0;
+  color: var(--text-headline);
+}
+
+.welcome-card-desc {
+  font-size: 14px;
+  color: var(--text-body);
   margin: 0;
   line-height: 1.5;
 }
 
 /* ==========================================================================
-   Card Grids
+   ARCHETYPE 3: archetype-canva-services (Slide 4 Services)
+   Split 35/65 (Left: title + photo, Right: 2x2 grid with 01-04 cards)
    ========================================================================== */
-
-.cards-grid {
+.archetype-canva-services {
   display: grid;
-  gap: 28px;
-  width: 100%;
+  grid-template-columns: 35% 65%;
+  height: 1080px !important;
+  box-sizing: border-box;
+  padding: 48px;
+  gap: 48px;
+  align-items: stretch;
 }
 
-.cards-grid-2 {
-  grid-template-columns: repeat(2, 1fr);
-}
-
-.cards-grid-3 {
-  grid-template-columns: repeat(3, 1fr);
-}
-
-.cards-grid-4 {
-  grid-template-columns: repeat(4, 1fr);
-}
-
-/* Base Card */
-.card, .feature-card {
-  background: var(--brand-card-bg);
-  border: 1px solid var(--brand-card-border);
-  border-radius: var(--radius-lg);
-  padding: var(--space-6);
-  box-shadow: var(--shadow-resting);
-  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
-              box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1),
-              border-color 0.25s ease;
-}
-
-.card:hover, .feature-card:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-hover);
-  border-color: var(--brand-card-border-hover);
-}
-
-/* ==========================================================================
-   Slide 1: Hero / Corporate Title Slide (.hero-slide, .slide-hero)
-   ========================================================================== */
-
-.hero-slide, .slide-hero {
-  position: relative;
-}
-
-.hero-grid, .hero-container {
-  display: grid;
-  grid-template-columns: 1.15fr 0.85fr;
-  gap: 60px;
-  align-items: center;
-  width: 100%;
+.services-left {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
   height: 100%;
 }
 
-.hero-content {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: center;
-  z-index: 2;
+.services-intro {
+  margin-bottom: 20px;
 }
 
-.hero-title {
-  font-family: var(--font-display);
-  font-size: 56px;
-  font-weight: 800;
-  line-height: 1.12;
-  letter-spacing: -0.025em;
-  color: var(--brand-text-primary);
-  margin: 0 0 18px;
-}
-
-.hero-title-gradient {
-  background: linear-gradient(135deg, #ffffff 40%, var(--brand-primary-light) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.hero-tagline {
-  font-size: 22px;
-  font-weight: 500;
-  line-height: 1.45;
-  color: var(--brand-text-secondary);
-  margin: 0 0 20px;
-}
-
-.hero-desc {
-  font-size: 16px;
-  line-height: 1.6;
-  color: var(--brand-text-muted);
-  max-width: 55ch;
-  margin: 0 0 36px;
-}
-
-/* Stats Metric Bar */
-.hero-stats {
-  display: flex;
-  flex-direction: row;
-  gap: 36px;
-  margin-top: auto;
-  padding-top: 24px;
-  border-top: 1px solid var(--brand-border);
-  width: 100%;
-}
-
-.stat-item, .stat-badge {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.stat-number, .reveal .stat {
-  font-family: var(--font-display);
-  font-size: 56px;
-  font-weight: 800;
-  line-height: 1.0;
-  letter-spacing: -0.03em;
-  color: var(--brand-primary-light);
-  font-variant-numeric: tabular-nums;
-}
-
-.stat-label {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--brand-text-muted);
-  white-space: nowrap;
-}
-
-.hero-visual {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  width: 100%;
-  height: 100%;
-}
-
-.hero-visual::before {
-  content: '';
-  position: absolute;
-  width: 500px;
-  height: 500px;
-  border-radius: 50%;
-  background: radial-gradient(circle, var(--brand-primary-glow) 0%, transparent 70%);
-  filter: blur(50px);
-  z-index: 1;
-  pointer-events: none;
-}
-
-/* ==========================================================================
-   Slide 2: Problem Slide (.slide-problem, .problem-slide)
-   ========================================================================== */
-
-.slide-problem, .problem-slide {
-  position: relative;
-}
-
-.problem-card {
-  background: rgba(239, 68, 68, 0.04);
-  border: 2px dashed rgba(239, 68, 68, 0.35);
-  border-radius: var(--radius-lg);
-  padding: 32px 28px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
-              border-color 0.25s ease,
-              background 0.25s ease,
-              box-shadow 0.25s ease;
-  position: relative;
-}
-
-.problem-card:hover {
-  transform: translateY(-4px);
-  border-color: rgba(239, 68, 68, 0.7);
-  background: rgba(239, 68, 68, 0.08);
-  box-shadow: 0 14px 30px -6px rgba(239, 68, 68, 0.25);
-}
-
-.card-icon-warning, .warning-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: var(--radius-md);
-  background: var(--color-problem-subtle);
-  border: 1px solid var(--color-problem-border);
-  color: var(--color-problem);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.problem-card h3 {
-  font-size: 22px;
-  font-weight: 700;
-  color: var(--brand-text-primary);
-  margin: 0;
-}
-
-.problem-card p {
+.services-desc {
   font-size: 15px;
+  color: var(--text-body);
   line-height: 1.6;
-  color: var(--brand-text-secondary);
   margin: 0;
 }
 
-.impact-pill {
-  align-self: flex-start;
-  margin-top: auto;
+.services-photo {
+  flex: 1;
+  min-height: 520px;
+}
+
+.services-right {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 100%;
+}
+
+.services-grid-2x2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 24px;
+  height: 100%;
+}
+
+.service-canva-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background: var(--canvas-surface);
+  border: 1px solid var(--surface-border);
+  border-radius: 12px;
+  padding: 32px;
+  box-shadow: var(--surface-shadow);
+  box-sizing: border-box;
+}
+
+.service-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.service-num {
   font-family: var(--font-display);
-  font-size: 12px;
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--brand-primary);
+  line-height: 1;
+}
+
+.service-pill-charcoal {
+  background: var(--charcoal-solid);
+  color: var(--text-inverse);
+  font-size: 11px;
   font-weight: 700;
+  text-transform: uppercase;
   letter-spacing: 0.05em;
-  padding: 5px 14px;
-  border-radius: var(--radius-full);
-  background: var(--color-problem-subtle);
-  border: 1px solid var(--color-problem-border);
-  color: var(--color-problem);
+  padding: 5px 12px;
+  border-radius: 4px;
 }
 
-/* ==========================================================================
-   Slide 3: Solution Slide (.slide-solution, .solution-slide)
-   ========================================================================== */
-
-.slide-solution, .solution-slide {
-  position: relative;
-}
-
-.solution-card, .benefit-card {
-  background: var(--brand-card-bg);
-  border: 1px solid var(--brand-card-border);
-  border-radius: var(--radius-lg);
-  padding: 34px 30px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  box-shadow: var(--shadow-resting);
-  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
-              box-shadow 0.25s ease,
-              border-color 0.25s ease;
-}
-
-.solution-card:hover, .benefit-card:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-hover);
-  border-color: var(--brand-card-border-hover);
-}
-
-.card-icon-brand {
-  width: 52px;
-  height: 52px;
-  border-radius: var(--radius-md);
-  background: var(--brand-primary-subtle);
-  border: 1px solid hsla(var(--brand-h), var(--brand-s), var(--brand-l), 0.3);
-  color: var(--brand-primary-light);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.solution-card h3, .benefit-card h3 {
-  font-size: 22px;
-  font-weight: 700;
-  color: var(--brand-text-primary);
-  margin: 0;
-}
-
-.solution-card p, .benefit-card p {
-  font-size: 15px;
-  line-height: 1.6;
-  color: var(--brand-text-secondary);
-  margin: 0;
-}
-
-.benefit-list {
-  list-style: none;
-  padding: 0;
-  margin: 8px 0 0;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.benefit-list li {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  font-size: 15px;
-  color: var(--brand-text-secondary);
-  line-height: 1.45;
-}
-
-.check-icon {
-  width: 20px;
-  height: 20px;
-  color: var(--color-success);
-  flex-shrink: 0;
-  margin-top: 1px;
-}
-
-/* ==========================================================================
-   Slide 4: Circular Ecosystem Diagram (.ecosystem-diagram)
-   ========================================================================== */
-
-.ecosystem-diagram, .ecosystem-container {
-  position: relative;
-  width: 100%;
-  max-width: 960px;
-  height: 520px;
-  margin: 0 auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.ecosystem-svg-bg {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-}
-
-.ecosystem-hub, .center-bubble {
-  width: 170px;
-  height: 170px;
-  border-radius: 50%;
-  background: linear-gradient(135deg,
-    hsl(var(--brand-h), var(--brand-s), calc(var(--brand-l) - 6%)) 0%,
-    hsl(var(--brand-h), var(--brand-s), calc(var(--brand-l) + 12%)) 100%);
-  border: 3px solid var(--brand-primary-light);
-  box-shadow: 0 0 45px var(--brand-primary-glow), var(--shadow-resting);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  z-index: 5;
-  padding: 16px;
-}
-
-.ecosystem-hub .hub-title {
+.service-card-title {
   font-family: var(--font-display);
   font-size: 18px;
-  font-weight: 800;
-  color: #ffffff;
-  line-height: 1.2;
+  font-weight: 700;
+  color: var(--text-headline);
+  margin: 0 0 8px 0;
 }
 
-.ecosystem-hub .hub-subtitle {
-  font-size: 12px;
-  font-weight: 500;
-  color: hsla(var(--brand-h), var(--brand-s), 92%, 0.85);
-  margin-top: 4px;
+.service-card-desc {
+  font-size: 13.5px;
+  color: var(--text-body);
+  line-height: 1.55;
+  margin: 0;
+  flex: 1;
 }
 
-.satellite-node, .orbit-node {
-  position: absolute;
-  background: rgba(15, 23, 42, 0.9);
-  backdrop-filter: blur(12px);
-  border: 1px solid hsla(var(--brand-h), var(--brand-s), 50%, 0.35);
-  border-radius: var(--radius-md);
-  padding: 12px 20px;
+/* ==========================================================================
+   ARCHETYPE 4: archetype-canva-ecosystem (Slide 5 AI Ecosystem Orbit)
+   Split 50/50 (Left: Orbit SVG diagram, Right: Landscape photo + GPU card)
+   ========================================================================== */
+.archetype-canva-ecosystem {
   display: flex;
-  align-items: center;
-  gap: 12px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
-  z-index: 4;
-  transition: transform 0.25s ease, border-color 0.25s ease;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 1080px !important;
+  box-sizing: border-box;
+  padding: 40px 48px;
 }
 
-.satellite-node:hover, .orbit-node:hover {
-  transform: scale(1.06);
-  border-color: var(--brand-primary-light);
+.ecosystem-header {
+  margin-bottom: 20px;
 }
 
-.satellite-node .node-icon, .orbit-node .node-icon {
-  width: 28px;
-  height: 28px;
-  color: var(--brand-primary-light);
+.ecosystem-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  height: calc(1080px - 160px);
+  align-items: stretch;
+}
+
+.ecosystem-left {
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
+  background: var(--canvas-surface);
+  border: 1px solid var(--surface-border);
+  border-radius: 14px;
+  padding: 24px;
+  box-shadow: var(--surface-shadow);
 }
 
-.satellite-node .node-text, .orbit-node .node-text {
-  display: flex;
-  flex-direction: column;
-}
-
-.satellite-node .node-title, .orbit-node .node-title {
-  font-family: var(--font-display);
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--brand-text-primary);
-  white-space: nowrap;
-}
-
-.satellite-node .node-desc, .orbit-node .node-desc {
-  font-size: 12px;
-  color: var(--brand-text-muted);
-  white-space: nowrap;
-}
-
-/* ==========================================================================
-   Slide 5: Smartphone UI Mockup Showcase (.phone-frame)
-   ========================================================================== */
-
-.phone-frame, .smartphone-mockup {
-  width: 300px;
-  height: 600px;
-  border-radius: 44px;
-  background: #090d16;
-  border: 4px solid #334155;
-  box-shadow: var(--shadow-device);
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  margin: 0 auto;
-  z-index: 3;
-}
-
-/* Dynamic Island & Speaker Notch */
-.dynamic-island, .phone-notch {
-  position: absolute;
-  top: 10px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 96px;
-  height: 24px;
-  border-radius: 12px;
-  background: #000000;
-  z-index: 10;
+.ecosystem-orbit-wrapper {
+  width: 100%;
+  height: 100%;
   display: flex;
   align-items: center;
+  justify-content: center;
+}
+
+.ecosystem-orbit-svg {
+  width: 100%;
+  max-width: 520px;
+  height: auto;
+}
+
+.ecosystem-right {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
   justify-content: space-between;
-  padding: 0 10px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+  height: 100%;
 }
 
-.dynamic-island .camera-lens {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: #111827;
-  border: 1px solid #1f2937;
+.ecosystem-photo {
+  height: 52%;
+  min-height: 320px;
+  border-radius: 12px;
 }
 
-.dynamic-island .sensor-indicator {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #059669;
-}
-
-/* Screen UI Container */
-.phone-screen {
+.ecosystem-gpu-card {
+  background: var(--charcoal-solid);
+  color: var(--text-inverse);
+  border-radius: 12px;
+  padding: 32px 36px;
   flex: 1;
-  background: linear-gradient(180deg, #0f172a 0%, #090d16 100%);
-  padding: 44px 16px 20px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  overflow: hidden;
-  position: relative;
+  justify-content: center;
+  box-shadow: var(--surface-shadow);
 }
 
-.phone-status-bar {
-  display: flex;
-  justify-content: space-between;
+.gpu-badge {
   font-size: 11px;
-  font-weight: 600;
-  color: var(--brand-text-muted);
-  padding: 0 4px;
-}
-
-.phone-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 4px 0;
-}
-
-.phone-header .app-title {
-  font-family: var(--font-display);
-  font-size: 15px;
   font-weight: 700;
-  color: var(--brand-text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--brand-light);
+  margin-bottom: 12px;
 }
 
-.phone-kpi-card {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
-  padding: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.phone-kpi-val {
+.gpu-title {
   font-family: var(--font-display);
   font-size: 20px;
-  font-weight: 800;
-  color: var(--brand-primary-light);
+  font-weight: 700;
+  color: #FFFFFF;
+  margin: 0 0 10px 0;
 }
 
-.phone-item-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.phone-list-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 10px;
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 8px;
-  font-size: 12px;
-  color: var(--brand-text-secondary);
-}
-
-.phone-home-indicator {
-  position: absolute;
-  bottom: 8px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 110px;
-  height: 4px;
-  border-radius: 2px;
-  background: #94a3b8;
-  opacity: 0.7;
+.gpu-desc {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.6;
+  margin: 0;
 }
 
 /* ==========================================================================
-   Slide 6: Pricing Slide (.slide-pricing, .pricing-slide)
+   ARCHETYPE 5: archetype-canva-metrics (Slide 6 Pencapaian & Bukti)
+   Split 40/60 (Left: Skyscraper photo, Right: 4 Big number metric cards)
    ========================================================================== */
-
-.slide-pricing, .pricing-slide {
-  position: relative;
+.archetype-canva-metrics {
+  display: grid;
+  grid-template-columns: 40% 60%;
+  height: 1080px !important;
+  box-sizing: border-box;
+  padding: 48px;
+  gap: 48px;
+  align-items: stretch;
 }
 
-.pricing-grid {
+.metrics-left {
+  height: 100%;
+}
+
+.metrics-photo {
+  height: 100%;
+  min-height: 800px;
+}
+
+.metrics-right {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+}
+
+.metrics-header {
+  margin-bottom: 20px;
+}
+
+.metrics-grid-2x2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 24px;
+  flex: 1;
+}
+
+.metric-canva-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background: var(--canvas-surface);
+  border: 1px solid var(--surface-border);
+  border-radius: 12px;
+  padding: 32px 28px;
+  box-shadow: var(--surface-shadow);
+  box-sizing: border-box;
+}
+
+.metric-big-number {
+  font-family: var(--font-display);
+  font-size: 44px;
+  font-weight: 800;
+  color: #007A87;
+  line-height: 1.1;
+  margin-bottom: 8px;
+}
+
+.metric-title {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-headline);
+  margin-bottom: 6px;
+}
+
+.metric-desc {
+  font-size: 13.5px;
+  color: var(--text-body);
+  line-height: 1.45;
+  margin: 0;
+}
+
+/* ==========================================================================
+   ARCHETYPE 6: archetype-canva-differentiator (Slide 7 Mengapa Kami)
+   Rounded comparison table with charcoal header and highlighted brand column
+   ========================================================================== */
+.archetype-canva-differentiator {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 1080px !important;
+  box-sizing: border-box;
+  padding: 48px;
+}
+
+.differentiator-header {
+  margin-bottom: 20px;
+}
+
+.comparison-table-wrapper {
+  background: var(--canvas-surface);
+  border-radius: 12px;
+  border: 1px solid var(--surface-border);
+  overflow: hidden;
+  box-shadow: var(--surface-shadow);
+  margin-bottom: 16px;
+}
+
+.canva-comparison-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 15px;
+  text-align: left;
+}
+
+.canva-comparison-table th {
+  background: var(--charcoal-solid);
+  color: #FFFFFF;
+  padding: 18px 22px;
+  font-weight: 700;
+  font-family: var(--font-display);
+  letter-spacing: -0.01em;
+}
+
+.canva-comparison-table th.col-brand {
+  background: var(--brand-dark);
+  color: #FFFFFF;
+  border-left: 2px solid var(--brand-primary);
+  border-right: 2px solid var(--brand-primary);
+}
+
+.canva-comparison-table td {
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--surface-border);
+  color: var(--text-body);
+}
+
+.canva-comparison-table tr:last-child td {
+  border-bottom: none;
+}
+
+.canva-comparison-table tbody tr:nth-child(even) {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.canva-comparison-table td.col-brand {
+  background: rgba(0, 155, 173, 0.08);
+  font-weight: 600;
+  color: var(--text-headline);
+  border-left: 2px solid var(--brand-primary);
+  border-right: 2px solid var(--brand-primary);
+}
+
+.comparison-check {
+  color: var(--color-success);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+}
+
+.comparison-cross {
+  color: var(--color-danger);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.comparison-warn {
+  color: var(--color-warning);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.honesty-callout {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  border-radius: 8px;
+  background: rgba(0, 155, 173, 0.08);
+  border: 1px solid rgba(0, 155, 173, 0.2);
+  font-size: 13.5px;
+  color: var(--text-body);
+}
+
+/* ==========================================================================
+   ARCHETYPE 7: archetype-canva-pricing (Slide 8 Paket & Kerjasama)
+   3-Tier Cards with elevated Pro Tier and Best Seller ribbon badge
+   ========================================================================== */
+.archetype-canva-pricing {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 1080px !important;
+  box-sizing: border-box;
+  padding: 48px;
+  gap: 36px;
+}
+
+.pricing-header {
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.pricing-header .section-title {
+  margin-bottom: 8px;
+}
+
+.canva-pricing-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 28px;
+  gap: 32px;
   align-items: center;
+  max-width: 1400px;
+  margin: 0 auto;
   width: 100%;
 }
 
 .pricing-card {
-  background: var(--brand-card-bg);
-  border: 1px solid var(--brand-card-border);
-  border-radius: var(--radius-lg);
-  padding: 36px 28px;
+  background: var(--canvas-surface);
+  border: 1px solid var(--surface-border);
+  border-radius: 16px;
+  padding: 40px 32px;
+  box-shadow: var(--surface-shadow);
+  position: relative;
   display: flex;
   flex-direction: column;
-  position: relative;
-  box-shadow: var(--shadow-resting);
-  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
-              box-shadow 0.25s ease;
+  justify-content: space-between;
+  min-height: 540px;
+  text-align: center;
+  box-sizing: border-box;
+  transition: transform 0.2s;
 }
 
-.pricing-card:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-hover);
+.pricing-card-elevated {
+  border: 2.5px solid var(--brand-primary);
+  box-shadow: 0 24px 48px rgba(0, 155, 173, 0.18);
+  transform: scale(1.05);
+  z-index: 2;
+  background: #FFFFFF;
 }
 
-/* Best Seller / Featured Card */
-.pricing-featured, .best-seller {
-  transform: scale(1.04);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%);
-  border: 2px solid var(--brand-primary);
-  box-shadow: var(--shadow-featured);
-  z-index: 3;
-}
-
-.pricing-featured:hover, .best-seller:hover {
-  transform: scale(1.06);
-  box-shadow: var(--shadow-featured);
-}
-
-/* Best Seller Ribbon Badge */
-.badge-ribbon, .ribbon-badge {
+.badge-ribbon {
   position: absolute;
   top: -14px;
   left: 50%;
   transform: translateX(-50%);
-  background: linear-gradient(135deg, var(--brand-primary), var(--brand-primary-light));
-  color: #ffffff;
-  font-family: var(--font-display);
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
+  background: var(--brand-primary);
+  color: #FFFFFF;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 18px;
+  border-radius: 999px;
   text-transform: uppercase;
-  padding: 5px 18px;
-  border-radius: var(--radius-full);
-  box-shadow: 0 4px 14px var(--brand-primary-glow);
+  letter-spacing: 0.05em;
   white-space: nowrap;
 }
 
-.tier-name {
+.pricing-tier-name {
   font-family: var(--font-display);
   font-size: 22px;
-  font-weight: 700;
-  color: var(--brand-text-primary);
-  margin-bottom: 8px;
-}
-
-.price-strikethrough {
-  font-size: 14px;
-  color: var(--brand-text-muted);
-  text-decoration: line-through;
-  height: 20px;
-  line-height: 20px;
-}
-
-.tier-price {
-  font-family: var(--font-display);
-  font-size: 34px;
   font-weight: 800;
-  color: var(--brand-text-primary);
-  letter-spacing: -0.02em;
+  color: var(--text-headline);
+  margin: 0 0 12px 0;
+}
+
+.pricing-tier-price {
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--brand-primary);
   margin-bottom: 20px;
-  font-variant-numeric: tabular-nums;
 }
 
-.tier-price span {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--brand-text-muted);
-  letter-spacing: normal;
-}
-
-.pricing-features, .feature-list {
+.pricing-feature-list {
   list-style: none;
   padding: 0;
-  margin: 0 0 28px;
+  margin: 0 0 28px 0;
+  text-align: left;
   display: flex;
   flex-direction: column;
   gap: 12px;
-  border-top: 1px solid var(--brand-border);
-  padding-top: 20px;
+  flex: 1;
 }
 
-.pricing-features li, .feature-list li {
+.pricing-feature-list li {
+  font-size: 14px;
+  color: var(--text-body);
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 10px;
-  font-size: 14px;
-  color: var(--brand-text-secondary);
 }
 
-.pricing-features li svg, .feature-list li svg {
-  width: 18px;
-  height: 18px;
-  color: var(--color-success);
-  flex-shrink: 0;
-}
-
-/* Buttons */
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 12px 24px;
-  border-radius: var(--radius-md);
-  font-family: var(--font-display);
-  font-size: 14px;
-  font-weight: 700;
-  text-decoration: none;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.btn-primary {
-  background: linear-gradient(135deg, var(--brand-primary), var(--brand-primary-light));
-  color: #ffffff;
-  border: none;
-  box-shadow: 0 4px 14px var(--brand-primary-glow);
-}
-
-.btn-primary:hover {
-  filter: brightness(1.1);
-  transform: translateY(-2px);
-  color: #ffffff;
-}
-
-.btn-secondary {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  color: var(--brand-text-primary);
-}
-
-.btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.3);
-  color: #ffffff;
+.pricing-feature-list li span.check {
+  color: var(--brand-primary);
+  font-weight: 800;
 }
 
 /* ==========================================================================
-   Slide 7: Special Offer & Facility Container (.facility-box)
+   ARCHETYPE 8: archetype-canva-closing (Slide 9 Hubungi Kami / Closing)
+   3-Column Layout: Photo left, Center charcoal contact card, Photo right
    ========================================================================== */
+.archetype-canva-closing {
+  display: grid;
+  grid-template-columns: 28% 44% 28%;
+  height: 1080px !important;
+  box-sizing: border-box;
+  padding: 48px;
+  gap: 32px;
+  align-items: stretch;
+}
 
-.facility-box, .special-offer-box {
-  background: linear-gradient(135deg, hsla(var(--brand-h), var(--brand-s), var(--brand-l), 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
-  border: 1px solid hsla(var(--brand-h), var(--brand-s), 50%, 0.3);
-  border-radius: var(--radius-xl);
-  padding: 32px 40px;
-  margin: 24px 0;
+.closing-photo-col {
+  height: 100%;
+}
+
+.closing-frame {
+  height: 100%;
+  min-height: 800px;
+}
+
+.closing-center-card {
+  background: var(--charcoal-solid);
+  color: #FFFFFF;
+  border-radius: 16px;
+  padding: 56px 44px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
-}
-
-.facility-header {
-  display: flex;
-  align-items: center;
   justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 16px;
-}
-
-.guarantee-badge {
-  display: inline-flex;
   align-items: center;
-  gap: 8px;
-  background: var(--color-success-subtle);
-  border: 1px solid var(--color-success-border);
-  color: var(--color-success);
-  font-family: var(--font-display);
-  font-size: 13px;
-  font-weight: 700;
-  padding: 6px 16px;
-  border-radius: var(--radius-full);
-}
-
-.deadline-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: var(--color-warning-subtle);
-  border: 1px solid var(--color-warning-border);
-  color: var(--color-warning);
-  font-family: var(--font-display);
-  font-size: 13px;
-  font-weight: 700;
-  padding: 6px 16px;
-  border-radius: var(--radius-full);
-}
-
-.checklist-bullets {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 14px 28px;
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.checklist-bullets li {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 15px;
-  color: var(--brand-text-secondary);
-}
-
-.checklist-bullets li svg {
-  width: 18px;
-  height: 18px;
-  color: var(--color-success);
-  flex-shrink: 0;
-}
-
-/* ==========================================================================
-   Slide 8: Closing Slide (.slide-closing, .closing-slide)
-   ========================================================================== */
-
-.slide-closing, .closing-slide {
-  position: relative;
-}
-
-.closing-banner {
-  background: linear-gradient(135deg, hsla(var(--brand-h), var(--brand-s), var(--brand-l), 0.16) 0%, rgba(15, 23, 42, 0.85) 100%);
-  border: 1px solid hsla(var(--brand-h), var(--brand-s), 50%, 0.3);
-  border-radius: var(--radius-xl);
-  padding: 44px 56px;
   text-align: center;
-  margin-bottom: 28px;
-  position: relative;
-  overflow: hidden;
+  box-shadow: var(--surface-shadow);
+  box-sizing: border-box;
 }
 
-.closing-banner h2 {
+.closing-title {
+  font-family: var(--font-display);
   font-size: 38px;
   font-weight: 800;
-  color: var(--brand-text-primary);
-  margin-bottom: 12px;
+  color: #FFFFFF;
+  margin: 16px 0;
+  line-height: 1.2;
 }
 
-.closing-banner p {
-  font-size: 18px;
-  line-height: 1.55;
-  color: var(--brand-text-secondary);
-  max-width: 62ch;
-  margin: 0 auto 28px;
+.closing-desc {
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.6;
+  max-width: 480px;
+  margin: 0 0 32px 0;
 }
 
-/* App Store & Google Play Badges */
-.store-pills, .store-badges {
+.closing-contact-list {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  max-width: 420px;
+  margin-bottom: 32px;
+}
+
+.closing-contact-item {
+  display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 16px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 14px 20px;
+  text-align: left;
 }
 
-.app-store-pill, .google-play-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
-  background: #000000;
-  border: 1.5px solid rgba(255, 255, 255, 0.25);
-  border-radius: var(--radius-full);
-  padding: 10px 24px;
-  color: #ffffff;
-  text-decoration: none;
-  transition: all 0.2s ease;
-}
-
-.app-store-pill:hover, .google-play-pill:hover {
-  border-color: rgba(255, 255, 255, 0.6);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
-}
-
-.app-store-pill svg, .google-play-pill svg {
+.closing-contact-icon {
   width: 24px;
   height: 24px;
+  color: var(--brand-light);
   flex-shrink: 0;
 }
 
-.pill-text {
+.closing-contact-info {
   display: flex;
   flex-direction: column;
-  text-align: left;
-  line-height: 1.15;
 }
 
-.pill-text small {
-  font-size: 9px;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--brand-text-muted);
-}
-
-.pill-text span {
-  font-family: var(--font-display);
-  font-size: 15px;
-  font-weight: 700;
-  color: #ffffff;
-}
-
-/* Contacts Grid (4 columns or balanced) */
-.contact-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 18px;
-  width: 100%;
-}
-
-.contact-card, .contact-item {
-  background: var(--brand-card-bg);
-  border: 1px solid var(--brand-card-border);
-  border-radius: var(--radius-md);
-  padding: 18px 20px;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  text-decoration: none;
-  color: var(--brand-text-primary);
-  transition: border-color 0.2s ease, transform 0.2s ease;
-}
-
-.contact-card:hover, .contact-item:hover {
-  border-color: var(--brand-card-border-hover);
-  transform: translateY(-2px);
-}
-
-.contact-card .contact-icon, .contact-item .contact-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: var(--radius-sm);
-  background: var(--brand-primary-subtle);
-  color: var(--brand-primary-light);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.contact-card .contact-info, .contact-item .contact-info {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  overflow: hidden;
-}
-
-.contact-card .contact-label, .contact-item .contact-label {
+.closing-contact-label {
   font-size: 11px;
-  font-weight: 600;
-  color: var(--brand-text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 600;
 }
 
-.contact-card .contact-value, .contact-item .contact-value {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--brand-text-primary);
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  overflow: hidden;
-}
-
-/* ==========================================================================
-   Corporate Data Table
-   ========================================================================== */
-
-.reveal table {
-  width: 100%;
-  border-collapse: collapse;
-  margin: 16px 0;
+.closing-contact-val {
   font-size: 15px;
+  font-weight: 600;
+  color: #FFFFFF;
 }
 
-.reveal th {
-  background: var(--brand-primary-subtle);
-  border-bottom: 2px solid var(--brand-border);
-  color: var(--brand-text-primary);
-  font-family: var(--font-display);
-  font-weight: 700;
-  padding: 12px 18px;
-  text-align: left;
-}
-
-.reveal td {
-  border-bottom: 1px solid var(--brand-border);
-  color: var(--brand-text-secondary);
-  padding: 12px 18px;
+.closing-actions {
+  display: flex;
+  gap: 16px;
 }
 
 /* ==========================================================================
-   Reveal.js UI Controls Styling
+   LEGACY / FALLBACK ARCHETYPE CLASSES (Backwards Compatibility)
    ========================================================================== */
-
-.reveal .progress {
-  height: 4px;
-  background: rgba(255, 255, 255, 0.1);
-  color: var(--brand-primary-light);
+.archetype-hero-cover,
+.archetype-narrative-split,
+.archetype-services-grid,
+.archetype-ecosystem-orbit,
+.archetype-metrics-contact,
+.archetype-differentiator,
+.archetype-pricing-cards,
+.archetype-closing-cta,
+.archetype-mission-pillars,
+.archetype-workflow-3col,
+.archetype-features-staggered,
+.archetype-persona-cards,
+.archetype-portfolio-gallery {
+  height: 1080px !important;
+  max-height: 1080px;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
-.reveal .controls {
-  color: var(--brand-primary-light);
+.phone-frame-editorial {
+  width: 280px;
+  height: 560px;
+  background: #090D14;
+  border-radius: 36px;
+  border: 6px solid #2B2927;
+  box-shadow: 0 25px 50px rgba(0,0,0,0.15);
+  position: relative;
+  overflow: hidden;
+  margin: 0 auto;
 }
 
-.reveal .slide-number {
-  font-family: var(--font-display);
-  font-size: 14px;
-  color: var(--brand-text-muted);
-  background: transparent;
+.pillar-card,
+.service-card,
+.ecosystem-feature-card,
+.metric-counter-box,
+.comparison-col,
+.comparison-col-venturo {
+  background: var(--canvas-surface);
+  border: 1px solid var(--surface-border);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: var(--surface-shadow);
 }
-
-/* ==========================================================================
-   Print & PDF Export Parity (@media print)
-   ========================================================================== */
-
-@media print {
-  @page {
-    size: 1920px 1080px landscape;
-    margin: 0;
-  }
-
-  html, body, .reveal, .reveal .slides, .reveal .slides section {
-    background-color: var(--brand-surface) !important;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-    color: var(--brand-text-primary) !important;
-  }
-
-  .reveal .slides section {
-    width: 1920px !important;
-    height: 1080px !important;
-    min-height: 1080px !important;
-    display: flex !important;
-    flex-direction: column !important;
-    justify-content: center !important;
-    padding: 60px 80px !important;
-    box-sizing: border-box !important;
-    page-break-after: always !important;
-    break-after: page !important;
-    top: 0 !important;
-    left: 0 !important;
-    transform: none !important;
-    opacity: 1 !important;
-    visibility: visible !important;
-  }
-
-  /* Reset 3D transforms, box-shadows and hover effects to avoid clipping */
-  .card, .feature-card, .problem-card, .solution-card, .benefit-card,
-  .pricing-card, .pricing-featured, .best-seller, .phone-frame,
-  .ecosystem-diagram, .closing-banner, .facility-box, .satellite-node {
-    transform: none !important;
-    box-shadow: none !important;
-    break-inside: avoid !important;
-    page-break-inside: avoid !important;
-  }
-
-  .pricing-featured, .best-seller {
-    border: 2px solid var(--brand-primary) !important;
-  }
-
-  .hero-visual::before {
-    display: none !important;
-  }
-}
-
   </style>
 </head>
 <body>
   <div class="reveal">
     <div class="slides">
       
-    <section class="hero-slide">
-      <div class="slide-content">
-        <div class="hero-grid">
-          <div class="hero-content">
-            <div class="badge-eyebrow">Venturo Pro Profile</div>
-            <h1 class="hero-title"><span class="hero-title-gradient">Venturo Pro — Video Ber-Brand Konsisten, Biaya Terprediksi</span></h1>
-            <p class="hero-tagline">Satu Brand DNA, banyak video konsisten, biaya yang bisa kamu kira-kira — untuk creator &amp; brand kecil Indonesia yang rutin.</p>
-            <p class="hero-desc">Venturo Pro adalah platform produksi video ber-brand untuk creator dan brand kecil Indonesia: masukkan Brand DNA sekali, lalu hasilkan video pendek yang konsisten dengan biaya terprediksi — karena generasinya berjalan di komputermu sendiri.</p>
-            <div class="hero-stats">
-      <div class="stat-item">
-        <div class="stat-number">1x</div>
-        <div class="stat-label">Satu kali setup</div>
-        <div style="font-size:12px; color:var(--brand-text-muted);">biaya marginal per video mendekati nol</div>
-      </div>
-
-      <div class="stat-item">
-        <div class="stat-number">100%</div>
-        <div class="stat-label">Brand DNA</div>
-        <div style="font-size:12px; color:var(--brand-text-muted);">identitas menempel di setiap output</div>
-      </div>
-
-      <div class="stat-item">
-        <div class="stat-number">1-Klik</div>
-        <div class="stat-label">Sheets-native</div>
-        <div style="font-size:12px; color:var(--brand-text-muted);">on-ramp lewat Google Spreadsheet</div>
-      </div></div>
+    <section class="archetype-canva-cover archetype-hero-cover">
+      <nav class="editorial-top-nav">
+        <div class="editorial-logo">Venturo Pro</div>
+        <div class="editorial-nav-links">
+          <span class="editorial-nav-badge">Company Profile</span>
+        </div>
+      </nav>
+      <div class="canva-cover-body">
+        <div class="canva-cover-left">
+          <div class="cover-card hero-floating-card">
+            <span class="hero-pill-badge">Venturo Pro</span>
+            <h1 class="cover-title hero-headline">Venturo Pro — Video Ber-Brand Konsisten, Biaya Terprediksi</h1>
+            <p class="cover-subtitle">Satu Brand DNA, banyak video konsisten, biaya yang bisa kamu kira-kira — untuk creator &amp; brand kecil Indonesia yang rutin.</p>
+            <p class="cover-desc">Venturo Pro adalah platform produksi video ber-brand untuk creator dan brand kecil Indonesia: masukkan Brand DNA sekali, lalu hasilkan video pendek yang konsisten dengan biaya terprediksi — karena generasinya berjalan di komputermu sendiri.</p>
+            <div class="cover-buttons hero-actions">
+              <button class="btn-charcoal btn-solid">Lihat Selengkapnya</button>
+              <button class="btn-outline-brand btn-outline">Hubungi Kami</button>
+            </div>
           </div>
-          <div class="hero-visual">
-            <img src="assets/hero-banner.svg" alt="Venturo Pro Visual" style="width:100%; max-width:620px; border-radius:20px; filter:drop-shadow(0 20px 40px rgba(0,0,0,0.5));">
+        </div>
+        <div class="canva-cover-right">
+          <div class="editorial-image-frame">
+            <img src="assets/slide-1-hero.jpg" alt="Venturo Pro Hero Presentation" />
           </div>
         </div>
       </div>
     </section>
 
-    <section class="slide-problem">
-      <div class="slide-content">
-        <div class="slide-header">
-          <div class="badge-eyebrow badge-danger">Tantangan Industri</div>
-          <h2>Masalah yang Dihadapi</h2>
-          <p class="slide-subtitle">Creator dan brand kecil yang rutin produksi video pendek terjebak di tiga masalah yang saling menumpuk.</p>
+    <section class="archetype-canva-welcome canva-welcome-problem">
+      <div class="welcome-left">
+        <div class="charcoal-backdrop">
+          <div class="editorial-image-frame">
+            <img src="assets/slide-2-problem.jpg" alt="Masalah yang Dihadapi" />
+          </div>
         </div>
-        <div class="cards-grid cards-grid-3">
+      </div>
+      <div class="welcome-right">
+        <div class="welcome-header">
+          <span class="hero-pill-badge">Tantangan Industri</span>
+          <h2 class="section-title">Masalah yang Dihadapi</h2>
+          <p class="section-intro">Creator dan brand kecil yang rutin produksi video pendek terjebak di tiga masalah yang saling menumpuk.</p>
+        </div>
+        <div class="welcome-cards">
           
-    <div class="problem-card">
-      <div class="card-icon-warning">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--color-problem)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-      </div>
-      <h3>Biaya per video naik tanpa henti</h3>
-      <p>Platform AI cloud membebankan biaya per-generasi/per-render; jasa editor mahal per proyek. Di volume rutin 5–20 video/bulan, biaya ini menjumlah dan tak terprediksi.</p>
-      <div class="impact-pill">Dampak Biaya Tinggi</div>
-    </div>
-  
-
-    <div class="problem-card">
-      <div class="card-icon-warning">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--color-problem)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-      </div>
-      <h3>Konsistensi brand sulit dijaga</h3>
-      <p>Video AI generik tidak selaras dengan warna, font, tone narasi, dan gaya cut brand. Tanpa sistem yang merekatkan Brand DNA ke setiap output, hasil terasa murahan dan merusak persepsi brand.</p>
-      <div class="impact-pill">Identitas Rusak</div>
-    </div>
-  
-
-    <div class="problem-card">
-      <div class="card-icon-warning">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--color-problem)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-      </div>
-      <h3>Workflow terfragmentasi</h3>
-      <p>Script di satu aplikasi, gambar di aplikasi lain, generation di aplikasi lain, subtitle dan editing di tempat lain. Produser berpindah-pindah konteks, rawan error, dan kehilangan momentum — padahal algoritma short-form memberi reward pada konsistensi posting.</p>
-      <div class="impact-pill">Waktu Terbuang</div>
-    </div>
-  
+      <div class="welcome-card">
+        <div class="welcome-num">01</div>
+        <div class="welcome-card-content">
+          <h3 class="welcome-card-title">Biaya per video naik tanpa henti.</h3>
+          <p class="welcome-card-desc">Platform AI cloud membebankan biaya per-generasi/per-render; jasa editor mahal per proyek. Di volume rutin 5–20 video/bulan, biaya ini menjumlah dan tak terprediksi.</p>
         </div>
-        <div style="margin-top:24px; padding:14px 24px; border-radius:12px; background:rgba(239,68,68,0.06); border:1px solid rgba(239,68,68,0.2); font-size:15px; color:var(--brand-text-secondary);"><strong>Intinya:</strong> untuk creator yang rutin, biaya terprediksi dan output yang tidak merusak brand bukan nice-to-have — itu syarat untuk terus produksi.</div>
+      </div>
+
+      <div class="welcome-card">
+        <div class="welcome-num">02</div>
+        <div class="welcome-card-content">
+          <h3 class="welcome-card-title">Konsistensi brand sulit dijaga.</h3>
+          <p class="welcome-card-desc">Video AI generik tidak selaras dengan warna, font, tone narasi, dan gaya cut brand. Tanpa sistem yang merekatkan Brand DNA ke setiap output, hasil terasa murahan dan merusak persepsi brand.</p>
+        </div>
+      </div>
+
+      <div class="welcome-card">
+        <div class="welcome-num">03</div>
+        <div class="welcome-card-content">
+          <h3 class="welcome-card-title">Workflow terfragmentasi.</h3>
+          <p class="welcome-card-desc">Script di satu aplikasi, gambar di aplikasi lain, generation di aplikasi lain, subtitle dan editing di tempat lain. Produser berpindah-pindah konteks, rawan error, dan kehilangan momentum — padahal algoritma short-form memberi reward pada konsistensi posting.</p>
+        </div>
+      </div>
+        </div>
       </div>
     </section>
 
-    <section class="slide-solution">
-      <div class="slide-content">
-        <div class="slide-header">
-          <div class="badge-eyebrow badge-success">Solusi & Nilai Tambah</div>
-          <h2>Solusi &amp; Nilai Tambah</h2>
-          <p class="slide-subtitle" style="color:var(--brand-text-primary); font-weight:600;"><strong>Satu tempat: masukkan Brand DNA sekali, lalu hasilkan video pendek ber-brand secara konsisten dengan biaya yang terprediksi — tanpa biaya API per-video.</strong></p>
+    <section class="archetype-canva-welcome canva-welcome-solution">
+      <div class="welcome-left">
+        <div class="charcoal-backdrop">
+          <div class="editorial-image-frame">
+            <img src="assets/slide-3-solution.jpg" alt="Solusi &amp; Nilai Tambah" />
+          </div>
         </div>
-        <div class="cards-grid cards-grid-4">
+      </div>
+      <div class="welcome-right">
+        <div class="welcome-header">
+          <span class="hero-pill-badge">Solusi & Nilai Tambah</span>
+          <h2 class="section-title">Solusi &amp; Nilai Tambah</h2>
+          <p class="section-intro"><strong>Satu tempat: masukkan Brand DNA sekali, lalu hasilkan video pendek ber-brand secara konsisten dengan biaya yang terprediksi — tanpa biaya API per-video.</strong></p>
+        </div>
+        <div class="welcome-cards">
           
-    <div class="solution-card">
-      <div style="display:flex; justify-content:space-between; align-items:center;">
-        <div class="card-icon-brand">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--brand-primary-light)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      <div class="welcome-card">
+        <div class="welcome-num">01</div>
+        <div class="welcome-card-content">
+          <h3 class="welcome-card-title">💸 <strong>Biaya marginal rendah.</strong> Setelah setup GPU lokal, generate video tambahan tidak dibebankan per</h3>
+          <p class="welcome-card-desc">render. Pipeline komposisi berjalan di komputermu sendiri   berbeda dari SaaS per generasi.</p>
         </div>
-        <span class="solution-check" style="width:24px; height:24px; border-radius:50%; background:var(--color-success-subtle); border:1px solid var(--color-success-border); display:flex; align-items:center; justify-content:center;">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-success)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
-        </span>
       </div>
-      <h3>Biaya marginal rendah</h3>
-      <p>Setelah setup GPU lokal, generate video tambahan tidak dibebankan per-render. Pipeline komposisi berjalan di komputermu sendiri — berbeda dari SaaS per-generasi.</p>
-    </div>
-  
 
-    <div class="solution-card">
-      <div style="display:flex; justify-content:space-between; align-items:center;">
-        <div class="card-icon-brand">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--brand-primary-light)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      <div class="welcome-card">
+        <div class="welcome-num">02</div>
+        <div class="welcome-card-content">
+          <h3 class="welcome-card-title">⏱ **Time</h3>
+          <p class="welcome-card-desc">to publish lebih cepat.** Brief → video jadi dalam satu alur, bukan lima aplikasi. Script, gambar, video, subtitle, dan editing disatukan dalam satu workspace.</p>
         </div>
-        <span class="solution-check" style="width:24px; height:24px; border-radius:50%; background:var(--color-success-subtle); border:1px solid var(--color-success-border); display:flex; align-items:center; justify-content:center;">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-success)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
-        </span>
       </div>
-      <h3>Time-to-publish lebih cepat</h3>
-      <p>Brief → video jadi dalam satu alur, bukan lima aplikasi. Script, gambar, video, subtitle, dan editing disatukan dalam satu workspace.</p>
-    </div>
-  
 
-    <div class="solution-card">
-      <div style="display:flex; justify-content:space-between; align-items:center;">
-        <div class="card-icon-brand">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--brand-primary-light)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.9 0 1.6-.7 1.6-1.6 0-.4-.2-.8-.5-1.1-.3-.3-.4-.7-.4-1.1 0-.9.7-1.6 1.6-1.6H16c3.3 0 6-2.7 6-6 0-5.5-4.5-9.6-10-9.6z"/></svg>
+      <div class="welcome-card">
+        <div class="welcome-num">03</div>
+        <div class="welcome-card-content">
+          <h3 class="welcome-card-title">🎨 <strong>Konsistensi brand.</strong> Brand DNA + AI copilot konteks</h3>
+          <p class="welcome-card-desc">aware menjaga identitas lintas video.</p>
         </div>
-        <span class="solution-check" style="width:24px; height:24px; border-radius:50%; background:var(--color-success-subtle); border:1px solid var(--color-success-border); display:flex; align-items:center; justify-content:center;">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-success)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
-        </span>
       </div>
-      <h3>Konsistensi brand</h3>
-      <p>Brand DNA + AI copilot konteks-aware menjaga identitas lintas video.</p>
-    </div>
-  
 
-    <div class="solution-card">
-      <div style="display:flex; justify-content:space-between; align-items:center;">
-        <div class="card-icon-brand">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--brand-primary-light)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/><path d="M15 3v18"/></svg>
+      <div class="welcome-card">
+        <div class="welcome-num">04</div>
+        <div class="welcome-card-content">
+          <h3 class="welcome-card-title">📋 **On</h3>
+          <p class="welcome-card-desc">ramp spreadsheet.** Guideline dan brief yang sudah ada di Google Sheets bisa di sync satu klik.</p>
         </div>
-        <span class="solution-check" style="width:24px; height:24px; border-radius:50%; background:var(--color-success-subtle); border:1px solid var(--color-success-border); display:flex; align-items:center; justify-content:center;">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-success)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
-        </span>
       </div>
-      <h3>On-ramp spreadsheet</h3>
-      <p>Guideline dan brief yang sudah ada di Google Sheets bisa di-sync satu klik.</p>
-    </div>
-  
-        </div>
-        
-        <div style="margin-top:24px; padding:16px 28px; border-radius:12px; background:linear-gradient(90deg, rgba(0,155,173,0.12), rgba(255,255,255,0.02)); border:1px solid rgba(0,155,173,0.25); font-size:15px; display:flex; align-items:center; gap:12px;">
-          <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--brand-primary-light);"></span>
-          <div style="color:var(--brand-text-secondary);"><strong>Posisi kami:</strong> di atas template gratis (Canva/CapCut) yang generik, dan di bawah per-video SaaS cloud serta jasa produksi. Tidak perlu memilih antara <em>mahal</em> atau <em>generik</em>.</div>
         </div>
       </div>
     </section>
 
-    <section class="slide-ecosystem">
-      <div class="slide-content">
-        <div class="slide-header" style="text-align:center; align-items:center; margin-bottom:20px;">
-          <div class="badge-eyebrow">Arsitektur & Layanan</div>
-          <h2>Layanan Unggulan</h2>
-          <p class="slide-subtitle" style="text-align:center;">Teknologi terintegrasi dari Brand DNA hingga pipeline video render lokal tanpa biaya per-render.</p>
+    <section class="archetype-canva-services">
+      <div class="services-left">
+        <div class="services-intro">
+          <span class="hero-pill-badge">Layanan Unggulan</span>
+          <h2 class="section-title">Layanan Unggulan</h2>
+          <p class="services-desc"><strong>Pipeline video lokal zero-API-cost</strong> — empat workflow komposisi berjalan di GPU lokal, tanpa biaya API pihak ketiga untuk jalur produksi video.</p>
         </div>
-        <div class="ecosystem-container">
-          <div class="ecosystem-diagram">
-            <img src="assets/ecosystem-diagram.svg" alt="Venturo Pro Ecosystem Diagram" style="max-height:510px; width:100%; object-fit:contain; filter:drop-shadow(0 16px 36px rgba(0,0,0,0.5));">
-          </div>
+        <div class="editorial-image-frame services-photo">
+          <img src="assets/slide-4-services.jpg" alt="Layanan Unggulan" />
         </div>
       </div>
-    </section>
-
-    <section class="slide-showcase">
-      <div class="slide-content">
-        <div style="display:grid; grid-template-columns:1.18fr 0.82fr; gap:48px; align-items:center; width:100%;">
-          <div>
-            <div class="slide-header" style="margin-bottom:24px;">
-              <div class="badge-eyebrow">Bukti & Validasi</div>
-              <h2>Pencapaian &amp; Bukti</h2>
-              <p class="slide-subtitle">Kami memilih jujur: produk ini masih di tahap awal, dan beberapa klaim kami tandai sebagai aspirasional.</p>
-            </div>
-            <div style="display:flex; flex-direction:column; gap:16px;">
-              
-    <div class="card" style="padding:18px 24px; border-left:4px solid var(--brand-primary-light); background:var(--brand-card-bg);">
-      <h3 style="font-size:18px; font-weight:700; color:var(--brand-text-primary); margin-bottom:6px;">Pipeline yang berjalan</h3>
-      <p style="font-size:14px; line-height:1.5; color:var(--brand-text-secondary); margin:0;">Jalur produksi video (komposisi lokal + stitching) berfungsi nyata — bukan sekadar konsep. Tiga model data inti (Brand DNA, Visual Guide, Asset Folder) terdokumentasi dan siap diperluas.</p>
-    </div>
-  
-
-    <div class="card" style="padding:18px 24px; border-left:4px solid var(--brand-primary-light); background:var(--brand-card-bg);">
-      <h3 style="font-size:18px; font-weight:700; color:var(--brand-text-primary); margin-bottom:6px;">Konsistensi brand yang terlihat</h3>
-      <p style="font-size:14px; line-height:1.5; color:var(--brand-text-secondary); margin:0;">Brand DNA + copilot menjamin identitas lintas video — diferensiasi yang jarang ada di tool AI video generik.</p>
-    </div>
-  
-
-    <div class="card" style="padding:18px 24px; border-left:4px solid var(--brand-primary-light); background:var(--brand-card-bg);">
-      <h3 style="font-size:18px; font-weight:700; color:var(--brand-text-primary); margin-bottom:6px;">Di bawah kendali biaya</h3>
-      <p style="font-size:14px; line-height:1.5; color:var(--brand-text-secondary); margin:0;">Setelah setup, video diproses di komputermu — tidak ditebus per video, berbeda dari model per generasi.</p>
-    </div>
-  
-            </div>
-            
-            <div style="margin-top:20px; padding:14px 20px; border-radius:10px; background:rgba(0,155,173,0.08); border:1px solid rgba(0,155,173,0.2); font-size:13px; color:var(--brand-text-secondary);">
-              <strong>Catatan jujur:</strong> kualitas output dan pengalaman onboarding brand-mu masih perlu dipoles — dan kami akan membuktikan "konsisten &amp; cukup untuk diposting" lewat contoh nyata, bukan klaim.
-            </div>
-          </div>
-          <div style="display:flex; justify-content:center; align-items:center;">
-            
-<div class="phone-frame">
-  <div class="dynamic-island">
-    <div class="camera-lens"></div>
-    <div class="sensor-indicator"></div>
-  </div>
-  <div class="phone-screen">
-    <div class="phone-status-bar">
-      <span>09:41</span>
-      <span>5G &bull; 100%</span>
-    </div>
-    <div class="phone-header">
-      <div style="display:flex; align-items:center; gap:6px;">
-        <span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:#009BAD;"></span>
-        <span class="app-title">Venturo Pro Studio</span>
-      </div>
-      <span style="font-size:10px; padding:2px 6px; border-radius:99px; background:rgba(0,155,173,0.18); color:#009BAD; font-weight:700;">PRO</span>
-    </div>
-
-    <!-- KPI / Status Card -->
-    <div class="phone-kpi-card">
-      <div style="display:flex; justify-content:space-between; font-size:11px; color:#94a3b8;">
-        <span>Pipeline Status</span>
-        <span style="color:#10b981; font-weight:600;">● GPU Ready</span>
-      </div>
-      <div class="phone-kpi-val">0 Biaya / Render</div>
-      <div style="font-size:10px; color:#cbd5e1;">Brand DNA: "Modern Warm" active</div>
-    </div>
-
-    <!-- Video Preview Card -->
-    <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:10px; display:flex; flex-direction:column; gap:8px;">
-      <div style="height:110px; border-radius:8px; background:linear-gradient(135deg, #004d57 0%, #009BAD 100%); display:flex; flex-direction:column; justify-content:space-between; padding:8px; position:relative; overflow:hidden;">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-          <span style="font-size:9px; font-weight:700; background:rgba(0,0,0,0.6); padding:2px 6px; border-radius:4px; color:#fff;">9:16 Shorts</span>
-          <span style="font-size:9px; background:rgba(0,0,0,0.6); padding:2px 6px; border-radius:4px; color:#fff;">00:45</span>
-        </div>
-        <div style="align-self:center; width:36px; height:36px; border-radius:50%; background:rgba(255,255,255,0.25); backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="#ffffff"><polygon points="6 3 20 12 6 21 6 3"/></svg>
-        </div>
-        <div style="font-size:10px; font-weight:600; color:#ffffff; text-shadow:0 1px 3px rgba(0,0,0,0.8);">
-          Preview: Reels_Ep12_Final.mp4
-        </div>
-      </div>
-      <!-- Progress Bar -->
-      <div>
-        <div style="display:flex; justify-content:space-between; font-size:10px; color:#94a3b8; margin-bottom:4px;">
-          <span>Stitching Subtitle & Audio</span>
-          <span style="color:#009BAD; font-weight:700;">100% Selesai</span>
-        </div>
-        <div style="height:4px; width:100%; background:rgba(255,255,255,0.1); border-radius:2px; overflow:hidden;">
-          <div style="height:100%; width:100%; background:linear-gradient(90deg, #009BAD, #38bdf8);"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Pipeline Steps List -->
-    <div class="phone-item-list">
-      <div class="phone-list-item">
-        <div style="width:20px; height:20px; border-radius:50%; background:rgba(16,185,129,0.15); display:flex; align-items:center; justify-content:center; color:#10b981;">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-        </div>
-        <span style="flex:1; font-weight:500;">Google Sheets Sync</span>
-        <span style="font-size:10px; color:#94a3b8;">1 klik</span>
-      </div>
-      <div class="phone-list-item">
-        <div style="width:20px; height:20px; border-radius:50%; background:rgba(16,185,129,0.15); display:flex; align-items:center; justify-content:center; color:#10b981;">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-        </div>
-        <span style="flex:1; font-weight:500;">Brand DNA Form</span>
-        <span style="font-size:10px; color:#94a3b8;">Locked</span>
-      </div>
-    </div>
-
-    <!-- Quick Action Button -->
-    <div style="margin-top:auto; padding-top:8px;">
-      <div style="background:linear-gradient(135deg, #009BAD, #00b4c8); color:#ffffff; font-weight:700; font-size:12px; text-align:center; padding:10px; border-radius:10px; box-shadow:0 4px 12px rgba(0,155,173,0.35);">
-        + Generate Batch Baru
-      </div>
-    </div>
-
-    <div class="phone-home-indicator"></div>
-  </div>
-</div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="slide-pricing">
-      <div class="slide-content">
-        <div class="slide-header" style="text-align:center; align-items:center; margin-bottom:28px;">
-          <div class="badge-eyebrow">Pilihan Paket</div>
-          <h2>Paket &amp; Kerjasama</h2>
-          <p class="slide-subtitle" style="text-align:center;">Struktur harga ini adalah usulan (proposal) untuk kamu tinjau — dirancang agar cocok untuk creator mikro yang rutin.</p>
-        </div>
-        <div class="pricing-grid">
+      <div class="services-right">
+        <div class="services-grid-2x2">
           
-      <div class="pricing-card">
-        
-        <div class="tier-name">Venturo Lite (Free)</div>
-        <div class="price-strikethrough"></div>
-        <div class="tier-price">Rp0 <span>/ bln</span></div>
-        
-        <ul class="pricing-features">
-          <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-success)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg> <span>1 Brand DNA</span></li>
-<li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-success)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg> <span>copilot terbatas</span></li>
-<li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-success)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg> <span>kuota 5 video/bulan dengan watermark</span></li>
-<li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-success)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg> <span>antrean standar</span></li>
-        </ul>
-        <a href="#/6" class="btn btn-secondary">
-          Mulai Gratis
-        </a>
+    <div class="service-canva-card">
+      <div class="service-card-top">
+        <span class="service-num">01</span>
+        <span class="service-pill-charcoal">Fitur Utama</span>
       </div>
+      <h3 class="service-card-title"><strong>Brand DNA → semua output</strong> — warn...</h3>
+      <p class="service-card-desc"><strong>Brand DNA → semua output</strong> — warna, font, tone narasi, dan gaya mengikuti DNA yang kamu isi sekali, dijaga copilot di setiap langkah. Tidak ada video yang "memboeloni" identitas brand-mu.</p>
+    </div>
+  
 
-      <div class="pricing-card pricing-featured">
-        <div class="badge-ribbon">Best Seller &bull; Paling Populer</div>
-        <div class="tier-name">Pro</div>
-        <div class="price-strikethrough">Rp149.000</div>
-        <div class="tier-price">Rp99.000 <span>/ bln</span></div>
-        <div style="font-size:12px; color:var(--brand-primary-light); margin:-14px 0 16px;">annual Rp990.000</div>
-        <ul class="pricing-features">
-          <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-success)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg> <span>Generate lokal tanpa batas</span></li>
-<li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-success)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg> <span>pipeline penuh</span></li>
-<li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-success)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg> <span>tanpa watermark</span></li>
-<li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-success)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg> <span>sync lanjutan</span></li>
-<li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-success)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg> <span>prioritas support</span></li>
-        </ul>
-        <a href="#/6" class="btn btn-primary">
-          Pilih Paket Pro
-        </a>
+    <div class="service-canva-card">
+      <div class="service-card-top">
+        <span class="service-num">02</span>
+        <span class="service-pill-charcoal">Fitur Utama</span>
       </div>
+      <h3 class="service-card-title"><strong>Google Sheets sync satu klik</strong> — ...</h3>
+      <p class="service-card-desc"><strong>Google Sheets sync satu klik</strong> — rencanakan konten, tarik guideline dari spreadsheet, generate. Subtitle dan musik terpasang otomatis di pipeline.</p>
+    </div>
+  
 
-      <div class="pricing-card">
-        
-        <div class="tier-name">Brand/Team</div>
-        <div class="price-strikethrough"></div>
-        <div class="tier-price">Rp299.000 <span>/ bln</span></div>
-        
-        <ul class="pricing-features">
-          <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-success)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg> <span>Multi-seat hingga 5 user</span></li>
-<li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-success)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg> <span>shared asset library</span></li>
-<li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-success)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg> <span>kolaborasi</span></li>
-<li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-success)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg> <span>dedicated support</span></li>
-        </ul>
-        <a href="#/6" class="btn btn-secondary">
-          Hubungi Tim
-        </a>
+    <div class="service-canva-card">
+      <div class="service-card-top">
+        <span class="service-num">03</span>
+        <span class="service-pill-charcoal">Fitur Utama</span>
       </div>
-        </div>
-        
-        <div style="margin-top:24px; display:flex; justify-content:center; gap:24px; font-size:13px; color:var(--brand-text-muted);">
-          <div>&bull; Free tier kami <strong>sengaja dibatasi</strong> 5 video ber-watermark: cukup untuk mencoba dan membentuk kebiasaan, tidak cukup untuk produksi rutin.</div>
-<div>&bull; Untuk kamu yang belum punya GPU 8 GB VRAM, opsi Cloud Render add-on sedang dalam rencana guna melebarkan akses.</div>
+      <h3 class="service-card-title"><strong>Copilot sidecar</strong> — form dan AI c...</h3>
+      <p class="service-card-desc"><strong>Copilot sidecar</strong> — form dan AI copilot berdampingan dalam satu workspace non-linear. Cara kerja yang ramah dan tidak memaksamu mengikuti wizard kaku.</p>
+    </div>
+  
+
+    <div class="service-canva-card">
+      <div class="service-card-top">
+        <span class="service-num">04</span>
+        <span class="service-pill-charcoal">Fitur Utama</span>
+      </div>
+      <h3 class="service-card-title"><strong>Stack multi-AI per peran</strong> — chat...</h3>
+      <p class="service-card-desc"><strong>Stack multi-AI per peran</strong> — chat, director, dan text-to-image memakai layanan cloud dengan biaya kecil; jalur produksi video tetap berjalan lokal. Kami tidak menyembunyikan itu.</p>
+    </div>
+  
         </div>
       </div>
     </section>
 
-    <section class="slide-closing">
-      <div class="slide-content">
-        <div class="closing-banner">
-          <div class="badge-eyebrow" style="margin:0 auto 16px;">Mulai Sekarang</div>
-          <h2>Mulai Produksi Video Ber-Brand Hari Ini</h2>
-          <p>Ceritakan kebutuhan konten-mu — kami bantu lewati setup awal yang kecil.</p>
-          <div class="store-pills">
-            <a href="#" class="app-store-pill">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="#ffffff" aria-hidden="true"><path fill="currentColor" stroke="none" d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 5.4c.64-.78 1.08-1.86.96-2.95-1 .04-2.14.67-2.8 1.44-.58.67-1.1 1.77-.96 2.82 1.12.09 2.18-.58 2.8-1.31z"/></svg>
-              <div class="pill-text">
-                <small>Download on the</small>
-                <span>App Store</span>
-              </div>
-            </a>
-            <a href="#" class="google-play-pill">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="#ffffff" aria-hidden="true"><path fill="currentColor" stroke="none" d="M3.609 1.814L13.792 12 3.61 22.186a2.03 2.03 0 0 1-.61-1.464V3.278c0-.568.22-1.09.609-1.464zm11.602 11.604l2.138 2.138-12.015 6.945 9.877-9.083zm0-2.836L5.334 1.499l12.015 6.945-2.138 2.138zm1.418 1.418l2.903-1.677c.844-.488.844-1.283 0-1.771l-2.903-1.677-2.122 2.562 2.122 2.563z"/></svg>
-              <div class="pill-text">
-                <small>GET IT ON</small>
-                <span>Google Play</span>
-              </div>
-            </a>
-          </div>
+    <section class="archetype-canva-metrics">
+      <div class="metrics-left">
+        <div class="editorial-image-frame metrics-photo">
+          <img src="assets/slide-5-metrics.jpg" alt="Pencapaian Venturo Pro" />
         </div>
-
-        <div class="contact-grid">
-          <div class="contact-card">
-            <div class="contact-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--brand-primary-light)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/><path d="M9.5 8.5c-.3 0-.7.2-.8.5-.2.4-.6 1.4-.6 1.7 0 .5.3 1.3 1 2.1.8.9 1.7 1.4 2.2 1.5.3.1 1.4-.2 1.8-.5.3-.2.5-.6.5-.8s-.2-.3-.5-.4l-1.3-.6c-.2-.1-.4-.1-.5.1l-.5.6c-.1.1-.3.2-.5.1-.4-.2-1.3-.8-1.8-1.5-.1-.2 0-.4.1-.5l.4-.5c.2-.2.2-.4.1-.6L9.8 8.6c-.1-.1-.2-.1-.3-.1z"/></svg></div>
-            <div class="contact-info">
-              <span class="contact-label">WhatsApp Official</span>
-              <span class="contact-value">+62 812-8888-0199</span>
-            </div>
-          </div>
-          <div class="contact-card">
-            <div class="contact-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--brand-primary-light)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg></div>
-            <div class="contact-info">
-              <span class="contact-label">Email Support</span>
-              <span class="contact-value">halo@venturopro.id</span>
-            </div>
-          </div>
-          <div class="contact-card">
-            <div class="contact-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--brand-primary-light)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></div>
-            <div class="contact-info">
-              <span class="contact-label">Call Center</span>
-              <span class="contact-value">(021) 5088-7200</span>
-            </div>
-          </div>
-          <div class="contact-card">
-            <div class="contact-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--brand-primary-light)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg></div>
-            <div class="contact-info">
-              <span class="contact-label">Kantor & Komunitas</span>
-              <span class="contact-value">Jakarta Selatan, ID</span>
-            </div>
-          </div>
+      </div>
+      <div class="metrics-right">
+        <div class="metrics-header">
+          <span class="hero-pill-badge">Pencapaian & Bukti</span>
+          <h2 class="section-title">Pencapaian &amp; Bukti</h2>
         </div>
+        <div class="metrics-grid-2x2">
+          
+    <div class="metric-canva-card">
+      <div class="metric-big-number">100%</div>
+      <div class="metric-title">Pipeline yang berjalan.</div>
+      <div class="metric-desc">Jalur produksi video (komposisi lokal + stitching) berfungsi nyata — bukan sekadar konsep. Tiga model data inti (Brand DNA, Visual Guide, Asset Folder) terdokumentasi dan siap diperluas.</div>
+    </div>
+  
 
+    <div class="metric-canva-card">
+      <div class="metric-big-number">100%</div>
+      <div class="metric-title">Konsistensi brand yang terlihat.</div>
+      <div class="metric-desc">Brand DNA + copilot menjamin identitas lintas video — diferensiasi yang jarang ada di tool AI video generik.</div>
+    </div>
+  
+
+    <div class="metric-canva-card">
+      <div class="metric-big-number">100%</div>
+      <div class="metric-title">Di bawah kendali biaya.</div>
+      <div class="metric-desc">Setelah setup, video diproses di komputermu — tidak ditebus per video, berbeda dari model per generasi.</div>
+    </div>
+  
+
+    <div class="metric-canva-card">
+      <div class="metric-big-number">Rp10.000</div>
+      <div class="metric-title">Biaya Marginal.</div>
+      <div class="metric-desc">Biaya indikatif per video yang sangat terprediksi.</div>
+    </div>
+  
+        </div>
+      </div>
+    </section>
+
+    <section class="archetype-canva-pricing">
+      <div class="pricing-header">
+        <span class="hero-pill-badge">Paket & Kerjasama</span>
+        <h2 class="section-title">Paket &amp; Kerjasama</h2>
+      </div>
+      <div class="canva-pricing-grid">
         
-        <div style="margin-top:20px; text-align:center; font-size:13px; color:var(--brand-text-muted); font-style:italic;">
-          Informasi kontak resmi akan kami pastikan tersedia di saluran ini setelah rilis publik.
+      <div class="pricing-card ">
+        
+        <div>
+          <div class="pricing-tier-name">Lite</div>
+          <div class="pricing-tier-price">Rp0</div>
+          <ul class="pricing-feature-list">
+            <li><span class="check">✓</span> <span>5 Video Batch / bln</span></li>
+<li><span class="check">✓</span> <span>Brand DNA Standar</span></li>
+<li><span class="check">✓</span> <span>Resolusi 720p</span></li>
+          </ul>
+        </div>
+        <div>
+          <button class="btn-outline-brand" style="width:100%; justify-content:center;">Mulai Gratis</button>
+        </div>
+      </div>
+
+      <div class="pricing-card pricing-card-elevated">
+        <div class="badge-ribbon">Best Seller</div>
+        <div>
+          <div class="pricing-tier-name">Pro</div>
+          <div class="pricing-tier-price">Rp99.000</div>
+          <ul class="pricing-feature-list">
+            <li><span class="check">✓</span> <span>Unlimited Batch Render</span></li>
+<li><span class="check">✓</span> <span>Full Brand DNA Kit</span></li>
+<li><span class="check">✓</span> <span>Resolusi 1080p 60FPS</span></li>
+<li><span class="check">✓</span> <span>Google Sheets 1-Klik</span></li>
+<li><span class="check">✓</span> <span>Prioritas Render Lokal</span></li>
+          </ul>
+        </div>
+        <div>
+          <button class="btn-charcoal" style="width:100%; justify-content:center;">Pilih Paket Pro</button>
+        </div>
+      </div>
+
+      <div class="pricing-card ">
+        
+        <div>
+          <div class="pricing-tier-name">Team</div>
+          <div class="pricing-tier-price">Rp299.000</div>
+          <ul class="pricing-feature-list">
+            <li><span class="check">✓</span> <span>Multi-User Seat</span></li>
+<li><span class="check">✓</span> <span>Custom Workflow Model</span></li>
+<li><span class="check">✓</span> <span>Dedicated Local Pipeline</span></li>
+<li><span class="check">✓</span> <span>Dukungan Setup On-Site</span></li>
+          </ul>
+        </div>
+        <div>
+          <button class="btn-outline-brand" style="width:100%; justify-content:center;">Hubungi Tim</button>
+        </div>
+      </div>
+      </div>
+    </section>
+
+    <section class="archetype-canva-closing">
+      <div class="closing-photo-col">
+        <div class="editorial-image-frame closing-frame">
+          <img src="assets/slide-1-hero.jpg" alt="Architecture Visual" />
+        </div>
+      </div>
+      <div class="closing-center-card">
+        <span class="hero-pill-badge" style="background:rgba(255,255,255,0.12); color:#FFFFFF; border-color:rgba(255,255,255,0.25);">Hubungi Kami</span>
+        <h2 class="closing-title">Hubungi Kami</h2>
+        <p class="closing-desc">Ceritakan kebutuhan konten-mu — kami bantu lewati setup awal yang kecil.</p>
+        <div class="closing-contact-list">
+          
+    <div class="closing-contact-item">
+      <div class="closing-contact-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--brand-light)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg></div>
+      <div class="closing-contact-info">
+        <span class="closing-contact-label">💬 Mulai dari Free</span>
+        <span class="closing-contact-val">daftar Venturo Lite dan buat video ber-brand pertamamu.</span>
+      </div>
+    </div>
+  
+
+    <div class="closing-contact-item">
+      <div class="closing-contact-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--brand-light)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg></div>
+      <div class="closing-contact-info">
+        <span class="closing-contact-label">🚀 Bisnis/agensi</span>
+        <span class="closing-contact-val">lihat tier Brand/Team untuk kolaborasi multi-seat.</span>
+      </div>
+    </div>
+  
+        </div>
+        <div class="closing-actions">
+          <a href="#/0" class="btn-solid-teal">Mulai Sekarang</a>
+        </div>
+      </div>
+      <div class="closing-photo-col">
+        <div class="editorial-image-frame closing-frame">
+          <img src="assets/slide-7-closing.jpg" alt="Corporate Team Visual" />
         </div>
       </div>
     </section>
     </div>
   </div>
 
+  <!-- Reveal.js Core Script -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/reveal.min.js"></script>
   <script>
     Reveal.initialize({
@@ -1786,14 +1428,11 @@ body {
       margin: 0.04,
       minScale: 0.2,
       maxScale: 2.0,
-      hash: true,
-      slideNumber: true,
-      navigation: true,
+      controls: true,
       progress: true,
       center: true,
-      controlsBackArrows: 'visible',
-      transition: 'slide',
-      locale: 'id'
+      hash: true,
+      transition: 'fade'
     });
   </script>
 </body>
