@@ -68,177 +68,69 @@ function parseEditorialCards(content) {
   return { introText, cards };
 }
 
-function findRoot() {
+function detectProjectRoot(customArgs) {
+  const argv = customArgs || process.argv.slice(2);
+  for (const arg of argv) {
+    if (arg.startsWith('--root=')) {
+      return path.resolve(arg.split('=')[1]);
+    }
+  }
+
+  if (process.env.COMPRO_PROJECT_ROOT) {
+    return path.resolve(process.env.COMPRO_PROJECT_ROOT);
+  }
+
   let cur = process.cwd();
   while (cur && cur !== path.dirname(cur)) {
-    if (fs.existsSync(path.join(cur, 'compros')) || fs.existsSync(path.join(cur, 'input')) || fs.existsSync(path.join(cur, '.git'))) {
-      return cur;
+    const gitPath = path.join(cur, '.git');
+    if (fs.existsSync(gitPath)) {
+      const stat = fs.statSync(gitPath);
+      if (stat.isFile()) {
+        try {
+          const content = fs.readFileSync(gitPath, 'utf8');
+          const match = content.match(/gitdir:\s*(.*)/);
+          if (match) {
+            const gitdir = match[1].trim();
+            const candidate = path.resolve(cur, gitdir, '../../..');
+            if (fs.existsSync(path.join(candidate, 'compros')) || fs.existsSync(path.join(candidate, '.gitmodules'))) {
+              return candidate;
+            }
+          }
+        } catch (e) {}
+      }
+      if (fs.existsSync(path.join(cur, 'compros')) || fs.existsSync(path.join(cur, 'input'))) {
+        return cur;
+      }
     }
     cur = path.dirname(cur);
   }
   return process.cwd();
 }
 
-const ROOT = findRoot();
-
-// 1a. CLI argument parser (supports --theme=<theme> and --name=<slug>, backward-compat positional)
-let THEME = 'editorial';
-let slug = 'congen';
-const args = process.argv.slice(2);
-for (const arg of args) {
-  if (arg.startsWith('--theme=')) {
-    THEME = arg.split('=')[1];
-  } else if (arg.startsWith('--name=')) {
-    slug = arg.split('=')[1];
-  } else if (!arg.startsWith('--')) {
-    slug = arg;
+function postBuildSyncGuarantee(outDir, resolvedRoot, slug) {
+  const expectedDir = path.join(resolvedRoot, 'compros', slug);
+  if (path.resolve(outDir) !== path.resolve(expectedDir)) {
+    console.log(`[SYNC] Out directory (${outDir}) is in worktree. Mirroring to main workspace: ${expectedDir}...`);
+    fs.mkdirSync(expectedDir, { recursive: true });
+    copyRecursiveSync(outDir, expectedDir);
+    console.log(`[SYNC-SUCCESS] Workspace guarantee mirrored ${slug} to ${expectedDir}`);
   }
 }
 
-// Output directories
-const OUT_DIR = path.join(ROOT, 'compros', slug);
-const ASSETS_DIR = path.join(OUT_DIR, 'assets');
-const REPORTS_DIR = path.join(OUT_DIR, 'reports');
-const DRAFTS_DIR = path.join(OUT_DIR, 'drafts');
-
-// Template paths (Builder skill templates)
-const templateCandidates = [
-  path.join(__dirname, '..', 'templates'),
-  path.join(ROOT, '.claude', 'plugins', 'compro', 'skills', 'builder', 'templates'),
-  path.join(ROOT, 'skills', 'builder', 'templates'),
-  path.join(__dirname, '..', 'skills', 'builder', 'templates')
-];
-
-let SHELL = null;
-let CSS = null;
-if (THEME === 'editorial') {
-  for (const dir of templateCandidates) {
-    const s = path.join(dir, 'editorial-shell.html');
-    const c = path.join(dir, 'editorial.css');
-    if (fs.existsSync(s) && fs.existsSync(c)) {
-      SHELL = s;
-      CSS = c;
-      break;
+function copyRecursiveSync(src, dest) {
+  if (!fs.existsSync(src)) return;
+  const stats = fs.statSync(src);
+  if (stats.isDirectory()) {
+    fs.mkdirSync(dest, { recursive: true });
+    for (const child of fs.readdirSync(src)) {
+      copyRecursiveSync(path.join(src, child), path.join(dest, child));
     }
-  }
-} else {
-  for (const dir of templateCandidates) {
-    const s = path.join(dir, 'profile-shell.html');
-    const c = path.join(dir, 'custom.css');
-    if (fs.existsSync(s) && fs.existsSync(c)) {
-      SHELL = s;
-      CSS = c;
-      break;
-    }
+  } else {
+    fs.copyFileSync(src, dest);
   }
 }
 
-if (!SHELL || !fs.existsSync(SHELL)) {
-  console.error(`Error: Slide shell template not found. Searched in: ${templateCandidates.join(', ')}`);
-  process.exit(1);
-}
-if (!CSS || !fs.existsSync(CSS)) {
-  console.error(`Error: Custom CSS not found. Searched in: ${templateCandidates.join(', ')}`);
-  process.exit(1);
-}
-
-// 1. Resolve source markdown
-let srcMdPath = '';
-const candidatePaths = [
-  path.join(DRAFTS_DIR, '02-final.md'),
-  path.join(DRAFTS_DIR, '02-company-profile-final.md'),
-  path.join(ROOT, 'artifacts', '02-final.md'),
-  path.join(ROOT, 'artifacts', '02-company-profile-final.md'),
-  path.join(OUT_DIR, 'compro.md'),
-  path.join(DRAFTS_DIR, '01-draft.md'),
-  path.join(DRAFTS_DIR, '01-company-profile-draft.md'),
-  path.join(ROOT, 'artifacts', '01-draft.md'),
-  path.join(ROOT, 'artifacts', '01-company-profile-draft.md')
-];
-
-for (const p of candidatePaths) {
-  if (fs.existsSync(p) && fs.statSync(p).isFile()) {
-    srcMdPath = p;
-    break;
-  }
-}
-
-if (!srcMdPath) {
-  // Fallback: scan all existing slugs for any 02-final.md draft
-  const comprosDir = path.join(ROOT, 'compros');
-  if (fs.existsSync(comprosDir)) {
-    const existingSlugs = fs.readdirSync(comprosDir).filter(s => {
-      const p = path.join(comprosDir, s);
-      return fs.existsSync(p) && fs.statSync(p).isDirectory();
-    });
-    for (const s of existingSlugs) {
-      const fallbackPath = path.join(comprosDir, s, 'drafts', '02-final.md');
-      if (fs.existsSync(fallbackPath) && fs.statSync(fallbackPath).isFile()) {
-        srcMdPath = fallbackPath;
-        console.log(`  [editorial fallback] Using draft from compros/${s}/drafts/02-final.md`);
-        break;
-      }
-    }
-  }
-  if (!srcMdPath) {
-    console.error(`Error: No input markdown draft found. Checked paths:\n${candidatePaths.map(c => ' - ' + c).join('\n')}`);
-    process.exit(1);
-  }
-}
-
-const md = fs.readFileSync(srcMdPath, 'utf8');
-if (!md.trim()) {
-  console.error('Error: Source markdown file is empty.');
-  process.exit(1);
-}
-
-// 2. Extract brand data from input documents (brand-story-guide or business-knowledge-base)
-let brandName = 'Venturo Pro';
-let primaryColor = '#009BAD';
-let secondaryColor = '#006D79';
-
-const brandStoryPath = path.join(ROOT, 'input', 'brand-story-guide.md');
-const bkbPath = path.join(ROOT, 'input', 'business-knowledge-base.md');
-
-if (fs.existsSync(brandStoryPath)) {
-  const bsContent = fs.readFileSync(brandStoryPath, 'utf8');
-  const nameMatch = bsContent.match(/#\s*Brand Story Guide:\s*([^#\n\r]+?)(?:\s+AI|\s+Content|\s+Generator|$)/i);
-  if (nameMatch) brandName = nameMatch[1].trim();
-
-  const primaryMatch = bsContent.match(/\|\s*Primary\s*\|[^|]*\|\s*(`?#[0-9A-Fa-f]{6}`?)/i);
-  if (primaryMatch) primaryColor = primaryMatch[1].replace(/`/g, '').trim();
-
-  const secondaryMatch = bsContent.match(/\|\s*(?:Secondary|Accent)[^|]*\|[^|]*\|\s*(`?#[0-9A-Fa-f]{6}`?)/i);
-  if (secondaryMatch) secondaryColor = secondaryMatch[1].replace(/`/g, '').trim();
-} else if (fs.existsSync(bkbPath)) {
-  const bkbContent = fs.readFileSync(bkbPath, 'utf8');
-  const nameMatch = bkbContent.match(/#\s*(?:Business Knowledge Base:\s*)?([^\n\r—\-]+)/i);
-  if (nameMatch) brandName = nameMatch[1].trim();
-}
-
-const hsl = assetGenerator.hexToHsl(primaryColor);
-const brand = {
-  name: brandName,
-  primaryColor,
-  secondaryColor,
-  hsl
-};
-
-// 3. Ensure target directories exist
-fs.mkdirSync(OUT_DIR, { recursive: true });
-fs.mkdirSync(ASSETS_DIR, { recursive: true });
-fs.mkdirSync(REPORTS_DIR, { recursive: true });
-fs.mkdirSync(DRAFTS_DIR, { recursive: true });
-
-// 4. Procedurally generate vector SVG assets
-fs.writeFileSync(path.join(ASSETS_DIR, 'smartphone-mockup.svg'), assetGenerator.generateSmartphoneMockupSvg({ brandName, primaryColor, secondaryColor }));
-fs.writeFileSync(path.join(ASSETS_DIR, 'ecosystem-diagram.svg'), assetGenerator.generateEcosystemDiagramSvg({ brandName, primaryColor, secondaryColor }));
-fs.writeFileSync(path.join(ASSETS_DIR, 'hero-banner.svg'), assetGenerator.generateTechBannerSvg({ brandName, primaryColor, secondaryColor }));
-fs.writeFileSync(path.join(ASSETS_DIR, 'closing-banner.svg'), assetGenerator.generateClosingBannerSvg({ brandName, primaryColor, secondaryColor }));
-fs.writeFileSync(path.join(ASSETS_DIR, 'logo.svg'), assetGenerator.generateLogoSvg(brandName, primaryColor));
-
-// 5. Parse & chunking: H1 = new slide — now via shared parseAndSanitizeMarkdown()
-const slides = parseAndSanitizeMarkdown(md);
+let ASSETS_DIR = '';
 
 // Markdown inline helper
 function inline(mdtext) {
@@ -324,8 +216,8 @@ function renderHeroSlide(slide, brand) {
           <div class="hero-visual">
             <!-- Inline SVG per Inline SVG Enforcement Rule (never <img src="assets/*.svg">) -->
             ${(() => {
-              const svgPath = path.join(ASSETS_DIR, 'hero-banner.svg');
-              if (fs.existsSync(svgPath)) {
+              const svgPath = ASSETS_DIR ? path.join(ASSETS_DIR, 'hero-banner.svg') : '';
+              if (svgPath && fs.existsSync(svgPath)) {
                 return fs.readFileSync(svgPath, 'utf8')
                   .replace(/<svg/, `<svg style="width:100%; max-width:620px; border-radius:20px; filter:drop-shadow(0 20px 40px rgba(0,0,0,0.5));"`)
                   .replace(/class=""/, '');
@@ -491,8 +383,8 @@ function renderEcosystemSlide(slide, brand) {
           <div class="ecosystem-diagram">
             <!-- Inline SVG per Inline SVG Enforcement Rule -->
             ${(() => {
-              const svgPath = path.join(ASSETS_DIR, 'ecosystem-diagram.svg');
-              if (fs.existsSync(svgPath)) {
+              const svgPath = ASSETS_DIR ? path.join(ASSETS_DIR, 'ecosystem-diagram.svg') : '';
+              if (svgPath && fs.existsSync(svgPath)) {
                 return fs.readFileSync(svgPath, 'utf8')
                   .replace(/<svg/, `<svg style="max-height:510px; width:100%; object-fit:contain; filter:drop-shadow(0 16px 36px rgba(0,0,0,0.5));"`)
                   .replace(/class=""/, '');
@@ -1413,179 +1305,388 @@ function renderEditorialNarrativeSplit(slide, brand, type) {
     </section>`;
 }
 
-// 6. Convert slides into HTML based on detected archetypes
-const slideHtml = slides.map((s, idx) => {
-  if (THEME === 'editorial') {
-    const archetype = classifyEditorialArchetype(s, idx, slides.length);
-    switch (archetype) {
-      case 'archetype-narrative-split': {
-        const type = /masalah|tantangan|pain|problem/.test((s.title || '').toLowerCase()) ? 'problem' : 'solution';
-        return renderEditorialNarrativeSplit(s, brand, type);
-      }
-      case 'archetype-hero-cover': return renderEditorialHero(s, brand);
-      case 'archetype-services-grid': return renderEditorialServicesGrid(s, brand);
-      case 'archetype-ecosystem-orbit': return renderEditorialEcosystem(s, brand);
-      case 'archetype-metrics-contact': return renderEditorialMetrics(s, brand);
-      case 'archetype-differentiator': return renderEditorialDifferentiator(s, brand);
-      case 'archetype-pricing-cards': return renderEditorialPricing(s, brand);
-      default: return renderEditorialClosing(s, brand);
+function runMain(customArgs) {
+  const argv = customArgs || process.argv.slice(2);
+  const ROOT = detectProjectRoot(argv);
+
+  // 1a. CLI argument parser (supports --theme=<theme>, --name=<slug>, and --root=<path>, backward-compat positional)
+  let THEME = 'editorial';
+  let slug = 'congen';
+  for (const arg of argv) {
+    if (arg.startsWith('--theme=')) {
+      THEME = arg.split('=')[1];
+    } else if (arg.startsWith('--name=')) {
+      slug = arg.split('=')[1];
+    } else if (!arg.startsWith('--')) {
+      slug = arg;
     }
   }
-  const type = detectSlideType(s, idx, slides.length);
-  switch (type) {
-    case 'hero': return renderHeroSlide(s, brand);
-    case 'problem': return renderProblemSlide(s, brand);
-    case 'solution': return renderSolutionSlide(s, brand);
-    case 'ecosystem': return renderEcosystemSlide(s, brand);
-    case 'features': return renderFeaturesSlide(s, brand);
-    case 'differentiator': return renderDifferentiatorSlide(s, brand);
-    case 'showcase': return renderShowcaseSlide(s, brand);
-    case 'pricing': return renderPricingSlide(s, brand);
-    case 'offer': return renderOfferSlide(s, brand);
-    case 'closing': return renderClosingSlide(s, brand);
-    default: return renderGeneralSlide(s, brand);
+
+  // Worktree detection for output directory:
+  // If running in an isolated worktree directory, output locally to worktree first,
+  // then postBuildSyncGuarantee will mirror it to the resolved project root.
+  let isWorktree = false;
+  let cur = process.cwd();
+  const gitPath = path.join(cur, '.git');
+  if (fs.existsSync(gitPath) && fs.statSync(gitPath).isFile()) {
+    try {
+      const content = fs.readFileSync(gitPath, 'utf8');
+      if (/gitdir:\s*.*worktrees/i.test(content) || (cur !== ROOT && !content.includes('.git/modules/'))) {
+        isWorktree = true;
+      }
+    } catch (e) {}
+  } else if (cur !== ROOT && cur.includes('worktrees')) {
+    isWorktree = true;
   }
-}).join('\n');
 
-// 7. Inject into HTML Shell with dynamic CSS variables
-let shell = fs.readFileSync(SHELL, 'utf8');
-let customCss = fs.readFileSync(CSS, 'utf8');
+  // Output directories
+  const OUT_DIR = isWorktree ? path.join(process.cwd(), 'compros', slug) : path.join(ROOT, 'compros', slug);
+  ASSETS_DIR = path.join(OUT_DIR, 'assets');
+  const REPORTS_DIR = path.join(OUT_DIR, 'reports');
+  const DRAFTS_DIR = path.join(OUT_DIR, 'drafts');
 
-// Inject dynamic client HSL tokens (no-op when CSS lacks these tokens, e.g. editorial.css)
-customCss = customCss
-  .replace(/--brand-h:\s*\d+;/, `--brand-h: ${hsl.h};`)
-  .replace(/--brand-s:\s*\d+%;/, `--brand-s: ${hsl.s}%;`)
-  .replace(/--brand-l:\s*\d+%;/, `--brand-l: ${hsl.l}%;`);
+  // Template paths (Builder skill templates)
+  const templateCandidates = [
+    path.join(__dirname, '..', 'templates'),
+    path.join(ROOT, '.claude', 'plugins', 'compro', 'skills', 'builder', 'templates'),
+    path.join(ROOT, 'skills', 'builder', 'templates'),
+    path.join(__dirname, '..', 'skills', 'builder', 'templates')
+  ];
 
-if (THEME === 'editorial') {
-  shell = shell.replace(/<title>.*?<\/title>/, `<title>${brand.name} — Company Profile</title>`);
-  shell = shell.replace('/* CSS_INLINE_PLACEHOLDER */', customCss);
-  shell = shell.replace('<!-- SLIDES_INLINE_PLACEHOLDER -->', slideHtml);
-} else {
-  shell = shell.replace('/* {{CUSTOM_CSS}} */', customCss);
-  shell = shell.replace(/{{COMPANY_NAME}}/g, brand.name);
-  shell = shell.replace(
-    /<!-- Konten slide di-inject di sini oleh builder -->[\s\S]*?<!-- Setiap section adalah satu slide beresolusi 1920x1080 \(16:9\) -->/,
-    slideHtml
-  );
-}
-
-// 8. Write primary deliverables
-fs.writeFileSync(path.join(OUT_DIR, 'index.html'), shell, 'utf8');
-fs.writeFileSync(path.join(OUT_DIR, 'compro.md'), md, 'utf8');
-
-// 9. Folder Consolidation: move artifacts, drafts, reports
-const artifactsDir = path.join(ROOT, 'artifacts');
-const qaDir = path.join(ROOT, 'qa');
-
-// Move drafts
-const draftFiles = ['01-company-profile-draft.md', '02-company-profile-final.md', '01-draft.md', '02-final.md'];
-for (const file of draftFiles) {
-  const src = path.join(artifactsDir, file);
-  const dest = path.join(DRAFTS_DIR, file);
-  if (fs.existsSync(src)) {
-    fs.copyFileSync(src, dest);
-    fs.unlinkSync(src);
-  }
-}
-
-// Ensure both standard and descriptive filenames exist in drafts
-if (fs.existsSync(path.join(DRAFTS_DIR, '01-company-profile-draft.md')) && !fs.existsSync(path.join(DRAFTS_DIR, '01-draft.md'))) {
-  fs.copyFileSync(path.join(DRAFTS_DIR, '01-company-profile-draft.md'), path.join(DRAFTS_DIR, '01-draft.md'));
-}
-if (fs.existsSync(path.join(DRAFTS_DIR, '01-draft.md')) && !fs.existsSync(path.join(DRAFTS_DIR, '01-company-profile-draft.md'))) {
-  fs.copyFileSync(path.join(DRAFTS_DIR, '01-draft.md'), path.join(DRAFTS_DIR, '01-company-profile-draft.md'));
-}
-if (fs.existsSync(path.join(DRAFTS_DIR, '02-company-profile-final.md')) && !fs.existsSync(path.join(DRAFTS_DIR, '02-final.md'))) {
-  fs.copyFileSync(path.join(DRAFTS_DIR, '02-company-profile-final.md'), path.join(DRAFTS_DIR, '02-final.md'));
-}
-if (fs.existsSync(path.join(DRAFTS_DIR, '02-final.md')) && !fs.existsSync(path.join(DRAFTS_DIR, '02-company-profile-final.md'))) {
-  fs.copyFileSync(path.join(DRAFTS_DIR, '02-final.md'), path.join(DRAFTS_DIR, '02-company-profile-final.md'));
-}
-
-// Move reports
-const reportMoves = [
-  { src: path.join(artifactsDir, 'review-report.md'), dest: path.join(REPORTS_DIR, 'review-report.md') },
-  { src: path.join(qaDir, 'seo-report.md'), dest: path.join(REPORTS_DIR, 'seo-report.md') }
-];
-for (const rm of reportMoves) {
-  if (fs.existsSync(rm.src)) {
-    fs.copyFileSync(rm.src, rm.dest);
-    fs.unlinkSync(rm.src);
-  }
-}
-
-// Clean up old root build.log if exists
-const oldRootLog = path.join(OUT_DIR, 'build.log');
-if (fs.existsSync(oldRootLog)) {
-  fs.unlinkSync(oldRootLog);
-}
-
-// 10. Write build.log into compros/<slug>/reports/build.log
-const log = [
-  'Company Profile Build Log',
-  '========================================',
-  `Brand Name      : ${brand.name}`,
-  `Primary Color   : ${brand.primaryColor} (HSL: ${hsl.h}, ${hsl.s}%, ${hsl.l}%)`,
-  `Source Markdown : ${srcMdPath}`,
-  `Output Target   : ${path.join(OUT_DIR, 'index.html')}`,
-  `Timestamp       : ${new Date().toISOString()}`,
-  '',
-  `Total Slides    : ${slides.length}`,
-  ...slides.map((s, i) => {
-    const type = THEME === 'editorial'
-      ? classifyEditorialArchetype(s, i, slides.length).replace(/^archetype-/, '')
-      : detectSlideType(s, i, slides.length);
-    const wordCount = s.content.split(/\s+/).filter(Boolean).length;
-    return `  Slide ${i + 1} [${type.toUpperCase().padEnd(9)}]: ${s.title} (${wordCount} words)`;
-  }),
-  '',
-  'Smart Asset Pipeline (Procedurally Generated):',
-  `  - ${path.join(ASSETS_DIR, 'smartphone-mockup.svg')} (Vector Titanium Phone UI)`,
-  `  - ${path.join(ASSETS_DIR, 'ecosystem-diagram.svg')} (Circular Orbit Ecosystem)`,
-  `  - ${path.join(ASSETS_DIR, 'hero-banner.svg')} (Tech Dashboard Visual)`,
-  `  - ${path.join(ASSETS_DIR, 'closing-banner.svg')} (Call-to-Action Wave)`,
-  `  - ${path.join(ASSETS_DIR, 'logo.svg')} (Brand Vector Emblem)`,
-  '',
-  'Folder Consolidation:',
-  `  - Slide Deck    : ${path.join(OUT_DIR, 'index.html')}`,
-  `  - Final Markdown: ${path.join(OUT_DIR, 'compro.md')}`,
-  `  - Assets Folder : ${ASSETS_DIR}`,
-  `  - Drafts Folder : ${DRAFTS_DIR}`,
-  `  - Reports Folder: ${REPORTS_DIR}`,
-  '',
-  'Clean-up Verification:'
-];
-
-// Clean up empty directories
-if (fs.existsSync(artifactsDir)) {
-  const remaining = fs.readdirSync(artifactsDir);
-  if (remaining.length === 0) {
-    fs.rmdirSync(artifactsDir);
-    log.push('  - Root artifacts/ directory was empty and cleaned up.');
+  let SHELL = null;
+  let CSS = null;
+  if (THEME === 'editorial') {
+    for (const dir of templateCandidates) {
+      const s = path.join(dir, 'editorial-shell.html');
+      const c = path.join(dir, 'editorial.css');
+      if (fs.existsSync(s) && fs.existsSync(c)) {
+        SHELL = s;
+        CSS = c;
+        break;
+      }
+    }
   } else {
-    log.push(`  - Root artifacts/ contains: ${remaining.join(', ')}`);
+    for (const dir of templateCandidates) {
+      const s = path.join(dir, 'profile-shell.html');
+      const c = path.join(dir, 'custom.css');
+      if (fs.existsSync(s) && fs.existsSync(c)) {
+        SHELL = s;
+        CSS = c;
+        break;
+      }
+    }
   }
-}
-if (fs.existsSync(qaDir)) {
-  const remaining = fs.readdirSync(qaDir);
-  if (remaining.length === 0) {
-    fs.rmdirSync(qaDir);
-    log.push('  - Root qa/ directory was empty and cleaned up.');
+
+  if (!SHELL || !fs.existsSync(SHELL)) {
+    console.error(`Error: Slide shell template not found. Searched in: ${templateCandidates.join(', ')}`);
+    process.exit(1);
+  }
+  if (!CSS || !fs.existsSync(CSS)) {
+    console.error(`Error: Custom CSS not found. Searched in: ${templateCandidates.join(', ')}`);
+    process.exit(1);
+  }
+
+  // 1. Resolve source markdown
+  let srcMdPath = '';
+  const candidatePaths = [
+    path.join(DRAFTS_DIR, '02-final.md'),
+    path.join(DRAFTS_DIR, '02-company-profile-final.md'),
+    path.join(ROOT, 'artifacts', '02-final.md'),
+    path.join(ROOT, 'artifacts', '02-company-profile-final.md'),
+    path.join(process.cwd(), 'artifacts', '02-final.md'),
+    path.join(process.cwd(), 'artifacts', '02-company-profile-final.md'),
+    path.join(OUT_DIR, 'compro.md'),
+    path.join(DRAFTS_DIR, '01-draft.md'),
+    path.join(DRAFTS_DIR, '01-company-profile-draft.md'),
+    path.join(ROOT, 'artifacts', '01-draft.md'),
+    path.join(ROOT, 'artifacts', '01-company-profile-draft.md'),
+    path.join(process.cwd(), 'artifacts', '01-draft.md'),
+    path.join(process.cwd(), 'artifacts', '01-company-profile-draft.md')
+  ];
+
+  for (const p of candidatePaths) {
+    if (fs.existsSync(p) && fs.statSync(p).isFile()) {
+      srcMdPath = p;
+      break;
+    }
+  }
+
+  if (!srcMdPath) {
+    // Fallback: scan all existing slugs for any 02-final.md draft
+    const comprosDir = path.join(ROOT, 'compros');
+    if (fs.existsSync(comprosDir)) {
+      const existingSlugs = fs.readdirSync(comprosDir).filter(s => {
+        const p = path.join(comprosDir, s);
+        return fs.existsSync(p) && fs.statSync(p).isDirectory();
+      });
+      for (const s of existingSlugs) {
+        const fallbackPath = path.join(comprosDir, s, 'drafts', '02-final.md');
+        if (fs.existsSync(fallbackPath) && fs.statSync(fallbackPath).isFile()) {
+          srcMdPath = fallbackPath;
+          console.log(`  [editorial fallback] Using draft from compros/${s}/drafts/02-final.md`);
+          break;
+        }
+      }
+    }
+    if (!srcMdPath) {
+      console.error(`Error: No input markdown draft found. Checked paths:\n${candidatePaths.map(c => ' - ' + c).join('\n')}`);
+      process.exit(1);
+    }
+  }
+
+  const md = fs.readFileSync(srcMdPath, 'utf8');
+  if (!md.trim()) {
+    console.error('Error: Source markdown file is empty.');
+    process.exit(1);
+  }
+
+  // 2. Extract brand data from input documents (brand-story-guide or business-knowledge-base)
+  let brandName = 'Venturo Pro';
+  let primaryColor = '#009BAD';
+  let secondaryColor = '#006D79';
+
+  let brandStoryPath = path.join(ROOT, 'input', 'brand-story-guide.md');
+  let bkbPath = path.join(ROOT, 'input', 'business-knowledge-base.md');
+  if (!fs.existsSync(brandStoryPath) && fs.existsSync(path.join(process.cwd(), 'input', 'brand-story-guide.md'))) {
+    brandStoryPath = path.join(process.cwd(), 'input', 'brand-story-guide.md');
+  }
+  if (!fs.existsSync(bkbPath) && fs.existsSync(path.join(process.cwd(), 'input', 'business-knowledge-base.md'))) {
+    bkbPath = path.join(process.cwd(), 'input', 'business-knowledge-base.md');
+  }
+
+  if (fs.existsSync(brandStoryPath)) {
+    const bsContent = fs.readFileSync(brandStoryPath, 'utf8');
+    const nameMatch = bsContent.match(/#\s*Brand Story Guide:\s*([^#\n\r]+?)(?:\s+AI|\s+Content|\s+Generator|$)/i);
+    if (nameMatch) brandName = nameMatch[1].trim();
+
+    const primaryMatch = bsContent.match(/\|\s*Primary\s*\|[^|]*\|\s*(`?#[0-9A-Fa-f]{6}`?)/i);
+    if (primaryMatch) primaryColor = primaryMatch[1].replace(/`/g, '').trim();
+
+    const secondaryMatch = bsContent.match(/\|\s*(?:Secondary|Accent)[^|]*\|[^|]*\|\s*(`?#[0-9A-Fa-f]{6}`?)/i);
+    if (secondaryMatch) secondaryColor = secondaryMatch[1].replace(/`/g, '').trim();
+  } else if (fs.existsSync(bkbPath)) {
+    const bkbContent = fs.readFileSync(bkbPath, 'utf8');
+    const nameMatch = bkbContent.match(/#\s*(?:Business Knowledge Base:\s*)?([^\n\r—\-]+)/i);
+    if (nameMatch) brandName = nameMatch[1].trim();
+  }
+
+  const hsl = assetGenerator.hexToHsl(primaryColor);
+  const brand = {
+    name: brandName,
+    primaryColor,
+    secondaryColor,
+    hsl
+  };
+
+  // 3. Ensure target directories exist
+  fs.mkdirSync(OUT_DIR, { recursive: true });
+  fs.mkdirSync(ASSETS_DIR, { recursive: true });
+  fs.mkdirSync(REPORTS_DIR, { recursive: true });
+  fs.mkdirSync(DRAFTS_DIR, { recursive: true });
+
+  // 4. Procedurally generate vector SVG assets
+  fs.writeFileSync(path.join(ASSETS_DIR, 'smartphone-mockup.svg'), assetGenerator.generateSmartphoneMockupSvg({ brandName, primaryColor, secondaryColor }));
+  fs.writeFileSync(path.join(ASSETS_DIR, 'ecosystem-diagram.svg'), assetGenerator.generateEcosystemDiagramSvg({ brandName, primaryColor, secondaryColor }));
+  fs.writeFileSync(path.join(ASSETS_DIR, 'hero-banner.svg'), assetGenerator.generateTechBannerSvg({ brandName, primaryColor, secondaryColor }));
+  fs.writeFileSync(path.join(ASSETS_DIR, 'closing-banner.svg'), assetGenerator.generateClosingBannerSvg({ brandName, primaryColor, secondaryColor }));
+  fs.writeFileSync(path.join(ASSETS_DIR, 'logo.svg'), assetGenerator.generateLogoSvg(brandName, primaryColor));
+
+  // 5. Parse & chunking: H1 = new slide — now via shared parseAndSanitizeMarkdown()
+  const slides = parseAndSanitizeMarkdown(md);
+
+  // 6. Convert slides into HTML based on detected archetypes
+  const slideHtml = slides.map((s, idx) => {
+    if (THEME === 'editorial') {
+      const archetype = classifyEditorialArchetype(s, idx, slides.length);
+      switch (archetype) {
+        case 'archetype-narrative-split': {
+          const type = /masalah|tantangan|pain|problem/.test((s.title || '').toLowerCase()) ? 'problem' : 'solution';
+          return renderEditorialNarrativeSplit(s, brand, type);
+        }
+        case 'archetype-hero-cover': return renderEditorialHero(s, brand);
+        case 'archetype-services-grid': return renderEditorialServicesGrid(s, brand);
+        case 'archetype-ecosystem-orbit': return renderEditorialEcosystem(s, brand);
+        case 'archetype-metrics-contact': return renderEditorialMetrics(s, brand);
+        case 'archetype-differentiator': return renderEditorialDifferentiator(s, brand);
+        case 'archetype-pricing-cards': return renderEditorialPricing(s, brand);
+        default: return renderEditorialClosing(s, brand);
+      }
+    }
+    const type = detectSlideType(s, idx, slides.length);
+    switch (type) {
+      case 'hero': return renderHeroSlide(s, brand);
+      case 'problem': return renderProblemSlide(s, brand);
+      case 'solution': return renderSolutionSlide(s, brand);
+      case 'ecosystem': return renderEcosystemSlide(s, brand);
+      case 'features': return renderFeaturesSlide(s, brand);
+      case 'differentiator': return renderDifferentiatorSlide(s, brand);
+      case 'showcase': return renderShowcaseSlide(s, brand);
+      case 'pricing': return renderPricingSlide(s, brand);
+      case 'offer': return renderOfferSlide(s, brand);
+      case 'closing': return renderClosingSlide(s, brand);
+      default: return renderGeneralSlide(s, brand);
+    }
+  }).join('\n');
+
+  // 7. Inject into HTML Shell with dynamic CSS variables
+  let shell = fs.readFileSync(SHELL, 'utf8');
+  let customCss = fs.readFileSync(CSS, 'utf8');
+
+  // Inject dynamic client HSL tokens (no-op when CSS lacks these tokens, e.g. editorial.css)
+  customCss = customCss
+    .replace(/--brand-h:\s*\d+;/, `--brand-h: ${hsl.h};`)
+    .replace(/--brand-s:\s*\d+%;/, `--brand-s: ${hsl.s}%;`)
+    .replace(/--brand-l:\s*\d+%;/, `--brand-l: ${hsl.l}%;`);
+
+  if (THEME === 'editorial') {
+    shell = shell.replace(/<title>.*?<\/title>/, `<title>${brand.name} — Company Profile</title>`);
+    shell = shell.replace('/* CSS_INLINE_PLACEHOLDER */', customCss);
+    shell = shell.replace('<!-- SLIDES_INLINE_PLACEHOLDER -->', slideHtml);
   } else {
-    log.push(`  - Root qa/ contains: ${remaining.join(', ')}`);
+    shell = shell.replace('/* {{CUSTOM_CSS}} */', customCss);
+    shell = shell.replace(/{{COMPANY_NAME}}/g, brand.name);
+    shell = shell.replace(
+      /<!-- Konten slide di-inject di sini oleh builder -->[\s\S]*?<!-- Setiap section adalah satu slide beresolusi 1920x1080 \(16:9\) -->/,
+      slideHtml
+    );
   }
+
+  // 8. Write primary deliverables
+  fs.writeFileSync(path.join(OUT_DIR, 'index.html'), shell, 'utf8');
+  fs.writeFileSync(path.join(OUT_DIR, 'compro.md'), md, 'utf8');
+
+  // 9. Folder Consolidation: move artifacts, drafts, reports
+  const artifactsDir = path.join(ROOT, 'artifacts');
+  const qaDir = path.join(ROOT, 'qa');
+
+  // Move drafts
+  const draftFiles = ['01-company-profile-draft.md', '02-company-profile-final.md', '01-draft.md', '02-final.md'];
+  for (const file of draftFiles) {
+    const src = path.join(artifactsDir, file);
+    const dest = path.join(DRAFTS_DIR, file);
+    if (fs.existsSync(src)) {
+      fs.copyFileSync(src, dest);
+      fs.unlinkSync(src);
+    }
+  }
+
+  // Ensure both standard and descriptive filenames exist in drafts
+  if (fs.existsSync(path.join(DRAFTS_DIR, '01-company-profile-draft.md')) && !fs.existsSync(path.join(DRAFTS_DIR, '01-draft.md'))) {
+    fs.copyFileSync(path.join(DRAFTS_DIR, '01-company-profile-draft.md'), path.join(DRAFTS_DIR, '01-draft.md'));
+  }
+  if (fs.existsSync(path.join(DRAFTS_DIR, '01-draft.md')) && !fs.existsSync(path.join(DRAFTS_DIR, '01-company-profile-draft.md'))) {
+    fs.copyFileSync(path.join(DRAFTS_DIR, '01-draft.md'), path.join(DRAFTS_DIR, '01-company-profile-draft.md'));
+  }
+  if (fs.existsSync(path.join(DRAFTS_DIR, '02-company-profile-final.md')) && !fs.existsSync(path.join(DRAFTS_DIR, '02-final.md'))) {
+    fs.copyFileSync(path.join(DRAFTS_DIR, '02-company-profile-final.md'), path.join(DRAFTS_DIR, '02-final.md'));
+  }
+  if (fs.existsSync(path.join(DRAFTS_DIR, '02-final.md')) && !fs.existsSync(path.join(DRAFTS_DIR, '02-company-profile-final.md'))) {
+    fs.copyFileSync(path.join(DRAFTS_DIR, '02-final.md'), path.join(DRAFTS_DIR, '02-company-profile-final.md'));
+  }
+
+  // Move reports
+  const reportMoves = [
+    { src: path.join(artifactsDir, 'review-report.md'), dest: path.join(REPORTS_DIR, 'review-report.md') },
+    { src: path.join(qaDir, 'seo-report.md'), dest: path.join(REPORTS_DIR, 'seo-report.md') }
+  ];
+  for (const rm of reportMoves) {
+    if (fs.existsSync(rm.src)) {
+      fs.copyFileSync(rm.src, rm.dest);
+      fs.unlinkSync(rm.src);
+    }
+  }
+
+  // Clean up old root build.log if exists
+  const oldRootLog = path.join(OUT_DIR, 'build.log');
+  if (fs.existsSync(oldRootLog)) {
+    fs.unlinkSync(oldRootLog);
+  }
+
+  // 10. Write build.log into compros/<slug>/reports/build.log
+  const log = [
+    'Company Profile Build Log',
+    '========================================',
+    `Brand Name      : ${brand.name}`,
+    `Primary Color   : ${brand.primaryColor} (HSL: ${hsl.h}, ${hsl.s}%, ${hsl.l}%)`,
+    `Source Markdown : ${srcMdPath}`,
+    `Output Target   : ${path.join(OUT_DIR, 'index.html')}`,
+    `Timestamp       : ${new Date().toISOString()}`,
+    '',
+    `Total Slides    : ${slides.length}`,
+    ...slides.map((s, i) => {
+      const type = THEME === 'editorial'
+        ? classifyEditorialArchetype(s, i, slides.length).replace(/^archetype-/, '')
+        : detectSlideType(s, i, slides.length);
+      const wordCount = s.content.split(/\s+/).filter(Boolean).length;
+      return `  Slide ${i + 1} [${type.toUpperCase().padEnd(9)}]: ${s.title} (${wordCount} words)`;
+    }),
+    '',
+    'Smart Asset Pipeline (Procedurally Generated):',
+    `  - ${path.join(ASSETS_DIR, 'smartphone-mockup.svg')} (Vector Titanium Phone UI)`,
+    `  - ${path.join(ASSETS_DIR, 'ecosystem-diagram.svg')} (Circular Orbit Ecosystem)`,
+    `  - ${path.join(ASSETS_DIR, 'hero-banner.svg')} (Tech Dashboard Visual)`,
+    `  - ${path.join(ASSETS_DIR, 'closing-banner.svg')} (Call-to-Action Wave)`,
+    `  - ${path.join(ASSETS_DIR, 'logo.svg')} (Brand Vector Emblem)`,
+    '',
+    'Folder Consolidation:',
+    `  - Slide Deck    : ${path.join(OUT_DIR, 'index.html')}`,
+    `  - Final Markdown: ${path.join(OUT_DIR, 'compro.md')}`,
+    `  - Assets Folder : ${ASSETS_DIR}`,
+    `  - Drafts Folder : ${DRAFTS_DIR}`,
+    `  - Reports Folder: ${REPORTS_DIR}`,
+    '',
+    'Clean-up Verification:'
+  ];
+
+  // Clean up empty directories
+  if (fs.existsSync(artifactsDir)) {
+    const remaining = fs.readdirSync(artifactsDir);
+    if (remaining.length === 0) {
+      fs.rmdirSync(artifactsDir);
+      log.push('  - Root artifacts/ directory was empty and cleaned up.');
+    } else {
+      log.push(`  - Root artifacts/ contains: ${remaining.join(', ')}`);
+    }
+  }
+  if (fs.existsSync(qaDir)) {
+    const remaining = fs.readdirSync(qaDir);
+    if (remaining.length === 0) {
+      fs.rmdirSync(qaDir);
+      log.push('  - Root qa/ directory was empty and cleaned up.');
+    } else {
+      log.push(`  - Root qa/ contains: ${remaining.join(', ')}`);
+    }
+  }
+
+  fs.writeFileSync(path.join(REPORTS_DIR, 'build.log'), log.join('\n'), 'utf8');
+
+  // Post-build workspace guarantee: sync artifacts to main workspace if in worktree
+  postBuildSyncGuarantee(OUT_DIR, ROOT, slug);
+
+  console.log(`\n🎉 Company profile build complete!`);
+  console.log(`  Target : ${path.join(OUT_DIR, 'index.html')}`);
+  console.log(`  Slides : ${slides.length} slides compiled`);
+  console.log(`  Assets : 5 SVG vector assets generated in ${ASSETS_DIR}`);
+  console.log(`  Reports: build.log, review-report, and seo-report consolidated in ${REPORTS_DIR}`);
+  console.log(`  Drafts : source drafts consolidated in ${DRAFTS_DIR}\n`);
 }
 
-fs.writeFileSync(path.join(REPORTS_DIR, 'build.log'), log.join('\n'), 'utf8');
-
-console.log(`\n🎉 Company profile build complete!`);
-console.log(`  Target : ${path.join(OUT_DIR, 'index.html')}`);
-console.log(`  Slides : ${slides.length} slides compiled`);
-console.log(`  Assets : 5 SVG vector assets generated in ${ASSETS_DIR}`);
-console.log(`  Reports: build.log, review-report, and seo-report consolidated in ${REPORTS_DIR}`);
-console.log(`  Drafts : source drafts consolidated in ${DRAFTS_DIR}\n`);
+if (require.main === module) {
+  runMain();
+}
 
 if (typeof module !== 'undefined' && typeof require !== 'undefined') {
-  module.exports = { parseAndSanitizeMarkdown, parseEditorialCards, renderEditorialNarrativeSplit, renderEditorialEcosystem, renderEditorialDifferentiator, renderEditorialPricing, renderEditorialServicesGrid };
+  module.exports = {
+    detectProjectRoot,
+    postBuildSyncGuarantee,
+    copyRecursiveSync,
+    runMain,
+    parseAndSanitizeMarkdown,
+    parseEditorialCards,
+    renderEditorialNarrativeSplit,
+    renderEditorialEcosystem,
+    renderEditorialDifferentiator,
+    renderEditorialPricing,
+    renderEditorialServicesGrid
+  };
 }
