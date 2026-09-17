@@ -198,6 +198,24 @@ function resolveSlideImageUrl(slideNum, slot, assetsDir) {
   return `assets/slide-${slideNum}-${slot}.jpg`;
 }
 
+function assertSlideStructure(slideHtml, totalSlides) {
+  const openTags = (slideHtml.match(/<section[\s>]/g) || []).length;
+  const closeTags = (slideHtml.match(/<\/section>/g) || []).length;
+  if (openTags !== totalSlides || closeTags !== totalSlides) {
+    throw new Error(`slide structure violation: expected ${totalSlides} sections, found ${openTags} opens / ${closeTags} closes`);
+  }
+  // Foster-parenting check: strip outermost sections one by one; any <section> left means nesting.
+  let depth = 0;
+  const tagRe = /<\/?section[\s>]/g;
+  let m;
+  while ((m = tagRe.exec(slideHtml)) !== null) {
+    depth += m[0][1] === '/' ? -1 : 1;
+    if (depth > 1) {
+      throw new Error('slide structure violation (foster-parenting): a <section> is nested inside another section; check unclosed <table> near the differentiator slide');
+    }
+  }
+}
+
 // Markdown inline helper
 function inline(mdtext) {
   if (!mdtext) return '';
@@ -2200,6 +2218,8 @@ async function runMain(customArgs) {
     return renderSlide(s, idx, slides.length, brand, THEME, ASSETS_DIR);
   }).join('\n');
 
+  assertSlideStructure(slideHtml, slides.length);
+
   // 7. Inject into HTML Shell with dynamic CSS variables
   let shell = fs.readFileSync(SHELL, 'utf8');
   let customCss = fs.readFileSync(CSS, 'utf8');
@@ -2370,6 +2390,7 @@ if (typeof module !== 'undefined' && typeof require !== 'undefined') {
     classifyCanvaArchetype,
     resolveSlideSlot,
     resolveSlideImageUrl,
+    assertSlideStructure,
     renderEditorialNarrativeSplit,
     renderEditorialEcosystem,
     renderEditorialDifferentiator,

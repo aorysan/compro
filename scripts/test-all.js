@@ -8,7 +8,8 @@ const testScripts = [
   'test-builder-inlining.js',
   'test-publisher-workflow.js',
   'test-orchestrator.js',
-  'test-theme-dispatch.js'
+  'test-theme-dispatch.js',
+  'test-slide-structure.js'
 ];
 
 console.log('--- Running Layer 3 Compro Plugin Verification Suite ---');
