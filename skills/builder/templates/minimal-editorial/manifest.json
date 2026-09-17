@@ -1,5 +1,5 @@
 {
-  "name": "profile",
+  "name": "minimal-editorial",
   "version": "2.6.0",
   "archetypes": ["cover", "welcome-problem", "welcome-solution", "services", "ecosystem", "metrics", "differentiator", "pricing", "closing"],
   "slots": {
@@ -15,5 +15,5 @@
   },
   "cssFile": "theme.css",
   "shellFile": "shell.html",
-  "renderer": "profile"
+  "renderer": "editorial"
 }
