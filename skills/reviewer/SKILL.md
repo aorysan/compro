@@ -48,7 +48,9 @@ Memastikan draf company profile berkualitas tinggi, bebas kesalahan faktual, ses
      dan bullet tidak bisa dikonversi ke tabel → REVISION_REQUIRED.
    - big-number regex: setiap bullet metrik WAJIB cocok dengan big-number regex
      (`%`, `:`, `Rp`, `vX` — misal `~90%`, `20:1`, `Rp10rb`) agar tidak jatuh ke
-     default `100%`. Tidak cocok → REVISION_REQUIRED.
+     default `100%`. Tidak cocok → REVISION_REQUIRED, kecuali bullet
+     struktural/prosa yang tidak membawa klaim metrik (misal label pipeline
+     seperti `3-tier`).
    - honesty callout: baris `**Intinya:** ...` WAJIB ada bila kompetitor menang di
      satu aspek (misal syarat setup GPU 8 GB). honesty callout hilang padahal ada
      aspek yang dimenangkan kompetitor → REVISION_REQUIRED.

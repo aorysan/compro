@@ -1,4 +1,5 @@
-/* themes/modern.js — Modern multi-template renderers (part 1: hero, welcome, services).
+/* themes/modern.js — Modern multi-template renderers (cover, welcome/problem+solution,
+   services, ecosystem, metrics, differentiator, pricing, closing, social-proof + dispatcher).
    Direct ports of congen6 build_deck.py sections 1-4, adapted to generic
    { title, content } slides with shared parsers from ../build-deck.
    Zero-hallucination rule: render only parsed cards (cards.slice(0,4) as-is);
@@ -481,6 +482,7 @@ function renderModernPricing(slide, brand, index = 7, assetsDir = '', totalSlide
     if (cols.length >= 2) rawRows.push(cols);
   }
   const rows = rawRows.slice(1).map(cols => ({
+    // Intentional structural label (not a defaultTiers invention): fills an empty tier cell.
     tier: cols[0] || 'Paket',
     price: cols[1] || '',
     features: (cols[2] || '').split(';').map(f => f.trim()).filter(Boolean)

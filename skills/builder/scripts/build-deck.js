@@ -1503,7 +1503,10 @@ async function acquireSlotImage({ slot, query, keywords, index, slug, assetsDir,
   const slotConfig = (imageFetcher.SLOT_MAP && imageFetcher.SLOT_MAP[slot]) || { category: 'architecture-portrait', orientation: 'portrait', fallback: `${slot}-fallback.svg` };
   const pool = imageFetcher.CURATED_IMAGE_CATALOG[slotConfig.category] || imageFetcher.CURATED_IMAGE_CATALOG['architecture-portrait'];
   // Tier 1: distinct pick from category pool (round-robin by slide index + slug hash)
-  if (elapsed() < budget.ms) {
+  // Build-deadline gate (spec §5: 15 s total asset budget): when the caller threads
+  // budget.deadline through, gate on the build deadline instead of the per-slot
+  // elapsed() check; the elapsed() fallback only serves direct callers without one.
+  if (budget?.deadline != null ? Date.now() < budget.deadline : elapsed() < budget.ms) {
     try {
       const picked = pickFromPoolDistinct(pool, index, slug, assetsDir, slot, pickedUrls);
       await imageFetcher.fetchImageWithFallback({ category: slotConfig.category, destPath: destJpg, slot, _forceUrl: picked });
@@ -1511,7 +1514,8 @@ async function acquireSlotImage({ slot, query, keywords, index, slug, assetsDir,
     } catch (e) { console.warn(`[WARN] Tier 1 search failed for slide ${index + 1}: ${e.message}`); }
   }
   // Tier 2: pollinations generation (5 s strict), skipped when budget exhausted
-  if (query && elapsed() < budget.ms) {
+  // (same build-deadline gate as Tier 1; elapsed() fallback for direct callers).
+  if (query && (budget?.deadline != null ? Date.now() < budget.deadline : elapsed() < budget.ms)) {
     try {
       const landscape = slotConfig.orientation === 'landscape';
       await imageFetcher.fetchGeneratedImage(query, destJpg, { width: landscape ? 1600 : 800, height: landscape ? 900 : 1200, timeoutMs: 5000 });
@@ -2070,8 +2074,8 @@ function buildReviewerMetaBlock(md) {
   const titleMatch = md.match(/^Meta Title:\s*(.+?)\s*$/m);
   const descMatch = md.match(/^Meta Description:\s*(.+?)\s*$/m);
   const parts = [];
-  if (titleMatch) parts.push(`<title>${titleMatch[1].replace(/</g, '&lt;')}</title>`);
-  if (descMatch) parts.push(`<meta name="description" content="${descMatch[1].replace(/&/g, '&amp;').replace(/"/g, '&quot;')}">`);
+  if (titleMatch) parts.push(`<title>${titleMatch[1].replace(/&/g, '&amp;').replace(/</g, '&lt;')}</title>`);
+  if (descMatch) parts.push(`<meta name="description" content="${descMatch[1].replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;')}">`);
   return parts.join('\n  ');
 }
 
@@ -2275,7 +2279,9 @@ async function runMain(customArgs) {
   const slides = parseAndSanitizeMarkdown(md);
 
   // 5b. Wire slide image downloads inside build lifecycle with fallback handling
-  const budget = { ms: 15000 };
+  // Total asset budget (spec §5, binding): ONE build-level deadline shared by all
+  // slots via acquireSlotImage — never a per-slot elapsed() window.
+  const budget = { ms: 15000, deadline: Date.now() + 15000 };
   const pickedUrls = new Set();
   const assetsStart = Date.now();
   const tierCounts = { search: 0, generate: 0, svg: 0, cached: 0 };
