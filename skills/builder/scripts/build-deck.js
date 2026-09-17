@@ -206,12 +206,14 @@ function assertSlideStructure(slideHtml, totalSlides) {
   }
   // Foster-parenting check: strip outermost sections one by one; any <section> left means nesting.
   let depth = 0;
+  let closedSlides = 0;
   const tagRe = /<\/?section[\s>]/g;
   let m;
   while ((m = tagRe.exec(slideHtml)) !== null) {
     depth += m[0][1] === '/' ? -1 : 1;
+    if (m[0][1] === '/' && depth === 0) closedSlides++;
     if (depth > 1) {
-      throw new Error('slide structure violation (foster-parenting): a <section> is nested inside another section; check unclosed <table> near the differentiator slide');
+      throw new Error(`slide structure violation (foster-parenting): a <section> is nested inside another section near slide ${closedSlides + 1}; check unclosed <table> near the differentiator slide`);
     }
   }
 }
