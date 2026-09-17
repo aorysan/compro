@@ -5,7 +5,7 @@
 **Pemilik / Author:** 9_Aryo Adi Putro  
 **Dimensi Kanvas:** 1920 x 1080 px (16:9 Presentation Format)  
 **Total Slide:** 15 Halaman  
-**Folder Hasil Export Gambar:** [`compro/input/canva_slides_exported/`](file://slides/)
+**Folder Hasil Export Gambar:** [`slides/`](slides/)
 
 ---
 

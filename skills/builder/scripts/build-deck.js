@@ -2431,7 +2431,7 @@ async function runMain(customArgs) {
     '',
     `Total Slides    : ${slides.length}`,
     ...slides.map((s, i) => {
-      const type = THEME === 'editorial'
+      const type = (THEME === 'minimal-editorial' || THEME === 'editorial')
         ? classifyCanvaArchetype(s, i, slides.length)
         : detectSlideType(s, i, slides.length);
       const wordCount = s.content.split(/\s+/).filter(Boolean).length;
