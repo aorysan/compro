@@ -10,7 +10,7 @@ for (const theme of requiredThemes) {
     console.error(`FAIL: theme dir missing: ${theme}`);
     process.exit(1);
   }
-  for (const file of ['manifest.json', 'shell.html', 'theme.css']) {
+  for (const file of ['manifest.json', 'shell.html', 'theme.css', 'README.md']) {
     const filePath = path.join(dir, file);
     if (!fs.existsSync(filePath)) {
       console.error(`FAIL: ${theme} missing ${file}`);
