@@ -1451,6 +1451,63 @@ function resolveSlideSlot(slide, index, totalSlides, defaultSlot) {
   }
 }
 
+function parseImageDirective(content) {
+  if (!content) return null;
+  const m = content.match(/<!--\s*image:\s*([a-zA-Z0-9_-]+)\s*--\s*query:\s*([^;]+?)\s*;\s*keywords:\s*([^;]+?)\s*;\s*style:\s*([a-z]+)\s*-->/i);
+  if (!m) return null;
+  return { slot: m[1].toLowerCase(), query: m[2].trim(), keywords: m[3].trim() };
+}
+
+function pickFromPoolDistinct(pool, index, slug, assetsDir) {
+  const first = imageFetcher.pickCatalogUrl(pool, index, slug);
+  let existing = [];
+  try {
+    if (assetsDir && fs.existsSync(assetsDir)) {
+      existing = fs.readdirSync(assetsDir).filter(f => /^slide-\d+-.*\.jpe?g$/i.test(f));
+    }
+  } catch (e) {}
+  for (let k = 0; k < pool.length; k++) {
+    const candidate = imageFetcher.pickCatalogUrl(pool, index + k, slug);
+    const basename = path.basename(String(candidate).split('?')[0]);
+    if (!existing.some(f => f.includes(basename))) return candidate;
+  }
+  return first;
+}
+
+async function acquireSlotImage({ slot, query, keywords, index, slug, assetsDir, budget }) {
+  const started = Date.now();
+  const elapsed = () => Date.now() - started;
+  const destJpg = path.join(assetsDir, `slide-${index + 1}-${slot}.jpg`);
+  // Idempotency first (existing valid file wins, any tier)
+  if (fs.existsSync(destJpg) && fs.statSync(destJpg).size > 1024) {
+    return { path: destJpg, tier: 'cached', elapsedMs: elapsed() };
+  }
+  const slotConfig = (imageFetcher.SLOT_MAP && imageFetcher.SLOT_MAP[slot]) || { category: 'architecture-portrait', orientation: 'portrait', fallback: `${slot}-fallback.svg` };
+  const pool = imageFetcher.CURATED_IMAGE_CATALOG[slotConfig.category] || imageFetcher.CURATED_IMAGE_CATALOG['architecture-portrait'];
+  // Tier 1: distinct pick from category pool (round-robin by slide index + slug hash)
+  if (elapsed() < budget.ms) {
+    try {
+      const picked = pickFromPoolDistinct(pool, index, slug, assetsDir);
+      await imageFetcher.fetchImageWithFallback({ category: slotConfig.category, destPath: destJpg, slot, _forceUrl: picked });
+      return { path: destJpg, tier: 'search', elapsedMs: elapsed() };
+    } catch (e) { console.warn(`[WARN] Tier 1 search failed for slide ${index + 1}: ${e.message}`); }
+  }
+  // Tier 2: pollinations generation (5 s strict), skipped when budget exhausted
+  if (query && elapsed() < budget.ms) {
+    try {
+      const landscape = slotConfig.orientation === 'landscape';
+      await imageFetcher.fetchGeneratedImage(query, destJpg, { width: landscape ? 1600 : 800, height: landscape ? 900 : 1200, timeoutMs: 5000 });
+      if (fs.statSync(destJpg).size > 1024) return { path: destJpg, tier: 'generate', elapsedMs: elapsed() };
+    } catch (e) { console.warn(`[WARN] Tier 2 generate failed for slide ${index + 1}: ${e.message}`); }
+  }
+  // Tier 3: local SVG fallback (never broken)
+  const fallbackFile = slotConfig.fallback || `${slot}-fallback.svg`;
+  const localFallback = path.join(__dirname, '..', 'templates', 'assets', 'fallback', fallbackFile);
+  const svgDest = destJpg.replace(/\.jpe?g$/i, '.svg');
+  if (fs.existsSync(localFallback)) fs.copyFileSync(localFallback, svgDest);
+  return { path: svgDest, tier: 'svg', elapsedMs: elapsed() };
+}
+
 function renderCanvaCover(slide, brand, index = 0, assetsDir = '', totalSlides = 8) {
   const content = sanitizeSlideContent(slide.content || '').replace(/<!--[\s\S]*?-->/g, '').trim();
   const lines = content.split('\n').map(l => l.trim()).filter(Boolean);
@@ -2183,37 +2240,36 @@ async function runMain(customArgs) {
   const slides = parseAndSanitizeMarkdown(md);
 
   // 5b. Wire slide image downloads inside build lifecycle with fallback handling
+  const budget = { ms: 15000 };
+  const assetsStart = Date.now();
+  const tierCounts = { search: 0, generate: 0, svg: 0, cached: 0 };
   for (let i = 0; i < slides.length; i++) {
     const s = slides[i];
     const arch = classifyCanvaArchetype(s, i, slides.length);
     if (arch === 'differentiator' || arch === 'pricing') {
       continue;
     }
-    const slot = resolveSlideSlot(s, i, slides.length);
-    const slotConfig = (imageFetcher.SLOT_MAP && imageFetcher.SLOT_MAP[slot]) || {
-      category: 'architecture-portrait',
-      orientation: 'portrait',
-      fallback: `${slot}-fallback.svg`
-    };
-    const destPathJpg = path.join(ASSETS_DIR, `slide-${i + 1}-${slot}.jpg`);
+    const directive = parseImageDirective(s.content || '');
+    let slot;
+    let query = '';
+    let keywords = '';
+    if (directive) {
+      slot = directive.slot;
+      query = directive.query;
+      keywords = directive.keywords;
+    } else {
+      slot = resolveSlideSlot(s, i, slides.length);
+    }
     try {
-      await imageFetcher.fetchImageWithFallback({
-        category: slotConfig.category,
-        destPath: destPathJpg,
-        slot: slot
-      });
+      const result = await acquireSlotImage({ slot, query, keywords, index: i, slug, assetsDir: ASSETS_DIR, budget });
+      tierCounts[result.tier] = (tierCounts[result.tier] || 0) + 1;
+      console.log(`[ASSETS] slide ${i + 1} slot=${slot} tier=${result.tier}`);
     } catch (err) {
       console.warn(`[WARN] Failed downloading image for slide ${i + 1}: ${err.message}`);
-      const destPathSvg = path.join(ASSETS_DIR, `slide-${i + 1}-${slot}.svg`);
-      if (!fs.existsSync(destPathJpg) && !fs.existsSync(destPathSvg)) {
-        const fallbackFile = slotConfig.fallback || `${slot}-fallback.svg`;
-        const localFallbackPath = path.join(__dirname, '..', 'templates', 'assets', 'fallback', fallbackFile);
-        if (fs.existsSync(localFallbackPath)) {
-          try { fs.copyFileSync(localFallbackPath, destPathSvg); } catch (e) {}
-        }
-      }
+      tierCounts.svg = (tierCounts.svg || 0) + 1;
     }
   }
+  console.log(`[ASSETS] elapsed=${((Date.now() - assetsStart) / 1000).toFixed(1)}s tiers(search=${tierCounts.search || 0},generate=${tierCounts.generate || 0},svg=${tierCounts.svg || 0},cached=${tierCounts.cached || 0})`);
 
   // 6. Convert slides into HTML based on detected archetypes
   const slideHtml = slides.map((s, idx) => {
@@ -2401,6 +2457,9 @@ if (typeof module !== 'undefined' && typeof require !== 'undefined') {
     sanitizeSlideContent,
     sanitizeContactDetails,
     extractBigNumberMetric,
-    loadThemeManifest
+    loadThemeManifest,
+    parseImageDirective,
+    pickFromPoolDistinct,
+    acquireSlotImage
   };
 }

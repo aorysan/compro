@@ -9,7 +9,8 @@ const testScripts = [
   'test-publisher-workflow.js',
   'test-orchestrator.js',
   'test-theme-dispatch.js',
-  'test-slide-structure.js'
+  'test-slide-structure.js',
+  'test-asset-pipeline.js'
 ];
 
 console.log('--- Running Layer 3 Compro Plugin Verification Suite ---');
