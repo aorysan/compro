@@ -2317,7 +2317,7 @@ async function runMain(customArgs) {
   }
   if (shell.includes('/* CSS_INLINE_PLACEHOLDER */')) {
     shell = shell.replace('/* CSS_INLINE_PLACEHOLDER */', customCss);
-  } else {
+  } else if (shell.includes('{{CUSTOM_CSS}}')) {
     shell = shell.replace('/* {{CUSTOM_CSS}} */', customCss);
   }
   if (shell.includes('{{COMPANY_NAME}}')) {
