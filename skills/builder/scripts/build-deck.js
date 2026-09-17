@@ -1949,6 +1949,23 @@ function renderSlide(slide, index, totalSlides, brand, theme = 'editorial', asse
   }
 }
 
+function loadThemeManifest(themeName, templatesDir) {
+  const known = ['editorial', 'profile', 'modern'];
+  const name = known.includes(themeName) ? themeName : 'editorial';
+  if (name !== themeName) {
+    console.warn(`[WARN] Unknown theme "${themeName}", falling back to editorial.`);
+  }
+  const manifestPath = path.join(templatesDir, name, 'manifest.json');
+  // Back-compat: theme files still live flat in templates/ until Task 4 moves modern in.
+  const flatFallback = path.join(templatesDir, 'manifest.json');
+  const raw = fs.readFileSync(fs.existsSync(manifestPath) ? manifestPath : flatFallback, 'utf8');
+  const manifest = JSON.parse(raw);
+  for (const key of ['name', 'version', 'archetypes', 'slots', 'cssFile', 'shellFile', 'renderer']) {
+    if (manifest[key] === undefined) throw new Error(`invalid manifest for theme ${name}: missing ${key}`);
+  }
+  return manifest;
+}
+
 async function runMain(customArgs) {
   const argv = customArgs || process.argv.slice(2);
   const ROOT = detectProjectRoot(argv);
@@ -2360,6 +2377,7 @@ if (typeof module !== 'undefined' && typeof require !== 'undefined') {
     renderEditorialServicesGrid,
     sanitizeSlideContent,
     sanitizeContactDetails,
-    extractBigNumberMetric
+    extractBigNumberMetric,
+    loadThemeManifest
   };
 }
