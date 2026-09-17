@@ -567,7 +567,10 @@ function renderModernClosing(slide, brand, index = 8, assetsDir = '', totalSlide
   }
   if (contacts.length === 0) console.warn(`[modern] closing slide ${index + 1} has zero contacts; rendering empty list`);
 
-  const imgLeft = resolveSlideImageUrl(1, 'hero', assetsDir);
+  // Unique-md5: the left panel uses the per-build branded closing-banner art
+  // (generated into assets/ on every build) instead of re-embedding the hero
+  // photo — reusing slide-1 bytes here violates the unique-md5 image rule.
+  const imgLeft = 'assets/closing-banner.svg';
   const targetSlot = resolveSlideSlot(slide, index, totalSlides, 'closing');
   const imgRight = resolveSlideImageUrl(index + 1, targetSlot, assetsDir);
 

@@ -1458,8 +1458,8 @@ function parseImageDirective(content) {
   return { slot: m[1].toLowerCase(), query: m[2].trim(), keywords: m[3].trim() };
 }
 
-function pickFromPoolDistinct(pool, index, slug, assetsDir) {
-  const first = imageFetcher.pickCatalogUrl(pool, index, slug);
+function pickFromPoolDistinct(pool, index, slug, assetsDir, slot, picked) {
+  picked = picked || new Set();
   let existing = [];
   try {
     if (assetsDir && fs.existsSync(assetsDir)) {
@@ -1469,12 +1469,30 @@ function pickFromPoolDistinct(pool, index, slug, assetsDir) {
   for (let k = 0; k < pool.length; k++) {
     const candidate = imageFetcher.pickCatalogUrl(pool, index + k, slug);
     const basename = path.basename(String(candidate).split('?')[0]);
-    if (!existing.some(f => f.includes(basename))) return candidate;
+    // NOTE: on-disk filenames are slide-N-slot.jpg so they never contain the
+    // catalog URL basename — the picked-set below is the load-bearing guard
+    // against same-build duplicate bytes (spec: unique-md5 images).
+    if (!existing.some(f => f.includes(basename)) && !picked.has(candidate)) {
+      picked.add(candidate);
+      return candidate;
+    }
   }
-  return first;
+  // Pool exhausted within this build (more same-category slots than pool
+  // entries): overflow to a seeded Picsum URL — deterministic per slug+slot
+  // so the slot still resolves to a distinct photo instead of a byte-duplicate.
+  const slotCfg = (imageFetcher.SLOT_MAP && imageFetcher.SLOT_MAP[slot]) || {};
+  const dims = slotCfg.orientation === 'landscape' ? '1600/900' : '800/1200';
+  let n = 0;
+  let overflow = `https://picsum.photos/seed/${slug}-${slot}-${n}/${dims}`;
+  while (picked.has(overflow)) {
+    n++;
+    overflow = `https://picsum.photos/seed/${slug}-${slot}-${n}/${dims}`;
+  }
+  picked.add(overflow);
+  return overflow;
 }
 
-async function acquireSlotImage({ slot, query, keywords, index, slug, assetsDir, budget }) {
+async function acquireSlotImage({ slot, query, keywords, index, slug, assetsDir, budget, pickedUrls }) {
   const started = Date.now();
   const elapsed = () => Date.now() - started;
   const destJpg = path.join(assetsDir, `slide-${index + 1}-${slot}.jpg`);
@@ -1487,7 +1505,7 @@ async function acquireSlotImage({ slot, query, keywords, index, slug, assetsDir,
   // Tier 1: distinct pick from category pool (round-robin by slide index + slug hash)
   if (elapsed() < budget.ms) {
     try {
-      const picked = pickFromPoolDistinct(pool, index, slug, assetsDir);
+      const picked = pickFromPoolDistinct(pool, index, slug, assetsDir, slot, pickedUrls);
       await imageFetcher.fetchImageWithFallback({ category: slotConfig.category, destPath: destJpg, slot, _forceUrl: picked });
       return { path: destJpg, tier: 'search', elapsedMs: elapsed() };
     } catch (e) { console.warn(`[WARN] Tier 1 search failed for slide ${index + 1}: ${e.message}`); }
@@ -2258,6 +2276,7 @@ async function runMain(customArgs) {
 
   // 5b. Wire slide image downloads inside build lifecycle with fallback handling
   const budget = { ms: 15000 };
+  const pickedUrls = new Set();
   const assetsStart = Date.now();
   const tierCounts = { search: 0, generate: 0, svg: 0, cached: 0 };
   for (let i = 0; i < slides.length; i++) {
@@ -2278,7 +2297,7 @@ async function runMain(customArgs) {
       slot = resolveSlideSlot(s, i, slides.length);
     }
     try {
-      const result = await acquireSlotImage({ slot, query, keywords, index: i, slug, assetsDir: ASSETS_DIR, budget });
+      const result = await acquireSlotImage({ slot, query, keywords, index: i, slug, assetsDir: ASSETS_DIR, budget, pickedUrls });
       tierCounts[result.tier] = (tierCounts[result.tier] || 0) + 1;
       console.log(`[ASSETS] slide ${i + 1} slot=${slot} tier=${result.tier}`);
     } catch (err) {
