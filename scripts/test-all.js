@@ -11,7 +11,8 @@ const testScripts = [
   'test-theme-dispatch.js',
   'test-slide-structure.js',
   'test-asset-pipeline.js',
-  'test-modern-theme-files.js'
+  'test-modern-theme-files.js',
+  'test-modern-render.js'
 ];
 
 console.log('--- Running Layer 3 Compro Plugin Verification Suite ---');
