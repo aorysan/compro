@@ -212,5 +212,240 @@ module.exports = {
   classifyModernArchetype,
   renderModernHero,
   renderModernWelcome,
-  renderModernServices
+  renderModernServices,
+  renderModernEcosystem,
+  renderModernMetrics,
+  renderModernDifferentiator
 };
+
+// Slide 5: Ecosystem — congen6 section 5 port (ecosystem-grid-split).
+// Orbit-SVG pattern from renderCanvaEcosystem restyled to congen6 GPU panel markup.
+// Zero-hallucination: node labels from parsed cards (title -> name, desc -> role);
+// structural default labels only when zero cards (with console.warn) — labels are
+// structural, not factual claims.
+function renderModernEcosystem(slide, brand, index = 4, assetsDir = '', totalSlides = 9) {
+  const content = sanitizeSlideContent(slide.content || '').trim();
+  const { introText, cards } = parseEditorialCards(content);
+  const targetSlot = resolveSlideSlot(slide, index, totalSlides, 'ecosystem');
+  const imgSrc = resolveSlideImageUrl(index + 1, targetSlot, assetsDir);
+
+  let nodes;
+  if (cards.length === 0) {
+    console.warn(`[modern] ecosystem slide ${index + 1} has zero cards; rendering structural default orbit labels`);
+    nodes = [
+      { name: 'Node 1', role: 'Peran 1' },
+      { name: 'Node 2', role: 'Peran 2' },
+      { name: 'Node 3', role: 'Peran 3' },
+      { name: 'Node 4', role: 'Peran 4' }
+    ];
+  } else {
+    nodes = cards.slice(0, 4).map(c => ({ name: c.title, role: c.desc }));
+  }
+
+  const cx = 250, cy = 250, r = 160;
+  const numNodes = nodes.length;
+  const satellitesSvg = nodes.map((node, i) => {
+    const angle = -Math.PI / 2 + (i * 2 * Math.PI) / numNodes;
+    const x = Math.round(cx + r * Math.cos(angle));
+    const y = Math.round(cy + r * Math.sin(angle));
+    return `
+        <g class="orbit-node">
+          <line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="${brand.primaryColor}" stroke-opacity="0.55" stroke-width="2" stroke-dasharray="6 6"/>
+          <circle cx="${x}" cy="${y}" r="40" fill="#FFFFFF" stroke="${brand.primaryColor}" stroke-width="2.5"/>
+          <text x="${x}" y="${y - 6}" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="13" font-weight="800" fill="#0F172A">${inline(node.name)}</text>
+          <text x="${x}" y="${y + 12}" text-anchor="middle" font-family="'Inter', sans-serif" font-size="10" font-weight="600" fill="#007A87">${inline(node.role)}</text>
+        </g>`;
+  }).join('\n');
+
+  const orbitSvg = `
+      <svg class="ecosystem-orbit-svg" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="${cx}" cy="${cy}" r="${r + 40}" fill="none" stroke="${brand.primaryColor}" stroke-opacity="0.12" stroke-width="2" stroke-dasharray="6 6"/>
+        <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${brand.primaryColor}" stroke-opacity="0.25" stroke-width="2" stroke-dasharray="8 8"/>
+        ${satellitesSvg}
+        <circle cx="${cx}" cy="${cy}" r="52" fill="${brand.primaryColor}"/>
+        <text x="${cx}" y="${cy - 6}" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="13" font-weight="800" fill="#FFFFFF">${inline(brand.name)}</text>
+        <text x="${cx}" y="${cy + 12}" text-anchor="middle" font-family="'Inter', sans-serif" font-size="10" font-weight="600" fill="rgba(255,255,255,0.85)">AI Core</text>
+      </svg>`;
+
+  const gpuItemsHtml = cards.slice(0, 4).map(c => `
+            <div class="gpu-mini-item">
+              <div class="gpu-mini-head">${inline(c.title)}</div>
+              <p class="gpu-mini-text">${inline(c.desc)}</p>
+            </div>`).join('\n');
+
+  return `
+    <section>
+      <div class="editorial-slide-container">
+        <div class="slide-header">
+          <div class="slide-header-left">
+            <span class="slide-kicker-badge">Arsitektur Sistem</span>
+            <h2 class="slide-title">${inline(slide.title)}</h2>
+          </div>
+          <div class="slide-header-right">
+            ${introText ? `<p class="slide-subtitle">${inline(introText)}</p>` : ''}
+            <span class="slide-index-badge">${slideBadge(index, totalSlides)}</span>
+          </div>
+        </div>
+        <div class="ecosystem-grid-split">
+          <div class="ecosystem-left-col">
+            <div class="ecosystem-svg-container">
+              ${orbitSvg}
+            </div>
+          </div>
+          <div class="ecosystem-right-col">
+            <div class="editorial-image-frame ecosystem-photo-card">
+              <img src="${imgSrc}" alt="${inline(slide.title)}" />
+            </div>
+            <div class="ecosystem-gpu-panel">
+              <div>
+                <span class="gpu-top-badge">Arsitektur &amp; Ekosistem</span>
+                <h3 class="gpu-headline">${inline(slide.title)}</h3>
+                ${introText ? `<p class="gpu-summary">${inline(introText)}</p>` : ''}
+                <div class="gpu-grid-items">
+                  ${gpuItemsHtml}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>`;
+}
+
+// Slide 6: Metrics — congen6 section 6 port (metrics-layout-grid).
+// Zero-hallucination: extractBigNumberMetric per bullet with metric-big-number class,
+// renders exactly the bullets present (no defaultMetrics); empty grid + console.warn.
+function renderModernMetrics(slide, brand, index = 5, assetsDir = '', totalSlides = 9) {
+  const content = sanitizeSlideContent(slide.content || '').trim();
+  const lines = content.split('\n').map(l => l.trim()).filter(Boolean);
+  const targetSlot = resolveSlideSlot(slide, index, totalSlides, 'metrics');
+  const imgSrc = resolveSlideImageUrl(index + 1, targetSlot, assetsDir);
+
+  const bulletLines = lines.filter(l => /^[-*]\s/.test(l));
+  if (bulletLines.length === 0) console.warn(`[modern] metrics slide ${index + 1} has zero bullets; rendering empty grid`);
+  const metrics = bulletLines.slice(0, 4).map(b => extractBigNumberMetric(b));
+
+  const metricsCardsHtml = metrics.map(m => `
+              <div class="metric-card">
+                <div>
+                  <div class="metric-big-number">${inline(m.number)}</div>
+                  <h3 class="metric-label">${inline(m.title)}</h3>
+                  <p class="metric-narrative">${inline(m.desc)}</p>
+                </div>
+              </div>`).join('\n');
+
+  return `
+    <section>
+      <div class="editorial-slide-container">
+        <div class="slide-header">
+          <div class="slide-header-left">
+            <span class="slide-kicker-badge">Validasi &amp; Metrik</span>
+            <h2 class="slide-title">${inline(slide.title)}</h2>
+          </div>
+          <div class="slide-header-right">
+            <span class="slide-index-badge">${slideBadge(index, totalSlides)}</span>
+          </div>
+        </div>
+        <div class="metrics-layout-grid">
+          <div class="metrics-left-col">
+            <div class="metrics-photo-wrap">
+              <img src="${imgSrc}" alt="${inline(slide.title)}" />
+            </div>
+          </div>
+          <div class="metrics-right-stack">
+            <div class="metrics-2x2-grid">
+              ${metricsCardsHtml}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>`;
+}
+
+// Slide 7: Differentiator — congen6 section 7 port (diff-table).
+// Same markdown-table row logic as renderCanvaDifferentiator (build-deck.js):
+// separator-row skip, header from first row, brand column gets col-brand.
+// **Intinya:** line -> honesty callout ("Catatan Transparansi").
+// Unclosed-table impossible by construction (template literal closes all tags).
+// Zero-hallucination: no invented comparison rows; empty table + console.warn.
+function renderModernDifferentiator(slide, brand, index = 6, assetsDir = '', totalSlides = 9) {
+  const content = sanitizeSlideContent(slide.content || '').trim();
+  const lines = content.split('\n').map(l => l.trim()).filter(Boolean);
+  let intro = '';
+  let honesty = '';
+  const tableLines = [];
+
+  for (const line of lines) {
+    if (line.startsWith('|')) {
+      tableLines.push(line);
+    } else if (/^\*\*intinya[:\s]*/i.test(line) || /^intinya[:\s]*/i.test(line)) {
+      honesty = line.replace(/^\*\*intinya[:\s]*\*\*/i, '').replace(/^intinya[:\s]*/i, '').trim();
+    } else if (!intro && !line.startsWith('#') && !line.startsWith('<!--')) {
+      intro = line;
+    }
+  }
+
+  let headers = ['Aspek', brand.name];
+  let rows = [];
+  if (tableLines.length > 0) {
+    const rawRows = [];
+    for (const tl of tableLines) {
+      const cleaned = tl.replace(/^\||\|$/g, '').trim();
+      if (/^(\s*:?-{2,}:?\s*\|?)+$/.test(cleaned)) continue;
+      const cols = cleaned.split('|').map(c => c.replace(/\*\*/g, '').trim());
+      if (cols.length >= 2) rawRows.push(cols);
+    }
+    if (rawRows.length > 0) {
+      headers = rawRows[0].map(h => h || 'Aspek');
+      rows = rawRows.slice(1);
+    }
+  }
+  if (rows.length === 0) console.warn(`[modern] differentiator slide ${index + 1} has zero table rows; rendering empty table`);
+
+  const brandIdx = headers.findIndex(h => new RegExp(brand.name.replace(/[^a-z0-9]/gi, '|'), 'i').test(h) || /kami|pro|venturo/i.test(h));
+  const activeBrandIdx = brandIdx !== -1 ? brandIdx : 1;
+
+  const headerHtml = headers.map((h, i) => `
+                <th class="${i === activeBrandIdx ? 'col-brand' : ''}">${inline(h)}</th>`).join('\n');
+
+  const rowsHtml = rows.map(r => `
+              <tr>
+                ${r.map((cell, ci) => `
+                  <td class="${ci === activeBrandIdx ? 'col-brand' : ''}">${inline(cell)}</td>`).join('\n')}
+              </tr>`).join('\n');
+
+  return `
+    <section>
+      <div class="editorial-slide-container">
+        <div class="slide-header">
+          <div class="slide-header-left">
+            <span class="slide-kicker-badge">Keunggulan Kompetitif</span>
+            <h2 class="slide-title">${inline(slide.title)}</h2>
+          </div>
+          <div class="slide-header-right">
+            ${intro ? `<p class="slide-subtitle">${inline(intro)}</p>` : ''}
+            <span class="slide-index-badge">${slideBadge(index, totalSlides)}</span>
+          </div>
+        </div>
+        <div class="differentiator-layout-wrap">
+          <div class="diff-table-container">
+            <table class="diff-table">
+              <thead>
+                <tr>
+                  ${headerHtml}
+                </tr>
+              </thead>
+              <tbody>
+                ${rowsHtml}
+              </tbody>
+            </table>
+          </div>
+          ${honesty ? `
+          <div class="differentiator-callout-strip">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${brand.primaryColor}" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <span><strong>Catatan Transparansi:</strong> ${inline(honesty)}</span>
+          </div>` : ''}
+        </div>
+      </div>
+    </section>`;
+}

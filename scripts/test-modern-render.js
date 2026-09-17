@@ -13,5 +13,13 @@ if (!services.includes('services-layout-grid') || !services.includes('Brand DNA'
 if (/Paket \d|Fitur Utama \d/.test(services)) { console.error('FAIL: services invented defaults'); process.exit(1); }
 
 if (modern.classifyModernArchetype({ title: 'Paket & Kerjasama', content: '' }, 7, 9) !== 'pricing') { console.error('FAIL: classify'); process.exit(1); }
+const eco = modern.renderModernEcosystem({ title: 'Arsitektur & Ekosistem', content: '- **Groq** — chat copilot\n- **ComfyUI** — render lokal' }, brand, 4, '', 9);
+if (!eco.includes('ecosystem-grid-split') || !eco.includes('Groq') || !eco.includes('<svg')) { console.error('FAIL: ecosystem'); process.exit(1); }
+
+const met = modern.renderModernMetrics({ title: 'Pencapaian & Bukti', content: '- **~90%** margin kontribusi — setelah biaya cloud\n- **20:1** rasio LTV:CAC — ambang sehat' }, brand, 5, '', 9);
+if (!met.includes('metrics-layout-grid') || !met.includes('~90%') || !met.includes('20:1')) { console.error('FAIL: metrics'); process.exit(1); }
+
+const diff = modern.renderModernDifferentiator({ title: 'Mengapa Kami', content: 'Intro jujur\n\n| Aspek | Venturo Pro | SaaS Cloud |\n|---|---|---|\n| Biaya | Flat | Per-generasi |\n\n**Intinya:** butuh GPU 8 GB' }, brand, 6, '', 9);
+if (!diff.includes('</table>') || !diff.includes('col-brand') || !diff.includes('Catatan Transparansi')) { console.error('FAIL: differentiator'); process.exit(1); }
 console.log('PASS: modern hero/welcome/services render');
 process.exit(0);
