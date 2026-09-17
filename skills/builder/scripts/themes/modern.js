@@ -8,6 +8,7 @@ const {
   parseEditorialCards,
   extractBigNumberMetric,
   sanitizeSlideContent,
+  sanitizeContactDetails,
   resolveSlideSlot,
   resolveSlideImageUrl
 } = require('../build-deck');
@@ -215,7 +216,11 @@ module.exports = {
   renderModernServices,
   renderModernEcosystem,
   renderModernMetrics,
-  renderModernDifferentiator
+  renderModernDifferentiator,
+  renderModernPricing,
+  renderModernClosing,
+  renderModernSocialProof,
+  renderModernSlide
 };
 
 // Slide 5: Ecosystem — congen6 section 5 port (ecosystem-grid-split).
@@ -448,4 +453,217 @@ function renderModernDifferentiator(slide, brand, index = 6, assetsDir = '', tot
         </div>
       </div>
     </section>`;
+}
+
+// Slide 8: Pricing — congen6 section 8 port (pricing-cards-grid).
+// Parses the markdown table (tier | price | `;`-separated features); the middle
+// row is elevated with a `Best Seller` ribbon. Zero-hallucination: renders only
+// the rows present (fewer than 3 -> render fewer + console.warn, never
+// defaultTiers); empty grid + console.warn when zero rows.
+function renderModernPricing(slide, brand, index = 7, assetsDir = '', totalSlides = 9) {
+  const content = sanitizeSlideContent(slide.content || '').replace(/<!--[\s\S]*?-->/g, '').trim();
+  const lines = content.split('\n').map(l => l.trim()).filter(Boolean);
+  let intro = '';
+  const tableLines = [];
+  for (const line of lines) {
+    if (line.startsWith('|')) {
+      tableLines.push(line);
+    } else if (!intro && !line.startsWith('#')) {
+      intro = line;
+    }
+  }
+
+  const rawRows = [];
+  for (const tl of tableLines) {
+    const cleaned = tl.replace(/^\||\|$/g, '').trim();
+    if (/^(\s*:?-{2,}:?\s*\|?)+$/.test(cleaned)) continue;
+    const cols = cleaned.split('|').map(c => c.replace(/\*\*/g, '').trim());
+    if (cols.length >= 2) rawRows.push(cols);
+  }
+  const rows = rawRows.slice(1).map(cols => ({
+    tier: cols[0] || 'Paket',
+    price: cols[1] || '',
+    features: (cols[2] || '').split(';').map(f => f.trim()).filter(Boolean)
+  }));
+  if (rows.length < 3) console.warn(`[modern] pricing slide ${index + 1} has ${rows.length} tier rows; rendering as-is (never inventing default tiers)`);
+
+  const elevatedIdx = Math.floor(rows.length / 2);
+  const checkSvg = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>';
+  const cardsHtml = rows.map((r, i) => {
+    const isElevated = i === elevatedIdx;
+    const btnLabel = isElevated ? 'Pilih Paket' : i === 0 ? 'Mulai' : 'Hubungi Tim';
+    const btnClass = isElevated ? 'btn-primary' : 'btn-outline';
+    const featsHtml = r.features.map(f => {
+      const parts = f.split(/[—–:\-]/);
+      const head = parts[0].trim();
+      const tail = parts.slice(1).join(' ').trim();
+      return `
+                <div class="tier-feature-item">
+                  ${checkSvg}
+                  <div>
+                    <strong>${inline(head)}</strong>
+                    ${tail ? `<p>${inline(tail)}</p>` : ''}
+                  </div>
+                </div>`;
+    }).join('\n');
+    return `
+            <div class="tier-card${isElevated ? ' elevated' : ''}">
+              ${isElevated ? '<div class="tier-ribbon">Best Seller</div>' : ''}
+              <div>
+                <h3 class="tier-name">${inline(r.tier)}</h3>
+                <div class="tier-price-row">${inline(r.price)}</div>
+              </div>
+              <div class="tier-features">
+                ${featsHtml}
+              </div>
+              <div>
+                <a href="#/${totalSlides - 1}" class="${btnClass}" style="justify-content:center; width:100%; box-sizing:border-box;">${btnLabel}</a>
+              </div>
+            </div>`;
+  }).join('\n');
+
+  return `
+    <section>
+      <div class="editorial-slide-container">
+        <div class="slide-header">
+          <div class="slide-header-left">
+            <span class="slide-kicker-badge">Investasi &amp; Kolaborasi</span>
+            <h2 class="slide-title">${inline(slide.title)}</h2>
+          </div>
+          <div class="slide-header-right">
+            ${intro ? `<p class="slide-subtitle">${inline(intro)}</p>` : ''}
+            <span class="slide-index-badge">${slideBadge(index, totalSlides)}</span>
+          </div>
+        </div>
+        <div class="pricing-content-wrap">
+          <div class="pricing-cards-grid">
+            ${cardsHtml}
+          </div>
+        </div>
+      </div>
+    </section>`;
+}
+
+// Slide 9: Closing — congen6 section 9 port (closing-3col-grid).
+// 3-column layout: architecture photo, charcoal contact card, team photo.
+// Contact values rendered verbatim via sanitizeContactDetails (invent nothing).
+// Zero-hallucination: empty contacts -> empty list + console.warn (the existing
+// sanitizeContactDetails placeholder replacement stays).
+function renderModernClosing(slide, brand, index = 8, assetsDir = '', totalSlides = 9) {
+  const brandSlug = (brand && brand.name ? brand.name : 'venturo-pro').toLowerCase().replace(/\s+/g, '-');
+  const sanitized = sanitizeContactDetails(slide.content || '', brandSlug);
+  const content = sanitizeSlideContent(sanitized).replace(/<!--[\s\S]*?-->/g, '').trim();
+  const lines = content.split('\n').map(l => l.trim()).filter(Boolean);
+
+  let desc = '';
+  const contacts = [];
+  for (const line of lines) {
+    const m = line.match(/^[-*]\s*(.+?)\s*:\s*(.+)$/);
+    if (m) {
+      contacts.push({ label: m[1].replace(/[*_`]/g, '').trim(), value: m[2].replace(/[*_`]/g, '').trim() });
+    } else if (!desc && !line.startsWith('#')) {
+      desc = line;
+    }
+  }
+  if (contacts.length === 0) console.warn(`[modern] closing slide ${index + 1} has zero contacts; rendering empty list`);
+
+  const imgLeft = resolveSlideImageUrl(1, 'hero', assetsDir);
+  const targetSlot = resolveSlideSlot(slide, index, totalSlides, 'closing');
+  const imgRight = resolveSlideImageUrl(index + 1, targetSlot, assetsDir);
+
+  const iconFor = (label) => {
+    const l = label.toLowerCase();
+    if (/whatsapp|telepon|phone|telp/.test(l)) return '<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>';
+    if (/email|mail|surat/.test(l)) return '<rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>';
+    return '<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>';
+  };
+  const contactItemsHtml = contacts.slice(0, 4).map(c => `
+              <div class="closing-contact-row">
+                <div class="closing-contact-icon-box">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${iconFor(c.label)}</svg>
+                </div>
+                <div class="closing-contact-meta">
+                  <span class="closing-contact-type">${inline(c.label)}</span>
+                  <span class="closing-contact-detail">${inline(c.value)}</span>
+                </div>
+              </div>`).join('\n');
+
+  return `
+    <section>
+      <div class="editorial-slide-container">
+        <div class="closing-3col-grid">
+          <div class="editorial-image-frame closing-photo-wrap">
+            <img src="${imgLeft}" alt="Architecture Visual" />
+          </div>
+          <div class="closing-center-panel">
+            <span class="closing-badge-top">Langkah Berikutnya · Hubungi Kami</span>
+            <h2 class="closing-main-title">${inline(slide.title)}</h2>
+            <p class="closing-main-desc">${inline(desc || '')}</p>
+            <div class="closing-contact-grid">
+              ${contactItemsHtml}
+            </div>
+            <div class="closing-action-buttons">
+              <a href="#/0" class="btn-primary" style="padding:12px 26px; font-size:15px;"><span>Mulai Sekarang</span></a>
+            </div>
+          </div>
+          <div class="editorial-image-frame closing-photo-wrap">
+            <img src="${imgRight}" alt="Corporate Team Visual" />
+          </div>
+        </div>
+      </div>
+    </section>`;
+}
+
+// Social-proof: 3-column quote-card grid reusing the welcome-card structure
+// with a quote SVG + attribution. Zero-hallucination: renders exactly the
+// bullets present (no invented testimonials); empty grid + console.warn.
+function renderModernSocialProof(slide, brand, index = 7, assetsDir = '', totalSlides = 9) {
+  const content = sanitizeSlideContent(slide.content || '').trim();
+  const { introText, cards } = parseEditorialCards(content);
+  if (cards.length === 0) console.warn(`[modern] social-proof slide ${index + 1} has zero cards; rendering empty grid`);
+  const cardsHtml = cards.map(card => `
+          <div class="welcome-card quote-card">
+            <svg class="quote-icon" width="28" height="28" viewBox="0 0 24 24" fill="${brand.primaryColor}" xmlns="http://www.w3.org/2000/svg"><path d="M10 8c-3 1-5 3.5-5 7v1h5v-6H7.5C8 9 9 8.5 10 8.2V8zm9 0c-3 1-5 3.5-5 7v1h5v-6h-2.5c.5-1 1.5-1.5 2.5-1.8V8z"/></svg>
+            <div class="welcome-card-content">
+              <p class="welcome-card-desc">${inline(card.desc)}</p>
+              <h3 class="welcome-card-title">${inline(card.title)}</h3>
+            </div>
+          </div>`).join('\n');
+
+  return `
+    <section>
+      <div class="editorial-slide-container">
+        <div class="slide-header">
+          <div class="slide-header-left">
+            <span class="slide-kicker-badge">Testimoni &amp; Kepercayaan</span>
+            <h2 class="slide-title">${inline(slide.title)}</h2>
+          </div>
+          <div class="slide-header-right">
+            ${introText ? `<p class="slide-subtitle">${inline(introText)}</p>` : ''}
+            <span class="slide-index-badge">${slideBadge(index, totalSlides)}</span>
+          </div>
+        </div>
+        <div class="social-proof-grid" style="display:grid; grid-template-columns:repeat(3, 1fr); gap:20px; align-items:stretch;">
+          ${cardsHtml}
+        </div>
+      </div>
+    </section>`;
+}
+
+// Modern dispatcher: archetype -> renderer (10 cases, default `solution`).
+function renderModernSlide(slide, index, totalSlides, brand, assetsDir = '') {
+  const arch = classifyModernArchetype(slide, index, totalSlides);
+  switch (arch) {
+    case 'cover': return renderModernHero(slide, brand, index, assetsDir, totalSlides);
+    case 'problem': return renderModernWelcome(slide, brand, index, 'problem', assetsDir, totalSlides);
+    case 'solution': return renderModernWelcome(slide, brand, index, 'solution', assetsDir, totalSlides);
+    case 'services': return renderModernServices(slide, brand, index, assetsDir, totalSlides);
+    case 'ecosystem': return renderModernEcosystem(slide, brand, index, assetsDir, totalSlides);
+    case 'metrics': return renderModernMetrics(slide, brand, index, assetsDir, totalSlides);
+    case 'differentiator': return renderModernDifferentiator(slide, brand, index, assetsDir, totalSlides);
+    case 'pricing': return renderModernPricing(slide, brand, index, assetsDir, totalSlides);
+    case 'closing': return renderModernClosing(slide, brand, index, assetsDir, totalSlides);
+    case 'social-proof': return renderModernSocialProof(slide, brand, index, assetsDir, totalSlides);
+    default: return renderModernWelcome(slide, brand, index, 'solution', assetsDir, totalSlides);
+  }
 }

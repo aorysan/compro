@@ -21,5 +21,13 @@ if (!met.includes('metrics-layout-grid') || !met.includes('~90%') || !met.includ
 
 const diff = modern.renderModernDifferentiator({ title: 'Mengapa Kami', content: 'Intro jujur\n\n| Aspek | Venturo Pro | SaaS Cloud |\n|---|---|---|\n| Biaya | Flat | Per-generasi |\n\n**Intinya:** butuh GPU 8 GB' }, brand, 6, '', 9);
 if (!diff.includes('</table>') || !diff.includes('col-brand') || !diff.includes('Catatan Transparansi')) { console.error('FAIL: differentiator'); process.exit(1); }
+const price = modern.renderModernPricing({ title: 'Paket & Kerjasama', content: 'Intro harga\n\n| Tier | Harga | Fitur |\n|---|---|---|\n| Lite | Rp0 | 5 video; watermark |\n| Pro | Rp99rb | unlimited; tanpa watermark |\n| Team | Rp299rb | 5 seat; support |' }, brand, 7, '', 9);
+if (!price.includes('pricing-cards-grid') || !price.includes('Best Seller') || !price.includes('Rp99rb')) { console.error('FAIL: pricing'); process.exit(1); }
+
+const close = modern.renderModernClosing({ title: 'Hubungi Kami', content: 'Mulai hari ini\n\n- WhatsApp: +62 812-0000-0000\n- Email: halo@venturo.pro' }, brand, 8, '', 9);
+if (!close.includes('closing-3col-grid') || !close.includes('+62 812-0000-0000')) { console.error('FAIL: closing'); process.exit(1); }
+
+const proof = modern.renderModernSocialProof({ title: 'Testimoni & Kepercayaan', content: '- **Budi, CTO** — "Memangkas waktu 60%"\n- **Siti, VP** — "Stabil dan intuitif"' }, brand, 7, '', 9);
+if (!proof.includes('quote') || !proof.includes('Budi')) { console.error('FAIL: social-proof'); process.exit(1); }
 console.log('PASS: modern hero/welcome/services render');
 process.exit(0);

@@ -1995,6 +1995,7 @@ function renderCanvaClosing(slide, brand, index = 8, assetsDir = '', totalSlides
 }
 
 function renderSlide(slide, index, totalSlides, brand, theme = 'editorial', assetsDir = '') {
+  if (theme === 'modern') return require('./themes/modern').renderModernSlide(slide, index, totalSlides, brand, assetsDir);
   if (theme === 'editorial') {
     const arch = classifyCanvaArchetype(slide, index, totalSlides);
     switch (arch) {
@@ -2041,6 +2042,19 @@ function loadThemeManifest(themeName, templatesDir) {
     if (manifest[key] === undefined) throw new Error(`invalid manifest for theme ${name}: missing ${key}`);
   }
   return manifest;
+}
+
+// Reviewer meta block for the modern shell's {{META}} token: extracted from the
+// Meta Title / Meta Description header lines the reviewer carries in 02-final.md.
+// Returns the <title> + description <meta> block, or '' when absent.
+function buildReviewerMetaBlock(md) {
+  if (!md) return '';
+  const titleMatch = md.match(/^Meta Title:\s*(.+?)\s*$/m);
+  const descMatch = md.match(/^Meta Description:\s*(.+?)\s*$/m);
+  const parts = [];
+  if (titleMatch) parts.push(`<title>${titleMatch[1].replace(/</g, '&lt;')}</title>`);
+  if (descMatch) parts.push(`<meta name="description" content="${descMatch[1].replace(/&/g, '&amp;').replace(/"/g, '&quot;')}">`);
+  return parts.join('\n  ');
 }
 
 async function runMain(customArgs) {
@@ -2098,27 +2112,30 @@ async function runMain(customArgs) {
     path.join(__dirname, '..', 'skills', 'builder', 'templates')
   ];
 
+  // Theme shell/CSS resolution via manifest (loadThemeManifest falls back to
+  // editorial with a warning on unknown themes, never hard-fails).
+  // Back-compat: editorial/profile shells still live flat in templates/ while
+  // modern ships inside its theme subdir — accept either location.
   let SHELL = null;
   let CSS = null;
-  if (THEME === 'editorial') {
-    for (const dir of templateCandidates) {
-      const s = path.join(dir, 'editorial-shell.html');
-      const c = path.join(dir, 'editorial.css');
-      if (fs.existsSync(s) && fs.existsSync(c)) {
-        SHELL = s;
-        CSS = c;
-        break;
-      }
+  for (const dir of templateCandidates) {
+    if (!fs.existsSync(dir)) continue;
+    let manifest;
+    try {
+      manifest = loadThemeManifest(THEME, dir);
+    } catch (e) {
+      continue;
     }
-  } else {
-    for (const dir of templateCandidates) {
-      const s = path.join(dir, 'profile-shell.html');
-      const c = path.join(dir, 'custom.css');
-      if (fs.existsSync(s) && fs.existsSync(c)) {
-        SHELL = s;
-        CSS = c;
-        break;
-      }
+    const shellFlat = path.join(dir, manifest.shellFile);
+    const shellNested = path.join(dir, manifest.name, manifest.shellFile);
+    const cssFlat = path.join(dir, manifest.cssFile);
+    const cssNested = path.join(dir, manifest.name, manifest.cssFile);
+    const s = fs.existsSync(shellFlat) ? shellFlat : (fs.existsSync(shellNested) ? shellNested : null);
+    const c = fs.existsSync(cssFlat) ? cssFlat : (fs.existsSync(cssNested) ? cssNested : null);
+    if (s && c) {
+      SHELL = s;
+      CSS = c;
+      break;
     }
   }
 
@@ -2288,13 +2305,29 @@ async function runMain(customArgs) {
     .replace(/--brand-s:\s*\d+%;/, `--brand-s: ${hsl.s}%;`)
     .replace(/--brand-l:\s*\d+%;/, `--brand-l: ${hsl.l}%;`);
 
-  if (THEME === 'editorial') {
-    shell = shell.replace(/<title>.*?<\/title>/, `<title>${brand.name} — Company Profile</title>`);
+  // Shell injection by placeholder sniffing: modern/editorial shells carry
+  // CSS_INLINE_PLACEHOLDER (+ SLIDES_INLINE_PLACEHOLDER) while the profile
+  // shell carries {{CUSTOM_CSS}} (+ {{COMPANY_NAME}} and its own slide range).
+  // The modern shell also carries {{META}}, replaced with the reviewer meta
+  // block when 02-final.md carries it (else empty string).
+  const reviewerMeta = buildReviewerMetaBlock(md);
+  const hasMetaToken = shell.includes('{{META}}');
+  if (hasMetaToken) {
+    shell = shell.replace('{{META}}', reviewerMeta);
+  }
+  if (shell.includes('/* CSS_INLINE_PLACEHOLDER */')) {
     shell = shell.replace('/* CSS_INLINE_PLACEHOLDER */', customCss);
-    shell = shell.replace('<!-- SLIDES_INLINE_PLACEHOLDER -->', slideHtml);
   } else {
     shell = shell.replace('/* {{CUSTOM_CSS}} */', customCss);
+  }
+  if (shell.includes('{{COMPANY_NAME}}')) {
     shell = shell.replace(/{{COMPANY_NAME}}/g, brand.name);
+  } else if (!hasMetaToken || !/<title>[\s\S]*<\/title>/.test(reviewerMeta)) {
+    shell = shell.replace(/<title>.*?<\/title>/, `<title>${brand.name} — Company Profile</title>`);
+  }
+  if (shell.includes('<!-- SLIDES_INLINE_PLACEHOLDER -->')) {
+    shell = shell.replace('<!-- SLIDES_INLINE_PLACEHOLDER -->', slideHtml);
+  } else {
     shell = shell.replace(
       /<!-- Konten slide di-inject di sini oleh builder -->[\s\S]*?<!-- Setiap section adalah satu slide beresolusi 1920x1080 \(16:9\) -->/,
       slideHtml
