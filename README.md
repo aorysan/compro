@@ -101,8 +101,8 @@ Rilis v2.2.0 menghadirkan peningkatan signifikan pada stabilitas arsitektur, kua
 ├── plugin.json                         # Manifest plugin root
 ├── skills/
 │   ├── compro/SKILL.md                 # Orchestrator State-Machine (Gate -1 s/d Phase 6)
-│   ├── writer/SKILL.md                 # Skill 8: Copywriting & Slide Drafting (dynamic slides)
-│   ├── reviewer/SKILL.md               # Skill 9: QA, Dedup & Content SEO Validator
+│   ├── writer/SKILL.md                 # Skill 8: Copywriting, Research & Slide Drafting
+│   ├── reviewer/SKILL.md               # Skill 9: QA, Dedup, Selling Point Verify & Content SEO
 │   ├── builder/                        # Skill 10: Theme-based Reveal.js Assembler (Inline SVG)
 │   │   ├── SKILL.md
 │   │   ├── templates/
@@ -110,7 +110,12 @@ Rilis v2.2.0 menghadirkan peningkatan signifikan pada stabilitas arsitektur, kua
 │   │   │   ├── editorial-shell.html    # Tema Canva Editorial (v2.4.0)
 │   │   │   ├── editorial.css           # Design system gray-white modern
 │   │   │   └── custom.css
-│   │   └── references/
+│   │   ├── references/
+│   │   │   ├── design-tokens.md        # Dynamic HSL brand color tokens
+│   │   │   └── visual-hierarchy.md     # Layout archetypes & composition
+│   │   └── skills/                     # ◄── Embedded design intelligence (v2.7.0)
+│   │       ├── ui-ux-pro-max/          # 79 styles, 192 palettes, 74 fonts, Python CLI
+│   │       └── impeccable/             # Craft quality: critique, audit, polish, 35 refs
 │   └── publisher/                      # Skill 11: SEO Auto-Fix & Vercel Deployer
 │       ├── SKILL.md
 │       └── scripts/
