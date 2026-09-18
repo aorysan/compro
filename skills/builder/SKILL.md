@@ -30,7 +30,7 @@ Builder ini menyertakan dua skill desain lengkap yang di-bundle langsung untuk p
 1. **[ui-ux-pro-max (`skills/ui-ux-pro-max/SKILL.md`)](skills/ui-ux-pro-max/SKILL.md):**
    - Design system generator dengan 79 searchable styles (50 aktif), 192 product palettes & reasoning profiles, 74 font pairings
    - Searchable datasets: colors, typography, icons (Lucide/Phosphor), motion presets, UX guidelines, landing patterns
-   - Python CLI: `python3 skills/ui-ux-pro-max/scripts/search.py "<query>" --design-system`
+   - Python CLI: `python3 skills/builder/skills/ui-ux-pro-max/scripts/search.py "<query>" --design-system`
    - Digunakan untuk: pemilihan palet warna, font pairing, style matching per industri produk klien
 
 2. **[impeccable (`skills/impeccable/SKILL.md`)](skills/impeccable/SKILL.md):**
@@ -43,7 +43,7 @@ Builder ini menyertakan dua skill desain lengkap yang di-bundle langsung untuk p
 
 | Tahap Build | Skill yang Dipanggil | Tujuan |
 |-------------|---------------------|--------|
-| 1a. Brand Color Resolution | ui-ux-pro-max (`python3 skills/ui-ux-pro-max/scripts/search.py "<industri> <produk>" --domain color`) | Validasi palet warna terhadap industry best practices |
+| 1a. Brand Color Resolution | ui-ux-pro-max (`python3 skills/builder/skills/ui-ux-pro-max/scripts/search.py "<industri> <produk>" --domain color`) | Validasi palet warna terhadap industry best practices |
 | 2. Archetype Mapping | ui-ux-pro-max (`--domain landing`) | Pastikan layout sesuai conversion patterns untuk industri klien |
 | 4. HTML Assembly | impeccable — baca [`craft-floor.md`](skills/impeccable/reference/craft-floor.md) | Enforce quality floor: no placeholder text, no broken layout, no orphaned elements |
 | 4. HTML Assembly | impeccable — baca [`typeset.md`](skills/impeccable/reference/typeset.md) | Pastikan typography hierarchy konsisten (Plus Jakarta Sans + Inter scale) |
@@ -56,13 +56,13 @@ Builder WAJIB membaca reference doc yang relevan dari skill ter-bundle pada taha
 
 ```bash
 # Generate design system recommendation untuk industri klien
-python3 skills/ui-ux-pro-max/scripts/search.py "fintech digital payment" --design-system
+python3 skills/builder/skills/ui-ux-pro-max/scripts/search.py "fintech digital payment" --design-system
 
 # Cari font pairing recommendation
-python3 skills/ui-ux-pro-max/scripts/search.py "professional corporate" --domain typography
+python3 skills/builder/skills/ui-ux-pro-max/scripts/search.py "professional corporate" --domain typography
 
 # Cari color palette recommendation
-python3 skills/ui-ux-pro-max/scripts/search.py "healthcare wellness" --domain color
+python3 skills/builder/skills/ui-ux-pro-max/scripts/search.py "healthcare wellness" --domain color
 ```
 
 Untuk impeccable, builder membaca reference docs secara langsung (bukan menjalankan CLI):
