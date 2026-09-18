@@ -38,6 +38,7 @@ Builder ini menyertakan dua skill desain lengkap yang di-bundle langsung untuk p
    - Commands: `critique` (UX heuristic scoring), `audit` (a11y, perf, responsive), `polish` (final quality pass), `bolder` (amplify bland designs), `animate` (purposeful motion), `colorize` (strategic color), `typeset` (typography hierarchy), `layout` (spacing & rhythm)
    - Critical reference: [`craft-floor.md`](skills/impeccable/reference/craft-floor.md) — quality floor & absolute bans
    - Digunakan untuk: post-build quality audit, visual polish, accessibility check pada HTML output
+   - Di-embed via 35 reference docs lengkap dan launcher script (`scripts/impeccable`), tanpa precompiled binary platform-specific di git (~16MB dihemat). Builder mengonsumsi reference docs secara langsung; launcher script akan mendownload binary sesuai platform atau menggunakan `impeccable` dari PATH jika eksekusi CLI diperlukan.
 
 ### Kapan Builder Harus Memanggil Skill Ini
 

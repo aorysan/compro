@@ -8,7 +8,7 @@ Rilis v2.7.0 menghadirkan competitive selling point research otomatis dan design
 
 - **Phase 0.5 Competitive Selling Point Research**: Writer melakukan research produk serupa di internet (`search_web` + `read_url_content`), menyusun tabel perbandingan internal, dan mengekstrak 5-8 selling points tervalidasi pasar. Hasil disimpan di `compros/<slug>/reports/selling-points-research.md` untuk user review sebelum drafting dimulai. Nama kompetitor TIDAK PERNAH muncul di slide output (Zero Competitor Leak).
 - **Reviewer Selling Point Verification**: Checklist audit baru memverifikasi traceability selling points ke research report dan memindai competitor leak di narasi draf.
-- **Embedded Design Skills (`ui-ux-pro-max` & `impeccable`)**: Kedua skill desain di-bundle langsung di dalam builder (`skills/builder/skills/`), menjadikan plugin fully self-contained dan portabel tanpa dependensi skill global.
+- **Embedded Design Skills (`ui-ux-pro-max` & `impeccable`)**: Kedua skill desain di-bundle langsung di dalam builder (`skills/builder/skills/`), menjadikan plugin fully self-contained dan portabel tanpa dependensi skill global. Skill `impeccable` menyertakan 35 dokumen referensi lengkap dan launcher script tanpa binary precompiled platform-specific (menghemat ~16MB).
 
 ## What's New in v2.6.0
 
@@ -115,7 +115,7 @@ Rilis v2.2.0 menghadirkan peningkatan signifikan pada stabilitas arsitektur, kua
 │   │   │   └── visual-hierarchy.md     # Layout archetypes & composition
 │   │   └── skills/                     # ◄── Embedded design intelligence (v2.7.0)
 │   │       ├── ui-ux-pro-max/          # 79 styles, 192 palettes, 74 fonts, Python CLI
-│   │       └── impeccable/             # Craft quality: critique, audit, polish, 35 refs
+│   │       └── impeccable/             # Craft quality: critique, audit, polish, 35 refs & launcher (tanpa binary blob)
 │   └── publisher/                      # Skill 11: SEO Auto-Fix & Vercel Deployer
 │       ├── SKILL.md
 │       └── scripts/

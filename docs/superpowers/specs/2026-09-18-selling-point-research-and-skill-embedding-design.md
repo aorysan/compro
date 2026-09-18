@@ -199,7 +199,7 @@ skills/builder/
 │   │       ├── reasoning_contract.py
 │   │       ├── validate_data.py
 │   │       └── tests/
-│   └── impeccable/               # Copy utuh (~18 MB, 52 files)
+│   └── impeccable/               # Reference docs & launcher (~2.2 MB, 51 files)
 │       ├── SKILL.md              # 11.6 KB
 │       ├── reference/            # 35 reference docs (~300 KB)
 │       │   ├── craft-floor.md
@@ -213,10 +213,9 @@ skills/builder/
 │       │   ├── typeset.md
 │       │   ├── layout.md
 │       │   └── ... (35 files total)
-│       └── scripts/              # Impeccable CLI tooling (~18 MB)
+│       └── scripts/              # Impeccable launcher & scripts (~1.9 MB, tanpa precompiled binary)
 │           ├── impeccable
 │           ├── impeccable.cmd
-│           ├── bin/
 │           ├── data/
 │           ├── command-metadata.json
 │           └── live-browser*.js
@@ -271,12 +270,12 @@ skills/builder/
 | Komponen | Ukuran |
 |----------|--------|
 | ui-ux-pro-max (68 files) | ~3.6 MB |
-| impeccable (52 files) | ~18 MB |
-| **Total tambahan** | **~21.6 MB** |
+| impeccable (51 files) | ~2.2 MB |
+| **Total tambahan** | **~5.8 MB** |
 | Plugin sebelumnya | ~200 KB |
 
-> [!WARNING]
-> Penambahan ~21.6 MB ke repository cukup signifikan. Sebagian besar berasal dari compiled binaries (`impeccable/scripts/bin/`) dan large CSV datasets (`ui-ux-pro-max/data/`). Trade-off yang dipilih: **portabilitas penuh** — user lain tidak perlu install skill terpisah.
+> [!NOTE]
+> Pada awalnya penambahan skill diestimasi ~21.6 MB karena mencakup compiled binary Linux-x64 `impeccable` (~16 MB). Berdasarkan review PR #9, binary precompiled tersebut dihapus karena redundant (builder hanya membaca reference docs markdown secara langsung) dan bersifat platform-specific (hanya Linux x64). Launcher script (`scripts/impeccable`) tetap disertakan dan dapat mengunduh binary secara on-demand atau mengeksekusi binary sistem di PATH jika dibutuhkan. Penambahan ukuran akhir tereduksi menjadi ~5.8 MB (menghemat ~16 MB).
 
 ---
 
@@ -306,7 +305,7 @@ skills/builder/
 ### Fitur 2 (Skill Embedding)
 
 #### [NEW] `skills/builder/skills/ui-ux-pro-max/` — Copy utuh, 68 files, ~3.6 MB
-#### [NEW] `skills/builder/skills/impeccable/` — Copy utuh, 52 files, ~18 MB
+#### [NEW] `skills/builder/skills/impeccable/` — Reference docs, launcher & metadata (51 files, ~2.2 MB, tanpa precompiled binary)
 
 #### [MODIFY] [SKILL.md](file:///home/aorysan/aorysan/AryokPunya/Magang/compro/.claude/plugins/compro/skills/builder/SKILL.md) (Builder)
 - Update referensi path ke skill lokal
