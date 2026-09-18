@@ -13,6 +13,7 @@ Dokumen yang disediakan di folder `input/`:
 
 ## Outputs
 - `compros/<slug>/drafts/01-draft.md` (legacy: `artifacts/01-company-profile-draft.md`): Draf presentasi company profile lengkap dengan pemisah heading slide.
+- `compros/<slug>/reports/selling-points-research.md`: Laporan research kompetitif internal — berisi tabel perbandingan produk dan selling points teridentifikasi. **Dokumen internal, TIDAK ditampilkan di slide.**
 
 ## Aturan Penulisan & Chunking
 1. **Pemisah Slide Deterministic:**
@@ -45,12 +46,103 @@ Dokumen yang disediakan di folder `input/`:
    - Rule of thumb: jika >40% kata di deskripsi sama dengan tagline, itu repetisi.
    - Pelanggaran aturan ini merupakan alasan reviewer mengeluarkan REVISION_REQUIRED.
 
+## Phase 0.5: Competitive Selling Point Research
+
+Sebelum menulis draf narasi, Writer WAJIB melakukan research kompetitif untuk mengidentifikasi selling points yang tervalidasi pasar.
+
+### Alur Research
+
+1. **Extract Product Identity:**
+   - Baca `input/business-knowledge-base.md`
+   - Identifikasi: nama produk/perusahaan, kategori industri (SaaS, F&B, Property, dll), daftar fitur/layanan utama, model bisnis, target market
+   - Formulasikan search queries dari informasi ini
+
+2. **Web Research — Discovery (maks 3 query `search_web`):**
+   - Query 1: `"<kategori industri> <jenis produk> Indonesia"` (kompetitor lokal)
+   - Query 2: `"<kategori industri> <jenis produk> competitor comparison"` (global)
+   - Query 3: `"best <jenis produk> 2025 2026"` (ranking/review)
+   - Kumpulkan 3-5 produk serupa: nama, URL website, tagline/positioning singkat
+
+3. **Web Research — Deep Dive (maks 5 halaman `read_url_content`):**
+   - Baca landing page utama setiap kompetitor yang ditemukan
+   - Ekstrak: fitur yang diklaim, pricing model (jika publik), positioning, target market, keunggulan yang ditekankan
+   - Batasan ketat: maksimal 5 halaman total untuk efisiensi token
+
+4. **Analisis Perbandingan:**
+   - Susun tabel perbandingan fitur: produk kita vs setiap kompetitor
+   - Identifikasi **keunggulan unik** (fitur yang TIDAK dimiliki mayoritas kompetitor)
+   - Identifikasi **table stakes** (fitur standar yang semua punya)
+   - Identifikasi **kelemahan** yang perlu diakui secara transparan
+
+5. **Formulasi Selling Points (5-8 poin):**
+   - Setiap selling point harus:
+     - Berdiri sendiri TANPA menyebut nama kompetitor
+     - Berbasis fakta dari `business-knowledge-base.md`
+     - Diperkuat oleh temuan research (keunikan relatif)
+   - Format per selling point:
+     ```
+     ### SP-N: [Title]
+     - **Klaim:** [Pernyataan keunggulan — positif, bukan komparatif]
+     - **Basis Fakta:** [Referensi dari business-knowledge-base.md]
+     - **Validasi Kompetitif:** [Mengapa ini unik — tanpa sebut nama kompetitor]
+     - **Rekomendasi Slide:** [Hero/Solution/Differentiator/dll]
+     ```
+
+6. **Tulis Output:**
+   - Simpan ke `compros/<slug>/reports/selling-points-research.md`
+   - Format file:
+     ```markdown
+     # Selling Points Research Report
+     ## Metadata
+     - Produk: <nama produk>
+     - Industri: <kategori>
+     - Tanggal Research: <YYYY-MM-DD>
+     - Jumlah Kompetitor Dianalisis: <N>
+
+     ## Ringkasan Temuan
+     <1-2 paragraf ringkasan positioning produk di pasar>
+
+     ## Tabel Perbandingan Internal
+     > ⚠️ DOKUMEN INTERNAL — Data kompetitor di bawah TIDAK ditampilkan di slide.
+
+     | Aspek | [Produk Kita] | [Kompetitor 1] | [Kompetitor 2] | [Kompetitor 3] |
+     |-------|...|...|...|...|
+
+     ## Selling Points Teridentifikasi
+     ### SP-1: [Title]
+     - **Klaim:** ...
+     - **Basis Fakta:** ...
+     - **Validasi Kompetitif:** ...
+     - **Rekomendasi Slide:** ...
+
+     ## Kelemahan yang Harus Diakui
+     <Untuk honesty callout di slide Differentiator>
+
+     ## Sumber Research
+     - [URL 1] — <deskripsi>
+     ```
+
+7. **User Review Gate (BLOCKING):**
+   - Tampilkan prompt:
+     > "Saya telah melakukan research kompetitif dan mengidentifikasi [N] selling points. Silakan review `compros/<slug>/reports/selling-points-research.md`. Apakah selling points ini sudah sesuai, atau ada yang perlu diubah sebelum saya mulai menulis draf narasi?"
+   - Writer TIDAK lanjut ke drafting sampai user approve
+   - User boleh mengedit file secara manual atau meminta revisi
+
+### Constraint Research
+
+- **Zero Competitor Leak:** Nama kompetitor TIDAK PERNAH muncul di draf slide (`01-draft.md`) atau output akhir. Hanya di `selling-points-research.md`.
+- **Fakta Tetap dari Input Docs:** Research memperkaya perspektif, tapi angka/klaim statistik tetap harus bersumber dari `business-knowledge-base.md`.
+- **Selling Points Berdiri Sendiri:** Formulasi harus positif ("Kami adalah satu-satunya yang..."), BUKAN komparatif ("Tidak seperti Kompetitor X...").
+
 ## Langkah Kerja
 1. Baca ketiga dokumen di `input/`.
 2. Identifikasi USP, masalah pelanggan, dan tone yang harus digunakan.
-3. Susun draf per slide mengikuti struktur standar di atas.
-4. Periksa jumlah kata per section (pastikan 85–140 kata per H1).
-5. Tulis hasil akhir ke `compros/<slug>/drafts/01-draft.md` (legacy: `artifacts/01-company-profile-draft.md`).
+3. **Jalankan Phase 0.5: Competitive Selling Point Research** (lihat section di atas).
+4. Tunggu user review dan approval terhadap `selling-points-research.md`.
+5. Baca `selling-points-research.md` yang sudah di-approve dan integrasikan selling points ke narasi.
+6. Susun draf per slide mengikuti struktur standar di atas — rajut selling points secara natural ke narasi tanpa menyebut nama kompetitor.
+7. Periksa jumlah kata per section (pastikan 85–140 kata per H1).
+8. Tulis hasil akhir ke `compros/<slug>/drafts/01-draft.md`.
 
 ## Referensi Nama Slide (English)
 Slide types di bawah menyelaraskan label yang dipakai harness pengujian dengan judul slide di atas:
