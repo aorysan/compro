@@ -29,8 +29,9 @@ Dokumen yang disediakan di folder `input/`:
    - **Slide 5 (Ecosystem):** `# Arsitektur & Ekosistem` + diagram platform/alur.
      *(Opsional — hanya jika bisnis punya platform/ekosistem yang layak divisualisasikan)*
    - **Slide 6 (Traction & Proof):** `# Pencapaian & Bukti` + metrik kuantitatif + device mockup.
-   - **Slide 7 (Why Choose Us):** `# Mengapa Kami` + tabel pembanding atau differentiator vs alternatif/kompetitor.
-     *(Opsional — hanya jika data kompetitor tersedia di business-audit-report.md)*
+   - **Slide 7 (Why Choose Us):** `# Mengapa Kami` + tabel pembanding atau differentiator 4–5 kolom vs alternatif kategori/arketipe.
+     *(Opsional — hanya jika data kompetitor/alternatif tersedia di business-audit-report.md)*
+     *Format Header Tabel Pembanding:* Kolom WAJIB menggunakan label kategori/arketipe generik (misal `| Aspek | [Produk Kita] | Solusi Konvensional | Software Generik | Pendekatan Manual |` atau `Agency Tradisional`, `Alat Manual / In-House`), BUKAN nama merek/brand kompetitor spesifik untuk mematuhi Zero Competitor Leak.
    - **Slide 8 (Social Proof):** `# Testimoni & Kepercayaan` + quotes klien atau logo trust badges.
      *(Opsional — hanya jika testimoni/portofolio klien tersedia di input docs)*
    - **Slide 9 (Pricing / Packages):** `# Paket & Kerjasama` (opsional jika ada pricing).
@@ -136,7 +137,7 @@ Sebelum menulis draf narasi, Writer WAJIB melakukan research kompetitif untuk me
 
 ### Constraint Research
 
-- **Zero Competitor Leak:** Nama kompetitor TIDAK PERNAH muncul di draf slide (`01-draft.md`) atau output akhir. Hanya di `selling-points-research.md`.
+- **Zero Competitor Leak:** Nama kompetitor TIDAK PERNAH muncul di draf slide (`01-draft.md`) atau output akhir. Hanya di `selling-points-research.md`. Termasuk pada tabel pembanding Slide 7: header kolom dan isi sel WAJIB menggunakan label kategori/arketipe generik (misal `Solusi Konvensional`, `Agency Tradisional`, `Software Generik`, `Pendekatan Manual`, `Alat Manual / In-House`) dan DILARANG menyebut nama merek/brand kompetitor spesifik.
 - **Fakta Tetap dari Input Docs:** Research memperkaya perspektif, tapi angka/klaim statistik tetap harus bersumber dari `business-knowledge-base.md` dan `business-audit-report.md`.
 - **Selling Points Berdiri Sendiri:** Formulasi harus positif ("Kami adalah satu-satunya yang..."), BUKAN komparatif ("Tidak seperti Kompetitor X...").
 - **Offline / Failure Graceful Fallback:** Jika `search_web` gagal, tidak tersedia (lingkungan offline, pembatasan sandbox, quota limit), atau menghasilkan 0 kompetitor relevan (misal produk niche atau internal), Writer WAJIB melakukan graceful fallback dengan mensintesis 5-8 selling points langsung dari `business-knowledge-base.md` dan `business-audit-report.md`. Pipeline tidak boleh macet (stall), dan metadata laporan wajib mencantumkan `Mode Research: Internal Synthesis (Offline / Fallback)`.
@@ -187,9 +188,9 @@ Aturan di bawah WAJIB dipenuhi agar output langsung bisa dikonsumsi tema builder
    | Venturo Pro | Rp99rb/bulan | generate unlimited, full pipeline, tanpa watermark; sync lanjutan + priority support; diskon annual Rp990rb/tahun |
    | Brand / Team | Rp299rb/bulan | multi-seat hingga 5 user; shared asset & kolaborasi; dedicated support |
    ```
-3. **Differentiator (Slide Mengapa Kami):** tabel 4–5 kolom
-   (`| Aspek | Venturo Pro | <kompetitor...> |`) + baris kejujuran
-   `**Intinya:** ...` yang mengakui aspek di mana kompetitor menang
+3. **Differentiator (Slide Mengapa Kami):** tabel 4–5 kolom dengan header kolom berupa kategori/arketipe generik
+   (`| Aspek | [Produk Kita] | Solusi Konvensional | Software Generik | Pendekatan Manual |` — dilarang memakai nama merek/brand kompetitor spesifik sesuai Zero Competitor Leak) + baris kejujuran
+   `**Intinya:** ...` yang mengakui aspek di mana alternatif/kompetitor menang
    (misal syarat setup GPU) — tanpa baris ini tabel tidak jujur dan DITOLAK reviewer.
 4. **Metrics (Slide Pencapaian & Bukti):** bullet `- **<number>** <title> — <desc>`
    dengan angka berformat `%`, `:`, `Rp`, atau `vX` (misal `~90%`, `20:1`,
