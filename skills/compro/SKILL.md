@@ -75,6 +75,7 @@ Setelah Gate 0 (setelah slug proyek ditentukan dan dikonfirmasi), sebelum memula
 2. **Phase 1 — Selling Point Research & Drafting** (`/writer`):
    - **Phase 0.5 — Competitive Research:**
      - Writer membaca `input/business-knowledge-base.md`, melakukan research produk serupa di internet (`search_web` + `read_url_content`), dan menyusun perbandingan internal.
+     - *(Graceful Fallback)*: Jika konektivitas internet tidak tersedia (lingkungan offline), web search mengalami error/kegagalan, atau menghasilkan 0 kompetitor relevan, Phase 0.5 secara otomatis beralih (smooth fallback) ke sintesis dokumen internal (`business-knowledge-base.md` & `business-audit-report.md`) tanpa menghentikan atau me-stall pipeline.
      - Menghasilkan: `compros/<slug>/reports/selling-points-research.md`
      - **User Review Gate (BLOCKING):** Menunggu user approve selling points sebelum lanjut drafting.
    - **Phase 1 — Drafting:**
