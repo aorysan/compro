@@ -10,6 +10,7 @@ Memastikan draf company profile berkualitas tinggi, bebas kesalahan faktual, ses
 - `input/business-knowledge-base.md`: Sumber fakta bisnis.
 - `input/business-audit-report.md`: Analisis pasar dan diferensiasi.
 - `input/brand-story-guide.md`: Panduan tone of voice dan persona merek.
+- `compros/<slug>/reports/selling-points-research.md` *(opsional)*: Laporan research kompetitif — digunakan untuk verifikasi selling points dan zero competitor leak check.
 
 ## Outputs
 - `compros/<slug>/reports/review-report.md` (legacy: `artifacts/review-report.md`): Laporan evaluasi per kategori dan daftar revisi yang wajib diperbaiki.
@@ -54,6 +55,11 @@ Memastikan draf company profile berkualitas tinggi, bebas kesalahan faktual, ses
    - honesty callout: baris `**Intinya:** ...` WAJIB ada bila kompetitor menang di
      satu aspek (misal syarat setup GPU 8 GB). honesty callout hilang padahal ada
      aspek yang dimenangkan kompetitor → REVISION_REQUIRED.
+8. **Selling Point Verification** *(hanya jika `selling-points-research.md` tersedia)*:
+   - Setiap selling point yang diklaim dalam narasi slide harus **traceable** ke entry `SP-N` di `selling-points-research.md`.
+   - **Zero Competitor Leak Check:** Scan seluruh `01-draft.md` — TIDAK BOLEH ada nama kompetitor yang muncul. Jika ditemukan → REVISION_REQUIRED dengan catatan "Competitor leak pada Slide X: nama [kompetitor] terdeteksi".
+   - Selling points harus dirajut secara natural ke narasi, bukan ditempel sebagai daftar terpisah.
+   - Selling points harus konsisten dengan fakta di `business-knowledge-base.md` (overlap check dengan item 1 Factual Consistency).
 
 ## Status Review
 - **`APPROVED`**: Draf memenuhi semua kriteria checklist. Salin konten ke `compros/<slug>/drafts/02-final.md` (legacy: `artifacts/02-company-profile-final.md`) dan teruskan ke Builder.
