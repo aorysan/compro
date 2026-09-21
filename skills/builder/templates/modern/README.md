@@ -72,3 +72,26 @@ skills/builder/templates/modern/
 ├── theme.css       # Bento grid stylesheet & modern CSS tokens
 └── README.md       # Dokumentasi spesifikasi template modern
 ```
+
+---
+
+## 5. RT Online Light Tokens (v2.8.0)
+
+White canvas + blue headline system:
+
+| Token | Nilai |
+|---|---|
+| `--canvas-bg` | `#FFFFFF` |
+| `--text-headline` | `#0B3B82` |
+| `--text-body` | `#334155` |
+| `--text-muted` | `#64748B` |
+| `--brand-primary` | `#009BAD` |
+| `--brand-dark` | `#007A87` |
+
+### Feature Archetype Classes
+
+- `.feature-cards-grid` — grid 2 kolom (`1fr 1fr`, gap 20px) untuk arketipe `feature-cards`.
+- `.feature-card` — kartu putih (`#FFFFFF`), border `rgba(11,59,130,0.10)`, radius 16px, padding 24px, shadow `rgba(11,59,130,0.08)`; `h3` headline `#0B3B82` 22px, `p` body `#334155` 15px.
+- `.feature-split` — grid split `78% 22%`, gap 24px untuk arketipe `feature-split`.
+- `.split-photo` — bingkai foto radius 16px dengan overlay `rgba(0,155,173,0.20)` via `::after`.
+- `.card-icon-brand` — ikon kartu brand (`#009BAD`, `line-height: 1`).
