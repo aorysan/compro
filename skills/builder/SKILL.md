@@ -138,6 +138,8 @@ Petakan setiap bagian Markdown ke dalam arsitektur slide 16:9 yang sesuai:
 - **Kontak / CTA Penutup** ➔ **Closing Slide Archetype** (Banner ajakan kolaborasi, tombol pill download App Store & Google Play, grid kontak 4 kolom WA/Email/Web/Alamat).
 - **Diferensiasi / Mengapa Kami** ➔ **Differentiator Table Archetype** (Tabel perbandingan 4–5 kolom brand vs kompetitor, highlight kolom brand, status indikator centang/silang/peringatan, honesty callout).
 - **Testimoni / Social Proof** ➔ **Social Proof Slide Archetype** (Header terpusat, 2–3 kartu kutipan testimoni klien dengan atribusi lengkap, logo trust bar grayscale atau fallback company pill badges).
+- **Layanan / Fitur Dense (`services`/`solution`)** ➔ **Feature Cards Archetype** (Grid 2x2 `.feature-cards-grid`, maksimal 4 kartu per slide, selebihnya split Part 1/Part 2).
+- **Narasi Hero / Closing / Ekosistem (`hero`/`closing`/`ecosystem`)** ➔ **Feature Split Archetype** (Split 78/22 `.feature-split`, teks narasi kiri + foto adaptif kanan dengan overlay brand 20%).
 
 ### 3. Smart Asset Pipeline & Vector Fallbacks
 - Untuk setiap referensi gambar:

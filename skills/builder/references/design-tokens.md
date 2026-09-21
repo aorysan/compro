@@ -33,9 +33,9 @@ Slides use dynamic HSL (Hue, Saturation, Lightness) color tokens. By defining th
   --brand-secondary-light: hsl(calc(var(--brand-h) + 35), 95%, 65%);
   --brand-secondary-subtle: hsla(calc(var(--brand-h) + 35), 90%, 52%, 0.15);
 
-  /* Dark Canvas & Surface Tones (Deep Corporate Tech Slate) */
-  --brand-dark: #090d16;          /* Deepest canvas backdrop */
-  --brand-surface: #0f172a;       /* Standard slide background */
+  /* Light Canvas & Headline Tones (RT Online Light Deck v2.8.0) */
+  --canvas-bg: #FFFFFF;           /* Light deck canvas backdrop */
+  --text-headline: #0B3B82;       /* Slide headline on light canvas */
   --brand-surface-elevated: #1e293b; /* Elevated container / modal */
   --brand-card-bg: rgba(255, 255, 255, 0.04);
   --brand-card-bg-hover: rgba(255, 255, 255, 0.07);
