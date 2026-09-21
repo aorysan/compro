@@ -45,6 +45,7 @@ function classifyModernArchetype(slide, index, totalSlides) {
   if (/solusi|solution|nilai tambah|value/.test(t)) return 'solution';
   if (/profil|profile|tentang|cover/.test(t)) return 'cover';
   if (/layanan|fitur|services|feature|keunggulan/.test(t)) return 'services';
+  if (/warga|iuran|kependudukan|mobile|whatsapp|fitur/i.test(t) && ((slide.content || '').match(/^[-*]\s/gm) || []).length >= 4) return 'feature-cards';
   return index === 1 ? 'problem' : 'solution';
 }
 
@@ -210,11 +211,64 @@ function renderModernServices(slide, brand, index = 3, assetsDir = '', totalSlid
     </section>`;
 }
 
+function renderFeatureCards(slide, brand, index = 3, assetsDir = '', totalSlides = 9) {
+  const content = sanitizeSlideContent(slide.content || '').trim();
+  const { introText, cards } = parseEditorialCards(content);
+  if (cards.length === 0) console.warn(`[modern] feature-cards slide ${index + 1} has zero cards; rendering empty grid`);
+  const cardsHtml = cards.slice(0, 4).map((c) => `
+    <div class="feature-card">
+      <div class="card-icon-brand"><span style="font-size:28px">✦</span></div>
+      <h3>${inline(c.title)}</h3>
+      <p>${inline(c.desc)}</p>
+    </div>`).join('\n');
+  return `
+    <section>
+      <div class="editorial-slide-container">
+        <div class="slide-header">
+          <div class="slide-header-left">
+            <span class="slide-kicker-badge">Fitur Unggulan</span>
+            <h2 class="slide-title">${inline(slide.title)}</h2>
+          </div>
+          <div class="slide-header-right">
+            ${introText ? `<p class="slide-subtitle">${inline(introText)}</p>` : ''}
+            <span class="slide-index-badge">${slideBadge(index, totalSlides)}</span>
+          </div>
+        </div>
+        <div class="feature-cards-grid">${cardsHtml}</div>
+      </div>
+    </section>`;
+}
+
+function renderFeatureSplit(slide, brand, index = 4, assetsDir = '', totalSlides = 9) {
+  const content = sanitizeSlideContent(slide.content || '').trim();
+  const { introText, cards } = parseEditorialCards(content);
+  const targetSlot = resolveSlideSlot(slide, index, totalSlides, 'solution');
+  const imgSrc = resolveSlideImageUrl(index + 1, targetSlot, assetsDir);
+  const miniHtml = cards.slice(0, 4).map((c) => `
+    <div class="feature-card"><h3>${inline(c.title)}</h3><p>${inline(c.desc)}</p></div>`).join('\n');
+  return `
+    <section>
+      <div class="editorial-slide-container">
+        <div class="feature-split">
+          <div>
+            <span class="slide-kicker-badge">Sorotan Fitur</span>
+            <h2 class="slide-title">${inline(slide.title)}</h2>
+            ${introText ? `<p class="slide-subtitle">${inline(introText)}</p>` : ''}
+            <div class="feature-cards-grid">${miniHtml}</div>
+          </div>
+          <div class="split-photo editorial-image-frame"><img src="${imgSrc}" alt="${inline(slide.title)}" /></div>
+        </div>
+      </div>
+    </section>`;
+}
+
 module.exports = {
   classifyModernArchetype,
   renderModernHero,
   renderModernWelcome,
   renderModernServices,
+  renderFeatureCards,
+  renderFeatureSplit,
   renderModernEcosystem,
   renderModernMetrics,
   renderModernDifferentiator,
@@ -663,6 +717,8 @@ function renderModernSlide(slide, index, totalSlides, brand, assetsDir = '') {
     case 'problem': return renderModernWelcome(slide, brand, index, 'problem', assetsDir, totalSlides);
     case 'solution': return renderModernWelcome(slide, brand, index, 'solution', assetsDir, totalSlides);
     case 'services': return renderModernServices(slide, brand, index, assetsDir, totalSlides);
+    case 'feature-cards': return renderFeatureCards(slide, brand, index, assetsDir, totalSlides);
+    case 'feature-split': return renderFeatureSplit(slide, brand, index, assetsDir, totalSlides);
     case 'ecosystem': return renderModernEcosystem(slide, brand, index, assetsDir, totalSlides);
     case 'metrics': return renderModernMetrics(slide, brand, index, assetsDir, totalSlides);
     case 'differentiator': return renderModernDifferentiator(slide, brand, index, assetsDir, totalSlides);

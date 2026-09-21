@@ -30,4 +30,9 @@ if (!close.includes('closing-3col-grid') || !close.includes('+62 812-0000-0000')
 const proof = modern.renderModernSocialProof({ title: 'Testimoni & Kepercayaan', content: '- **Budi, CTO** — "Memangkas waktu 60%"\n- **Siti, VP** — "Stabil dan intuitif"' }, brand, 7, '', 9);
 if (!proof.includes('quote') || !proof.includes('Budi')) { console.error('FAIL: social-proof'); process.exit(1); }
 console.log('PASS: modern hero/welcome/services render');
+const feat = modern.renderFeatureCards({ title: 'Warga dan Iuran', content: 'Intro\n\n- **Hak Akses** — atur peran pengurus\n- **Bayar Iuran** — VA QRIS multibank\n- **Reminder** — notifikasi otomatis\n- **Laporan Kas** — grafik realtime' }, brand, 3, '', 9);
+if (!feat.includes('feature-cards-grid') || !feat.includes('Hak Akses')) { console.error('FAIL: feature-cards'); process.exit(1); }
+const split = modern.renderFeatureSplit({ title: 'WhatsApp AI Agent', content: '<!-- image: solution -- query: support agent; keywords: chat, ai, phone; style: photo -->\nUrusan beres lewat WA\n\n- **Cek tagihan** — tanya status via chat' }, brand, 4, '', 9);
+if (!split.includes('feature-split') || !split.includes('WhatsApp AI Agent')) { console.error('FAIL: feature-split'); process.exit(1); }
+console.log('PASS: feature-cards + feature-split render');
 process.exit(0);
