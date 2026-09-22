@@ -29,34 +29,72 @@ function slideBadge(index, totalSlides) {
   return `${String(index + 1).padStart(2, '0')} / ${String(totalSlides).padStart(2, '0')}`;
 }
 
-// Modern archetype classifier: title-keyword map over the 10 modern archetypes
-// (cover/problem/solution/services/ecosystem/metrics/differentiator/pricing/
-// closing/social-proof) with positional fallback.
-function classifyModernArchetype(slide, index, totalSlides) {
-  const t = (slide.title || '').toLowerCase();
+// Aperture Cinematic archetype set (migration SSOT): exactly these 6 names.
+// Task 3's renderCinematicSlide dispatcher consumes the same 6 names.
+const CINEMATIC_ARCHETYPES = ['cover', 'problem', 'product', 'features', 'usp', 'pricing'];
+
+// Cinematic archetype -> legacy asset slot (imageFetcher SLOT_MAP keys).
+// Slot values verified against imageFetcher SLOT_MAP / resolveSlideSlot in
+// build-deck.js: macro/hands/viewfinder/lens entries were added there so
+// every value resolves to a category + fallback — never undefined.
+const CINEMATIC_SLOT_MAP = {
+  cover: 'hero',
+  problem: 'problem',
+  product: 'macro',
+  features: 'hands',
+  usp: 'viewfinder',
+  pricing: 'lens'
+};
+
+// Accept both pipeline slide shapes: { title, content } (build-deck) and
+// raw markdown objects { h1, raw, lines, bullets } (brief interface).
+function cinematicText(slide) {
+  const title = slide.title != null ? String(slide.title) : String(slide.h1 || '');
+  const parts = [slide.content, slide.raw];
+  if (Array.isArray(slide.lines)) parts.push(slide.lines.join('\n'));
+  else if (slide.lines) parts.push(String(slide.lines));
+  if (Array.isArray(slide.bullets)) parts.push(slide.bullets.join('\n'));
+  else if (slide.bullets) parts.push(String(slide.bullets));
+  const body = parts.filter(Boolean).map(String).join('\n');
+  return { t: title.toLowerCase(), combined: (title + '\n' + body).toLowerCase() };
+}
+
+// Single authoritative classifier (kills BUG-1 dual-classifier divergence).
+// Precedence is deliberate and locked by scripts/test-cinematic-classifier.js:
+// title keywords beat body keywords; within each layer pricing > usp >
+// problem > product > features (most specific first, e.g. "keunggulan
+// kompetitif" hits usp before the generic "keunggulan" features rule).
+function classifyCinematicArchetype(slide, index = 0, totalSlides = 1) {
+  slide = slide || {};
+  const { t, combined } = cinematicText(slide);
+
+  // cover: slide 1 / title / hero
   if (index === 0) return 'cover';
-  if (index === totalSlides - 1 || /hubungi|kontak|contact|closing|cta/.test(t)) return 'closing';
-  if (/testimoni|testimonial|klien|kepercayaan/.test(t)) return 'social-proof';
-  if (/paket|harga|pricing|kerjasama|plan/.test(t)) return 'pricing';
-  if (/mengapa|kenapa|why|differentiator|keunggulan kompetitif/.test(t)) return 'differentiator';
-  if (/arsitektur|ekosistem|ecosystem|stack/.test(t)) return 'ecosystem';
-  if (/pencapaian|bukti|traction|showcase|metric|statistik|angka|kpi/.test(t)) return 'metrics';
+  if (/profil|company profile|cover|hero/.test(t)) return 'cover';
+
+  // Title-keyword layer
+  if (/paket|harga|penawaran|pricing|investasi|kerjasama|\bplan\b|kontak|hubungi|contact/.test(t)) return 'pricing';
+  if (/mengapa|kenapa|\bwhy\b|why us|nilai tambah|alasan|pembeda|keunggulan kompetitif|differentiator/.test(t)) return 'usp';
   if (/masalah|tantangan|pain|problem/.test(t)) return 'problem';
-  const bulletCount = ((slide.content || '').match(/^[-*]\s/gm) || []).length;
-  // Dense services/solution slides -> feature-cards (§4-§5.3). Density signal first,
-  // title keywords only as scope guard so pricing/ecosystem/metrics/differentiator
-  // (matched above) keep their dedicated renderers. Generic dense titles are covered:
-  // any services/solution-scope title with >=4 bullets routes here, not just RT vocabulary.
-  // Placed before `solution`/`services` so dense slides don't fall through to welcome layouts.
-  if (bulletCount >= 4 && /layanan|fitur|services|feature|keunggulan|solusi|solution|nilai tambah|value|warga|iuran|kependudukan|mobile|whatsapp/i.test(t)) return 'feature-cards';
-  if (/solusi|solution|nilai tambah|value/.test(t)) return 'solution';
-  if (/profil|profile|tentang|cover/.test(t)) return 'cover';
-  // Narrative / WA AI / spotlight slides -> feature-split (§4): text + adaptive photo.
-  // Opt-in by content type (narrative/spotlight/WA keywords) + low bullet count so
-  // dense card slides stay on feature-cards and hero/closing keeps its dedicated renderer.
-  if (bulletCount <= 4 && /whatsapp|wa ai|narrative|narasi|sorotan|spotlight|cerita|aplikasi mobile/i.test(t)) return 'feature-split';
-  if (/layanan|fitur|services|feature|keunggulan/.test(t)) return 'services';
-  return index === 1 ? 'problem' : 'solution';
+  if (/produk|overview|solusi|solution|\bvalue\b/.test(t)) return 'product';
+  if (/fitur|layanan|keunggulan|capabilit|services|feature/.test(t)) return 'features';
+
+  // Body/combined fallback layer, same order (cover stays title/positional-only)
+  if (/paket|harga|penawaran|pricing|investasi|kerjasama|\bplan\b|kontak|hubungi|contact/.test(combined)) return 'pricing';
+  if (/mengapa|kenapa|\bwhy\b|why us|nilai tambah|alasan|pembeda|keunggulan kompetitif|differentiator/.test(combined)) return 'usp';
+  if (/masalah|tantangan|pain|problem/.test(combined)) return 'problem';
+  if (/produk|overview|solusi|solution|\bvalue\b/.test(combined)) return 'product';
+  if (/fitur|layanan|keunggulan|capabilit|services|feature/.test(combined)) return 'features';
+
+  // Positional fallback (mirrors legacy index-1-problem / else-solution)
+  return index === 1 ? 'problem' : 'product';
+}
+
+// Deprecated alias (Ruling-1): the single source of truth is
+// classifyCinematicArchetype above. This thin wrapper keeps legacy callers
+// working WITHOUT a second divergent logic copy.
+function classifyModernArchetype(slide, index, totalSlides) {
+  return classifyCinematicArchetype(slide, index, totalSlides);
 }
 
 // Slide 1: Hero Cover — congen6 section 1 port (hero-layout-grid).
@@ -283,6 +321,9 @@ function renderFeatureSplit(slide, brand, index = 4, assetsDir = '', totalSlides
 }
 
 module.exports = {
+  CINEMATIC_ARCHETYPES,
+  CINEMATIC_SLOT_MAP,
+  classifyCinematicArchetype,
   classifyModernArchetype,
   renderModernHero,
   renderModernWelcome,
@@ -729,14 +770,20 @@ function renderModernSocialProof(slide, brand, index = 7, assetsDir = '', totalS
     </section>`;
 }
 
-// Modern dispatcher: archetype -> renderer (12 cases, default `solution`).
-// feature-split routes via classifier (narrative/WA/spotlight opt-in, <=4 bullets);
-// feature-cards routes via density (>=4 bullets, services/solution scope).
+// Modern dispatcher: archetype -> renderer.
+// Task-1 compatibility shim: the unified classifyCinematicArchetype returns the
+// 6 cinematic names, mapped here onto the closest existing modern renderer so
+// no slide silently falls into `default`. Legacy 10-name outputs are still
+// honored (alias-era callers). Superseded by Task 3's renderCinematicSlide.
 function renderModernSlide(slide, index, totalSlides, brand, assetsDir = '') {
   const arch = classifyModernArchetype(slide, index, totalSlides);
   switch (arch) {
     case 'cover': return renderModernHero(slide, brand, index, assetsDir, totalSlides);
     case 'problem': return renderModernWelcome(slide, brand, index, 'problem', assetsDir, totalSlides);
+    case 'product': return renderModernWelcome(slide, brand, index, 'solution', assetsDir, totalSlides);
+    case 'features': return renderModernServices(slide, brand, index, assetsDir, totalSlides);
+    case 'usp': return renderModernDifferentiator(slide, brand, index, assetsDir, totalSlides);
+    case 'pricing': return renderModernPricing(slide, brand, index, assetsDir, totalSlides);
     case 'solution': return renderModernWelcome(slide, brand, index, 'solution', assetsDir, totalSlides);
     case 'services': return renderModernServices(slide, brand, index, assetsDir, totalSlides);
     case 'feature-cards': return renderFeatureCards(slide, brand, index, assetsDir, totalSlides);

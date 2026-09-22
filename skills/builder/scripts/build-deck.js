@@ -1475,38 +1475,15 @@ function renderEditorialNarrativeSplit(slide, brand, type) {
 }
 
 // ==========================================================================
-// 8 Distinct Canva Layout Archetypes (Canva Editorial Engine v2.5.0)
+// Canva Layout Archetypes — UNIFIED (Task 1): classifyCanvaArchetype is now a
+// thin deprecated alias delegating to classifyCinematicArchetype in
+// themes/modern.js (single source of truth; kills BUG-1 divergence).
+// Export name preserved for backward compat. (Task 4 owns dead-code removal.)
 // ==========================================================================
 
+// Deprecated alias (Task 1 unification): do NOT add logic here.
 function classifyCanvaArchetype(slide, index, totalSlides) {
-  const t = (slide.title || '').toLowerCase();
-  const c = (slide.content || '').toLowerCase();
-  const combined = t + ' ' + c;
-
-  // 1. Cover / Hero (slide 0 or explicit title)
-  if (index === 0 || /profile|profil|hero/i.test(t)) return 'cover';
-
-  // 2. Closing / Contact (last slide or explicit title)
-  if (index === totalSlides - 1 || /hubungi|kontak|contact|closing|cta/i.test(t)) return 'closing';
-
-  // 3. Explicit title-based checks (prioritized before greedy body matches)
-  if (/masalah|tantangan|pain|problem/i.test(t)) return 'welcome-problem';
-  if (/solusi|solution|nilai tambah|value/i.test(t)) return 'welcome-solution';
-  if (/layanan|fitur|feature|services/i.test(t)) return 'services';
-  if (/pencapaian|bukti|traction|showcase|metric|statistik|angka|kpi/i.test(t)) return 'metrics';
-  if (/paket|pricing|harga|kerjasama|plan/i.test(t)) return 'pricing';
-  if (/mengapa|kenapa|why|differentiator|keunggulan kompetitif/i.test(t)) return 'differentiator';
-  if (/arsitektur|ekosistem|ecosystem|stack|architecture/i.test(t)) return 'ecosystem';
-
-  // 4. Body & combined keyword fallbacks
-  if (/hubungi|kontak|contact|closing|cta/i.test(combined)) return 'closing';
-  if (/arsitektur|ekosistem|ecosystem|stack|architecture/i.test(combined) || (/pipeline/i.test(combined) && /multi-ai|gpu/i.test(combined))) return 'ecosystem';
-  if (slide.content && slide.content.includes('|') && slide.content.includes('---')) return 'differentiator';
-  if (/masalah|tantangan|pain|problem/i.test(combined)) return 'welcome-problem';
-  if (/solusi|solution|nilai tambah|value/i.test(combined)) return 'welcome-solution';
-
-  // 5. Positional fallback
-  return index === 1 ? 'welcome-problem' : 'welcome-solution';
+  return require('./themes/modern').classifyCinematicArchetype(slide, index, totalSlides);
 }
 
 function resolveSlideSlot(slide, index, totalSlides, defaultSlot) {
@@ -1519,7 +1496,16 @@ function resolveSlideSlot(slide, index, totalSlides, defaultSlot) {
   if (defaultSlot) {
     return defaultSlot;
   }
-  const arch = classifyCanvaArchetype(slide, index, totalSlides);
+  // Unified cinematic classifier (Task 1): archetype -> slot via CINEMATIC_SLOT_MAP.
+  // Lazy require mirrors the renderSlide pattern below and avoids a top-level
+  // require cycle (themes/modern.js requires this module for shared parsers).
+  // The legacy switch is retained as a safety net for pre-migration archetype
+  // names; the cinematic classifier only returns the 6 mapped names above.
+  const cinematic = require('./themes/modern');
+  const arch = cinematic.classifyCinematicArchetype(slide, index, totalSlides);
+  if (cinematic.CINEMATIC_SLOT_MAP && cinematic.CINEMATIC_SLOT_MAP[arch]) {
+    return cinematic.CINEMATIC_SLOT_MAP[arch];
+  }
   switch (arch) {
     case 'cover': return 'hero';
     case 'welcome-problem': return 'problem';
@@ -2341,8 +2327,10 @@ async function runMain(customArgs) {
   const tierCounts = { search: 0, generate: 0, svg: 0, cached: 0 };
   for (let i = 0; i < slides.length; i++) {
     const s = slides[i];
-    const arch = classifyCanvaArchetype(s, i, slides.length);
-    if (arch === 'differentiator' || arch === 'pricing') {
+    // Unified classifier (Task 1): single source of truth in themes/modern.js.
+    // Lazy require mirrors renderSlide below (avoids top-level require cycle).
+    const arch = require('./themes/modern').classifyCinematicArchetype(s, i, slides.length);
+    if (arch === 'pricing') {
       continue;
     }
     const directive = parseImageDirective(s.content || '');
