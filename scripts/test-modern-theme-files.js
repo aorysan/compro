@@ -21,6 +21,11 @@ console.log('PASS: modern theme files complete');
 for (const t of ['--canvas-bg: #FFFFFF', '--text-headline: #0B3B82', '.feature-cards-grid', '.feature-split']) {
   if (!css.includes(t)) { console.error(`FAIL: theme.css missing "${t}"`); process.exit(1); }
 }
+// Spec §3 light tokens (exact values)
+for (const t of ['--text-body: #334155', '--brand-primary: #009BAD', '--brand-dark: #007A87', 'rgba(11, 59, 130, 0.10)', 'rgba(11, 59, 130, 0.08)']) {
+  if (!css.includes(t)) { console.error(`FAIL: theme.css missing spec §3 token "${t}"`); process.exit(1); }
+}
+console.log('PASS: spec §3 light tokens present');
 if (manifest.version !== '2.8.0' || !manifest.archetypes.includes('feature-cards') || !manifest.archetypes.includes('feature-split')) {
   console.error('FAIL: manifest must be 2.8.0 with feature-cards + feature-split'); process.exit(1);
 }

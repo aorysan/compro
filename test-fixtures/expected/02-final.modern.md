@@ -56,11 +56,11 @@ Empat kemampuan inti antara template murah dan produksi mahal.
 
 # Layanan Unggulan
 
-Di luar empat kemampuan inti di atas, tiga layanan pendamping ini memastikan transisi dari template generik ke produksi ber-brand berjalan mulus — terutama pada minggu-minggu awal ketika tim masih menyesuaikan diri dengan alur kerja baru yang terpadu.
+Pendamping agar transisi ke produksi ber-brand mulus sejak minggu pertama.
 
-- **Onboarding Brand DNA** — sesi pendampingan pengisian identitas brand sekali sampai siap produksi, termasuk kurasi warna, font, dan tone narasi agar menempel konsisten di setiap video yang dihasilkan.
-- **Panduan Setup GPU** — langkah set up 8 GB VRAM yang jelas dan terdokumentasi untuk pipeline lokal, sehingga biaya marginal per video mendekati nol setelah instalasi awal selesai dilakukan.
-- **Dukungan Prioritas** — respon cepat berbahasa Indonesia untuk user Pro dan Brand/Team, mencakup troubleshooting pipeline, sinkronisasi Sheets, dan pembaruan workflow produksi berkala.
+- **Onboarding Brand DNA** — Isi identitas sekali; warna, font, narasi menempel konsisten.
+- **Panduan Setup GPU** — Pasang pipeline 8 GB VRAM; biaya marginal nol setelah instalasi.
+- **Dukungan Prioritas** — Respon Indonesia cepat; troubleshooting pipeline dan Sheets berkala.
 
 <!-- image: services -- query: support team onboarding session in bright studio ; keywords: onboarding, support, team, studio ; style: photo -->
 

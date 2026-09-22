@@ -47,7 +47,7 @@ const { runMain } = require('../skills/builder/scripts/build-deck');
   for (const cls of ['hero-layout-grid', 'two-col-layout-grid', 'diff-table', 'pricing-cards-grid', 'metric-big-number', 'closing-3col-grid']) {
     if (!html.includes(cls)) { console.error('FAIL: missing key element ' + cls); process.exit(1); }
   }
-<  // NOTE (Task 4): count rendered grid divs, not bare class mentions — theme.css
+  // NOTE (Task 4): count rendered grid divs, not bare class mentions — theme.css
   // inlines `.feature-cards-grid {...}` into index.html, so a bare /feature-cards-grid/
   // regex passes vacuously even with zero rendered cards.
   const cardGrids = (html.match(/<div class="feature-cards-grid">/g) || []).length;

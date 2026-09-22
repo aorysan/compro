@@ -42,9 +42,19 @@ function classifyModernArchetype(slide, index, totalSlides) {
   if (/arsitektur|ekosistem|ecosystem|stack/.test(t)) return 'ecosystem';
   if (/pencapaian|bukti|traction|showcase|metric|statistik|angka|kpi/.test(t)) return 'metrics';
   if (/masalah|tantangan|pain|problem/.test(t)) return 'problem';
+  const bulletCount = ((slide.content || '').match(/^[-*]\s/gm) || []).length;
+  // Dense services/solution slides -> feature-cards (§4-§5.3). Density signal first,
+  // title keywords only as scope guard so pricing/ecosystem/metrics/differentiator
+  // (matched above) keep their dedicated renderers. Generic dense titles are covered:
+  // any services/solution-scope title with >=4 bullets routes here, not just RT vocabulary.
+  // Placed before `solution`/`services` so dense slides don't fall through to welcome layouts.
+  if (bulletCount >= 4 && /layanan|fitur|services|feature|keunggulan|solusi|solution|nilai tambah|value|warga|iuran|kependudukan|mobile|whatsapp/i.test(t)) return 'feature-cards';
   if (/solusi|solution|nilai tambah|value/.test(t)) return 'solution';
   if (/profil|profile|tentang|cover/.test(t)) return 'cover';
-  if (/warga|iuran|kependudukan|mobile|whatsapp|fitur/i.test(t) && ((slide.content || '').match(/^[-*]\s/gm) || []).length >= 4) return 'feature-cards';
+  // Narrative / WA AI / spotlight slides -> feature-split (§4): text + adaptive photo.
+  // Opt-in by content type (narrative/spotlight/WA keywords) + low bullet count so
+  // dense card slides stay on feature-cards and hero/closing keeps its dedicated renderer.
+  if (bulletCount <= 4 && /whatsapp|wa ai|narrative|narasi|sorotan|spotlight|cerita|aplikasi mobile/i.test(t)) return 'feature-split';
   if (/layanan|fitur|services|feature|keunggulan/.test(t)) return 'services';
   return index === 1 ? 'problem' : 'solution';
 }
@@ -720,7 +730,8 @@ function renderModernSocialProof(slide, brand, index = 7, assetsDir = '', totalS
 }
 
 // Modern dispatcher: archetype -> renderer (12 cases, default `solution`).
-// NOTE: feature-split is direct-call-only (no classifier routing yet) pending routing follow-up.
+// feature-split routes via classifier (narrative/WA/spotlight opt-in, <=4 bullets);
+// feature-cards routes via density (>=4 bullets, services/solution scope).
 function renderModernSlide(slide, index, totalSlides, brand, assetsDir = '') {
   const arch = classifyModernArchetype(slide, index, totalSlides);
   switch (arch) {
