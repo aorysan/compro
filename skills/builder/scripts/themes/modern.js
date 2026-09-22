@@ -6,6 +6,7 @@
    never invent default services/cards. Empty grid + console.warn on zero cards.
 */
 const {
+  inline,
   parseEditorialCards,
   extractBigNumberMetric,
   sanitizeSlideContent,
@@ -13,17 +14,6 @@ const {
   resolveSlideSlot,
   resolveSlideImageUrl
 } = require('../build-deck');
-
-// NOTE: `inline` is duplicated here verbatim from build-deck.js (8-line helper)
-// to avoid cross-module HTML-escaping drift between theme renderers.
-function inline(mdtext) {
-  if (!mdtext) return '';
-  return mdtext
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*(.+?)\*/g, '<em>$1</em>')
-    .replace(/`(.+?)`/g, '<code>$1</code>');
-}
 
 function slideBadge(index, totalSlides) {
   return `${String(index + 1).padStart(2, '0')} / ${String(totalSlides).padStart(2, '0')}`;
