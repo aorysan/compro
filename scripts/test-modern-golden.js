@@ -44,9 +44,18 @@ const { runMain } = require('../skills/builder/scripts/build-deck');
     }
   }
   // Assert 4: key elements present
-  for (const cls of ['hero-layout-grid', 'two-col-layout-grid', 'diff-table', 'pricing-cards-grid', 'metric-big-number', 'closing-3col-grid']) {
+  for (const cls of ['hero-layout-grid', 'two-col-layout-grid', 'diff-table', 'pricing-cards-grid', 'metric-big-number', 'closing-3col-grid', 'feature-cards-grid']) {
     if (!html.includes(cls)) { console.error('FAIL: missing key element ' + cls); process.exit(1); }
   }
+  // NOTE (Task 4): count rendered grid divs, not bare class mentions — theme.css
+  // inlines `.feature-cards-grid {...}` into index.html, so a bare /feature-cards-grid/
+  // regex passes vacuously even with zero rendered cards.
+  const cardGrids = (html.match(/<div class="feature-cards-grid">/g) || []).length;
+  if (cardGrids < 1) { console.error('FAIL: no feature-cards-grid rendered'); process.exit(1); }
+  // NOTE (Task 4): exempt by-design per-build closing art (build-deck.js writes
+  // assets/closing-banner.svg every build; renderModernClosing always embeds it).
+  // The assert's intent is: no slide-photo SVG fallbacks — slot images must be .jpg.
+  if (/<img[^>]+src="assets\/(?!closing-banner\.svg)[^"]*\.svg"/.test(html)) { console.error('FAIL: local SVG img reference found'); process.exit(1); }
   console.log('PASS: modern golden DOM asserts hold');
   process.exit(0);
 })().catch(e => { console.error('FAIL: ' + e.message); process.exit(1); });
