@@ -44,8 +44,8 @@ function classifyModernArchetype(slide, index, totalSlides) {
   if (/masalah|tantangan|pain|problem/.test(t)) return 'problem';
   if (/solusi|solution|nilai tambah|value/.test(t)) return 'solution';
   if (/profil|profile|tentang|cover/.test(t)) return 'cover';
-  if (/layanan|fitur|services|feature|keunggulan/.test(t)) return 'services';
   if (/warga|iuran|kependudukan|mobile|whatsapp|fitur/i.test(t) && ((slide.content || '').match(/^[-*]\s/gm) || []).length >= 4) return 'feature-cards';
+  if (/layanan|fitur|services|feature|keunggulan/.test(t)) return 'services';
   return index === 1 ? 'problem' : 'solution';
 }
 
@@ -214,10 +214,16 @@ function renderModernServices(slide, brand, index = 3, assetsDir = '', totalSlid
 function renderFeatureCards(slide, brand, index = 3, assetsDir = '', totalSlides = 9) {
   const content = sanitizeSlideContent(slide.content || '').trim();
   const { introText, cards } = parseEditorialCards(content);
-  if (cards.length === 0) console.warn(`[modern] feature-cards slide ${index + 1} has zero cards; rendering empty grid`);
-  const cardsHtml = cards.slice(0, 4).map((c) => `
+  // Zero-bullet guard: the paragraph fallback in parseEditorialCards can invent a
+  // card from prose, so gate on raw bullet lines — zero bullets means empty grid.
+  const bulletCount = (content.match(/^[-*]\s/gm) || []).length;
+  if (bulletCount === 0) console.warn(`[modern] feature-cards slide ${index + 1} has zero bullets; rendering empty grid`);
+  else if (cards.length === 0) console.warn(`[modern] feature-cards slide ${index + 1} has zero cards; rendering empty grid`);
+  if (cards.length > 4) console.warn(`[modern] feature-cards slide ${index + 1} has ${cards.length} cards; rendering first 4, remainder needs Part split`);
+  const visibleCards = bulletCount === 0 ? [] : cards;
+  const cardsHtml = visibleCards.slice(0, 4).map((c) => `
     <div class="feature-card">
-      <div class="card-icon-brand"><span style="font-size:28px">✦</span></div>
+      <div class="card-icon-brand"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 7.6L22 12l-7.6 2.4L12 22l-2.4-7.6L2 12l7.6-2.4z"/></svg></div>
       <h3>${inline(c.title)}</h3>
       <p>${inline(c.desc)}</p>
     </div>`).join('\n');
@@ -242,8 +248,12 @@ function renderFeatureCards(slide, brand, index = 3, assetsDir = '', totalSlides
 function renderFeatureSplit(slide, brand, index = 4, assetsDir = '', totalSlides = 9) {
   const content = sanitizeSlideContent(slide.content || '').trim();
   const { introText, cards } = parseEditorialCards(content);
+  // 'solution' default slot: hero/solution/closing/ecosystem consumption depends on
+  // the image directive (known limitation — directive wins, see resolveSlideSlot).
   const targetSlot = resolveSlideSlot(slide, index, totalSlides, 'solution');
   const imgSrc = resolveSlideImageUrl(index + 1, targetSlot, assetsDir);
+  if (cards.length === 0) console.warn(`[modern] feature-split slide ${index + 1} has zero cards; rendering empty grid`);
+  if (cards.length > 4) console.warn(`[modern] feature-split slide ${index + 1} has ${cards.length} cards; rendering first 4, remainder needs Part split`);
   const miniHtml = cards.slice(0, 4).map((c) => `
     <div class="feature-card"><h3>${inline(c.title)}</h3><p>${inline(c.desc)}</p></div>`).join('\n');
   return `
@@ -709,7 +719,8 @@ function renderModernSocialProof(slide, brand, index = 7, assetsDir = '', totalS
     </section>`;
 }
 
-// Modern dispatcher: archetype -> renderer (10 cases, default `solution`).
+// Modern dispatcher: archetype -> renderer (12 cases, default `solution`).
+// NOTE: feature-split is direct-call-only (no classifier routing yet) pending routing follow-up.
 function renderModernSlide(slide, index, totalSlides, brand, assetsDir = '') {
   const arch = classifyModernArchetype(slide, index, totalSlides);
   switch (arch) {

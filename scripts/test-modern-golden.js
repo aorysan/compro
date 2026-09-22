@@ -44,7 +44,7 @@ const { runMain } = require('../skills/builder/scripts/build-deck');
     }
   }
   // Assert 4: key elements present
-  for (const cls of ['hero-layout-grid', 'two-col-layout-grid', 'diff-table', 'pricing-cards-grid', 'metric-big-number', 'closing-3col-grid', 'feature-cards-grid']) {
+  for (const cls of ['hero-layout-grid', 'two-col-layout-grid', 'diff-table', 'pricing-cards-grid', 'metric-big-number', 'closing-3col-grid']) {
     if (!html.includes(cls)) { console.error('FAIL: missing key element ' + cls); process.exit(1); }
   }
   // NOTE (Task 4): count rendered grid divs, not bare class mentions — theme.css

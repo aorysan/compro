@@ -155,6 +155,7 @@ Petakan setiap bagian Markdown ke dalam arsitektur slide 16:9 yang sesuai:
   - Gambar dari CDN eksternal (URL `https://`)
   - Gambar raster yang disediakan user (PNG/JPG) yang memang harus jadi file terpisah
 - **Post-build self-check:** Setelah menulis `index.html`, scan semua tag `<img>`. Jika ada yang me-reference path lokal relatif (`src="assets/..."` atau `src="./..."`), itu adalah ERROR — baca file tersebut, inline isinya sebagai `<svg>`, dan hapus tag `<img>`.
+- **Pengecualian per-build `closing-banner.svg`:** `renderModernClosing` (`themes/modern.js`) menyematkan `<img src="assets/closing-banner.svg">` — file art bermerek yang di-generate ke `assets/` pada setiap build. Ini BUKAN pelanggaran aturan inline: panel kiri membutuhkan byte gambar yang unik agar tidak melanggar aturan unique-md5 image (pakai ulang byte foto hero akan menggandakan hash).
 - **Constraint Retroaktif:** Aturan ini berlaku retroaktif: jika builder menemukan output lama dengan `<img src="assets/*.svg">`, harus di-fix saat rebuild.
 
 ### 4. HTML Assembly & Inlining

@@ -18,12 +18,10 @@ if (manifest.name !== 'modern' || manifest.renderer !== 'modern' || manifest.arc
   process.exit(1);
 }
 console.log('PASS: modern theme files complete');
-const cssLight = fs.readFileSync(path.join(__dirname, '..', 'skills', 'builder', 'templates', 'modern', 'theme.css'), 'utf8');
 for (const t of ['--canvas-bg: #FFFFFF', '--text-headline: #0B3B82', '.feature-cards-grid', '.feature-split']) {
-  if (!cssLight.includes(t)) { console.error(`FAIL: theme.css missing "${t}"`); process.exit(1); }
+  if (!css.includes(t)) { console.error(`FAIL: theme.css missing "${t}"`); process.exit(1); }
 }
-const manifestLight = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'skills', 'builder', 'templates', 'modern', 'manifest.json'), 'utf8'));
-if (manifestLight.version !== '2.8.0' || !manifestLight.archetypes.includes('feature-cards') || !manifestLight.archetypes.includes('feature-split')) {
+if (manifest.version !== '2.8.0' || !manifest.archetypes.includes('feature-cards') || !manifest.archetypes.includes('feature-split')) {
   console.error('FAIL: manifest must be 2.8.0 with feature-cards + feature-split'); process.exit(1);
 }
 console.log('PASS: light theme + manifest 2.8.0');

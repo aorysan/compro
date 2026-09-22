@@ -370,7 +370,7 @@ Visual accessibility is non-negotiable. Text must remain effortlessly readable u
 
 ### 3.2 Slide Deck Color Contrast Audit
 
-Computed against the slide background `--brand-surface` (`#0f172a`):
+Dark rows computed against the slide background `--brand-surface` (`#0f172a`); light-deck row computed against `#FFFFFF`:
 
 | Token | Hex Value | Contrast Ratio | Result |
 |-------|-----------|----------------|--------|
@@ -380,7 +380,7 @@ Computed against the slide background `--brand-surface` (`#0f172a`):
 | `--brand-primary` (Venturo Teal) | `#009BAD` | **4.7 : 1** | PASS (AA Normal, AAA Large) |
 | `--color-success` | `#10b981` | **5.4 : 1** | PASS (AA Normal, AAA Large) |
 | `--color-problem` (Warning Red) | `#ef4444` | **4.6 : 1** | PASS (AA Normal, AAA Large) |
-| `--text-headline` on `#FFFFFF` (light deck) | `#0B3B82` | **≥ 7.0 : 1** | PASS (AAA) |
+| `--text-headline` on `#FFFFFF` (light deck) | `#0B3B82` | **10.7 : 1** | PASS (AAA) |
 
 ### 3.3 Strict Anti-Patterns to Avoid
 

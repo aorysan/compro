@@ -34,6 +34,7 @@ Slides use dynamic HSL (Hue, Saturation, Lightness) color tokens. By defining th
   --brand-secondary-subtle: hsla(calc(var(--brand-h) + 35), 90%, 52%, 0.15);
 
   /* Light Canvas & Headline Tones (RT Online Light Deck v2.8.0) */
+  /* NOTE: legacy dark-deck rows below are non-authoritative for the light deck. */
   --canvas-bg: #FFFFFF;           /* Light deck canvas backdrop */
   --text-headline: #0B3B82;       /* Slide headline on light canvas */
   --brand-surface-elevated: #1e293b; /* Elevated container / modal */
@@ -208,6 +209,7 @@ When assembling slides, the builder automatically emits this consolidated CSS va
   --brand-primary-dark: hsl(var(--brand-h), var(--brand-s), calc(var(--brand-l) - 12%));
   --brand-primary-subtle: hsla(var(--brand-h), var(--brand-s), var(--brand-l), 0.12);
   --brand-secondary: hsl(calc(var(--brand-h) + 35), 90%, 52%);
+  /* NOTE: legacy dark-deck rows below are non-authoritative for the light deck. */
   --brand-dark: #090d16;
   --brand-surface: #0f172a;
   --brand-card-bg: rgba(255, 255, 255, 0.04);
