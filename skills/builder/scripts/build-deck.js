@@ -85,16 +85,18 @@ function splitDenseSlides(slides) {
     const lines = (s.content || '').split('\n');
     const bullets = lines.filter(l => /^[-*]\s/.test(l.trim()));
     const words = countWords(s.content);
-    if (bullets.length <= 4 && words <= 60) { out.push(s); continue; }
-    const nonBullets = lines.filter(l => !/^[-*]\s/.test(l.trim())).join('\n').trim();
+    const bulletCount = countBullets(s.content);
+    if (bulletCount <= 4 && words <= 60) { out.push(s); continue; }
+    const nonBullets = lines.filter(l => !/^[-*]\s/.test(l.trim())).join('\n').replace(/<!--[\s\S]*?-->/g, '').trim();
     const chunks = [];
-    for (let i = 0; i < bullets.length; i += 4) chunks.push(bullets.slice(i, i + 4));
+    for (let i = 0; i < bulletCount; i += 4) chunks.push(bullets.slice(i, i + 4));
     if (chunks.length === 0) chunks.push([]);
     chunks.forEach((ch, idx) => {
       const title = idx === 0 ? s.title : `Lanjutan: ${s.title} (Part ${idx + 1})`;
       const directive = (s.content.match(/<!--[\s\S]*?-->/) || [''])[0];
       const content = [nonBullets, directive, ...ch].filter(Boolean).join('\n');
       out.push({ title, content });
+      if (countWords(content) > 60 && bulletCount <= 4) console.log(`[DENSE] "${s.title}" (${countWords(content)} words, over 60-word budget)`);
       if (idx > 0) console.log(`[CHUNK] "${s.title}" -> Part ${idx + 1} (${ch.length} bullets)`);
     });
   }
