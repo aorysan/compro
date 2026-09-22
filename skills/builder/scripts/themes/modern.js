@@ -97,6 +97,535 @@ function classifyModernArchetype(slide, index, totalSlides) {
   return classifyCinematicArchetype(slide, index, totalSlides);
 }
 
+// --- Aperture Cinematic 6 Archetype Renderers (Figma DOM Parity) ---
+
+function resolveSlideParams(slide, brand, defaultIndex, defaultSlot, arg3, arg4, arg5) {
+  let index = defaultIndex;
+  let assetsDir = '';
+  let totalSlides = 6;
+  let customAssetUrl = null;
+
+  if (typeof arg3 === 'string' && (/\.(jpg|jpeg|png|svg|webp|gif)$/i.test(arg3) || /^https?:\/\//i.test(arg3) || /^data:/i.test(arg3))) {
+    customAssetUrl = arg3;
+    if (typeof arg4 === 'number') totalSlides = arg4;
+  } else if (typeof arg3 === 'number') {
+    index = arg3;
+    if (typeof arg4 === 'string') assetsDir = arg4;
+    if (typeof arg5 === 'number') totalSlides = arg5;
+  } else if (typeof arg3 === 'string') {
+    assetsDir = arg3;
+    if (typeof arg4 === 'number') totalSlides = arg4;
+  } else if (typeof arg3 === 'object' && arg3 !== null) {
+    customAssetUrl = arg3.url || arg3.src || arg3.path || null;
+  }
+
+  if (slide && typeof slide.index === 'number') {
+    index = slide.index;
+  }
+  if (slide && typeof slide.total === 'number') {
+    totalSlides = slide.total;
+  }
+
+  const slot = defaultSlot || (CINEMATIC_SLOT_MAP[classifyCinematicArchetype(slide, index, totalSlides)]) || 'hero';
+  const targetSlot = resolveSlideSlot(slide, index, totalSlides, slot);
+  const assetMapUrl = slide && slide.assetMap ? (slide.assetMap[targetSlot] || slide.assetMap[slot]) : null;
+  const imgSrc = customAssetUrl || (slide && (slide.image || slide.imageUrl)) || assetMapUrl || resolveSlideImageUrl(index + 1, targetSlot, assetsDir);
+
+  const brandObj = brand || {};
+  const brandName = brandObj.name || 'Aperture Instruments';
+
+  return { index, assetsDir, totalSlides, imgSrc, targetSlot, brandObj, brandName };
+}
+
+// 1. Cover: Full-bleed image, dark gradient overlay, status pill, 9rem headline
+function renderCover(slide, brand, indexOrAsset = 0, assetsDir = '', totalSlides = 6) {
+  slide = slide || {};
+  const { index, imgSrc, brandName } = resolveSlideParams(slide, brand, 0, 'hero', indexOrAsset, assetsDir, totalSlides);
+
+  const title = slide.title != null ? String(slide.title) : String(slide.h1 || 'Cinema, pocket-sized.');
+  const lines = sanitizeSlideContent(slide.content || slide.raw || '')
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .split('\n')
+    .map(l => l.trim())
+    .filter(Boolean);
+
+  let kicker = slide.kicker || slide.category || '';
+  let subtitle = slide.subtitle || slide.desc || '';
+
+  for (const line of lines) {
+    if (!kicker && /^kicker:\s*/i.test(line)) {
+      kicker = line.replace(/^kicker:\s*/i, '').trim();
+    } else if (!subtitle && !line.startsWith('#') && !/^kicker:\s*/i.test(line) && !/^[-*]\s/.test(line) && line.length > 15) {
+      subtitle = line;
+    }
+  }
+
+  if (!kicker) {
+    const candidate = lines.find(l => /^model\s|^tagline:|^series\s/i.test(l));
+    if (candidate) kicker = candidate.replace(/^tagline:\s*/i, '').trim();
+  }
+  if (!kicker) kicker = 'Model 01 / Vermilion';
+
+  const statusText = slide.status || slide.pill || 'Now shipping';
+  const titleHtml = inline(title).replace(/\n/g, '<br>');
+  const activeClass = index === 0 ? ' active' : '';
+
+  return `      <!-- Slide ${String(index + 1).padStart(2, '0')}: Cover -->
+      <article class="slide-item${activeClass}" id="slide-${index}">
+        <div class="slide-cover">
+          <img src="${imgSrc}" alt="${inline(title)}" class="bg-img">
+          <div class="overlay-t"></div>
+          <div class="overlay-r"></div>
+          <div class="content">
+            <div class="top-meta">
+              <span>${inline(brandName)}</span>
+              <span class="status-pill"><span class="status-dot"></span> ${inline(statusText)}</span>
+            </div>
+            <div>
+              ${kicker ? `<span class="mono-kicker">${inline(kicker)}</span>` : ''}
+              <h1 class="hero-title">
+                ${titleHtml}
+              </h1>
+              ${subtitle ? `<p class="hero-sub">
+                ${inline(subtitle)}
+              </p>` : ''}
+            </div>
+          </div>
+        </div>
+      </article>`;
+}
+
+// 2. Problem: 12-col split, grayscale image, ghost text "NO", 3 problem rows
+function renderProblem(slide, brand, indexOrAsset = 1, assetsDir = '', totalSlides = 6) {
+  slide = slide || {};
+  const { index, imgSrc } = resolveSlideParams(slide, brand, 1, 'problem', indexOrAsset, assetsDir, totalSlides);
+
+  const title = slide.title != null ? String(slide.title) : String(slide.h1 || 'Great cameras are still a burden to carry.');
+  const kicker = slide.kicker || 'The problem';
+  const caption = slide.caption || 'The old way';
+  const ghostText = slide.ghostText || 'NO';
+
+  let items = [];
+  if (Array.isArray(slide.items)) {
+    items = slide.items;
+  } else {
+    const content = sanitizeSlideContent(slide.content || slide.raw || '').trim();
+    const { cards } = parseEditorialCards(content);
+    items = cards;
+  }
+
+  if (items.length === 0) {
+    console.warn(`[modern] problem slide ${index + 1} has zero items; rendering empty list`);
+  }
+
+  const itemsHtml = items.slice(0, 3).map((item, i) => {
+    const num = String(i + 1).padStart(2, '0');
+    const itemTitle = item.title || item.heading || item.name || '';
+    const itemDesc = item.desc || item.detail || item.description || item.body || '';
+    return `              <div class="problem-item">
+                <span class="num">${num}</span>
+                <div class="body-wrap">
+                  <h3>${inline(itemTitle)}</h3>
+                  <p>${inline(itemDesc)}</p>
+                </div>
+              </div>`;
+  }).join('\n');
+
+  const activeClass = index === 0 ? ' active' : '';
+
+  return `      <!-- Slide ${String(index + 1).padStart(2, '0')}: Problem -->
+      <article class="slide-item${activeClass}" id="slide-${index}">
+        <div class="slide-problem">
+          <span class="ghost-text ghost-no">${inline(ghostText)}</span>
+          <div class="img-col">
+            <img src="${imgSrc}" alt="${inline(title)}">
+            <span class="caption">${inline(caption)}</span>
+          </div>
+          <div class="text-col">
+            <span class="mono-kicker">${inline(kicker)}</span>
+            <h2 class="headline">${inline(title)}</h2>
+            <div class="problem-list">
+${itemsHtml}
+            </div>
+          </div>
+        </div>
+      </article>`;
+}
+
+function parseMetricBullet(bulletLine) {
+  if (!bulletLine) return { metric: '', label: '' };
+  const clean = bulletLine.replace(/^[-*]\s*/, '').trim();
+  const boldMatch = clean.match(/^\*\*([^*]+)\*\*\s*[:—–-]?\s*(.*)$/);
+  if (boldMatch) {
+    const part1 = boldMatch[1].trim();
+    const part2 = boldMatch[2].trim();
+    const isPart1Metric = /^[$€£Rp~><]?\s*[\d.,]+[a-zA-Z%xX/]*$/i.test(part1);
+    if (isPart1Metric) {
+      return { metric: part1, label: part2 || part1 };
+    }
+    const numInPart2 = part2.match(/^([$€£Rp~><]?\s*[\d.,]+[a-zA-Z%xX/]*)\b/i);
+    if (numInPart2) {
+      return { metric: numInPart2[1].trim(), label: part1 };
+    }
+    const m = extractBigNumberMetric(bulletLine);
+    if (m.number && m.number !== '100%') {
+      return { metric: m.number, label: part1 };
+    }
+    return { metric: part1, label: part2 };
+  }
+  const parts = clean.split(/[—–:-]/);
+  if (parts.length > 1) {
+    const p0 = parts[0].trim();
+    const p1 = parts.slice(1).join(' ').trim();
+    if (/^[$€£Rp~><]?\s*[\d.,]+[a-zA-Z%xX/]*$/i.test(p0)) {
+      return { metric: p0, label: p1 };
+    }
+    return { metric: p1, label: p0 };
+  }
+  const m = extractBigNumberMetric(bulletLine);
+  return { metric: m.number, label: m.desc || m.title };
+}
+
+// 3. Product: 2-col split, macro image with floating glass badge, 2x2 stat matrix
+function renderProduct(slide, brand, indexOrAsset = 2, assetsDir = '', totalSlides = 6) {
+  slide = slide || {};
+  const { index, imgSrc } = resolveSlideParams(slide, brand, 2, 'macro', indexOrAsset, assetsDir, totalSlides);
+
+  const title = slide.title != null ? String(slide.title) : String(slide.h1 || 'One body.\nEvery format.');
+  const kicker = slide.kicker || 'The product';
+  const badge = slide.badge || slide.floatingBadge || 'Machined aluminium · IP54';
+
+  let desc = slide.desc || slide.subtitle || '';
+  let stats = [];
+
+  if (Array.isArray(slide.stats)) {
+    stats = slide.stats.map(s => ({
+      metric: s.metric || s.value || s.number || '',
+      label: s.label || s.desc || s.title || ''
+    }));
+  } else {
+    const content = sanitizeSlideContent(slide.content || slide.raw || '').trim();
+    const { introText, cards } = parseEditorialCards(content);
+    if (!desc && introText) desc = introText;
+
+    const lines = content.replace(/<!--[\s\S]*?-->/g, '').split('\n').map(l => l.trim()).filter(Boolean);
+    const bulletLines = lines.filter(l => /^[-*]\s/.test(l));
+    if (bulletLines.length > 0) {
+      for (const b of bulletLines) {
+        stats.push(parseMetricBullet(b));
+      }
+    } else if (cards.length > 0) {
+      for (const c of cards) {
+        stats.push(parseMetricBullet(`- **${c.title}** — ${c.desc}`));
+      }
+    }
+  }
+
+  if (stats.length === 0) {
+    console.warn(`[modern] product slide ${index + 1} has zero stats; rendering empty grid`);
+  }
+
+  const statsHtml = stats.slice(0, 4).map(st => `              <div class="stat-cell">
+                <div class="stat-metric">${inline(st.metric)}</div>
+                <div class="stat-label">${inline(st.label)}</div>
+              </div>`).join('\n');
+
+  const titleHtml = inline(title).replace(/\n/g, '<br>');
+  const activeClass = index === 0 ? ' active' : '';
+
+  return `      <!-- Slide ${String(index + 1).padStart(2, '0')}: Product -->
+      <article class="slide-item${activeClass}" id="slide-${index}">
+        <div class="slide-product">
+          <div class="img-col">
+            <img src="${imgSrc}" alt="${inline(title)}">
+            ${badge ? `<span class="badge-floating">${inline(badge)}</span>` : ''}
+          </div>
+          <div class="text-col">
+            <span class="mono-kicker">${inline(kicker)}</span>
+            <h2 class="headline">${titleHtml}</h2>
+            ${desc ? `<p class="desc">
+              ${inline(desc)}
+            </p>` : ''}
+            <div class="stats-grid">
+${statsHtml}
+            </div>
+          </div>
+        </div>
+      </article>`;
+}
+
+// 4. Features: 12-col split, rail photo with vertical label, 4 numbered feature rows (01-04)
+function renderFeatures(slide, brand, indexOrAsset = 3, assetsDir = '', totalSlides = 6) {
+  slide = slide || {};
+  const { index, imgSrc } = resolveSlideParams(slide, brand, 3, 'hands', indexOrAsset, assetsDir, totalSlides);
+
+  const title = slide.title != null ? String(slide.title) : String(slide.h1 || 'Everything, on board.');
+  const kicker = slide.kicker || 'Key features';
+  const railLabel = slide.railLabel || slide.rail || 'On board — everything you need';
+
+  let items = [];
+  if (Array.isArray(slide.items)) {
+    items = slide.items;
+  } else if (Array.isArray(slide.features)) {
+    items = slide.features;
+  } else {
+    const content = sanitizeSlideContent(slide.content || slide.raw || '').trim();
+    const { cards } = parseEditorialCards(content);
+    items = cards;
+  }
+
+  if (items.length === 0) {
+    console.warn(`[modern] features slide ${index + 1} has zero features; rendering empty list`);
+  }
+
+  const visibleItems = items.slice(0, 4);
+  const subCounter = slide.subCounter || `${String(visibleItems.length).padStart(2, '0')} / features`;
+
+  const featuresListHtml = visibleItems.map((item, i) => {
+    const num = String(i + 1).padStart(2, '0');
+    const name = item.name || item.title || '';
+    const detail = item.detail || item.desc || '';
+    return `              <li class="feature-row">
+                <span class="feature-num">${num}</span>
+                <h3 class="feature-name">${inline(name)}</h3>
+                <p class="feature-detail">${inline(detail)}</p>
+              </li>`;
+  }).join('\n');
+
+  const activeClass = index === 0 ? ' active' : '';
+
+  return `      <!-- Slide ${String(index + 1).padStart(2, '0')}: Features -->
+      <article class="slide-item${activeClass}" id="slide-${index}">
+        <div class="slide-features">
+          <div class="img-col">
+            <img src="${imgSrc}" alt="${inline(title)}">
+            <span class="rail-label">${inline(railLabel)}</span>
+          </div>
+          <div class="content-col">
+            <div class="features-header">
+              <div>
+                <span class="mono-kicker">${inline(kicker)}</span>
+                <h2 class="headline">${inline(title)}</h2>
+              </div>
+              <span class="sub-counter">${inline(subCounter)}</span>
+            </div>
+            <ul class="features-list">
+${featuresListHtml}
+            </ul>
+          </div>
+        </div>
+      </article>`;
+}
+
+// 5. USP: Full-bleed dark background, 3 frosted glass cards with metrics
+function renderUsp(slide, brand, indexOrAsset = 4, assetsDir = '', totalSlides = 6) {
+  slide = slide || {};
+  const { index, imgSrc } = resolveSlideParams(slide, brand, 4, 'viewfinder', indexOrAsset, assetsDir, totalSlides);
+
+  const title = slide.title != null ? String(slide.title) : String(slide.h1 || 'Three reasons it earns its place.');
+  const kicker = slide.kicker || 'Why it wins';
+
+  let cards = [];
+  if (Array.isArray(slide.items)) {
+    cards = slide.items;
+  } else if (Array.isArray(slide.cards)) {
+    cards = slide.cards;
+  } else {
+    const content = sanitizeSlideContent(slide.content || slide.raw || '').trim();
+    const { cards: parsedCards } = parseEditorialCards(content);
+    cards = parsedCards.map(c => {
+      const pm = parseMetricBullet(`- **${c.title}** — ${c.desc}`);
+      let kicker = c.kicker || c.tag || '';
+      let metric = c.metric || (pm.metric && pm.metric !== '100%' ? pm.metric : '');
+      let title = c.metric ? c.title : (pm.metric && pm.metric !== '100%' ? pm.label : c.title);
+      let desc = c.desc || c.detail || '';
+      return {
+        kicker,
+        metric,
+        title,
+        desc
+      };
+    });
+  }
+
+  if (cards.length === 0) {
+    console.warn(`[modern] usp slide ${index + 1} has zero cards; rendering empty grid`);
+  }
+
+  const uspCardsHtml = cards.slice(0, 3).map((card, i) => {
+    const num = String(i + 1).padStart(2, '0');
+    const cardKicker = card.kicker || card.tag || '';
+    const metric = card.metric || card.number || '';
+    const cardTitle = card.title || card.name || '';
+    const cardDesc = card.desc || card.detail || '';
+    return `              <div class="usp-card">
+                <div class="usp-card-top">
+                  <span class="usp-kicker">${inline(cardKicker)}</span>
+                  <span class="usp-card-num">${num}</span>
+                </div>
+                <div class="usp-metric">${inline(metric)}</div>
+                <h3 class="usp-title">${inline(cardTitle)}</h3>
+                <p class="usp-detail">${inline(cardDesc)}</p>
+              </div>`;
+  }).join('\n');
+
+  const activeClass = index === 0 ? ' active' : '';
+
+  return `      <!-- Slide ${String(index + 1).padStart(2, '0')}: Why It Wins (USP) -->
+      <article class="slide-item${activeClass}" id="slide-${index}">
+        <div class="slide-usp">
+          <img src="${imgSrc}" alt="${inline(title)}" class="bg-img">
+          <div class="overlay-v"></div>
+          <div class="content">
+            <span class="mono-kicker">${inline(kicker)}</span>
+            <h2 class="headline">${inline(title)}</h2>
+            <div class="usp-grid">
+${uspCardsHtml}
+            </div>
+          </div>
+        </div>
+      </article>`;
+}
+
+// 6. Pricing: 12-col split, lens photo with "Ship it." watermark, 3 pricing tiers (featured tier inverted)
+function renderPricing(slide, brand, indexOrAsset = 5, assetsDir = '', totalSlides = 6) {
+  slide = slide || {};
+  const { index, imgSrc } = resolveSlideParams(slide, brand, 5, 'lens', indexOrAsset, assetsDir, totalSlides);
+
+  const title = slide.title != null ? String(slide.title) : String(slide.h1 || 'Pick a configuration.');
+  const kicker = slide.kicker || 'Get yours';
+  const railTitle = slide.railTitle || 'Ship it.';
+  const railSub = slide.railSub || 'Free delivery worldwide';
+
+  let tiers = [];
+  if (Array.isArray(slide.tiers)) {
+    tiers = slide.tiers;
+  } else if (Array.isArray(slide.items)) {
+    tiers = slide.items;
+  } else {
+    const content = sanitizeSlideContent(slide.content || slide.raw || '').replace(/<!--[\s\S]*?-->/g, '').trim();
+    const lines = content.split('\n').map(l => l.trim()).filter(Boolean);
+    const tableLines = lines.filter(l => l.startsWith('|'));
+    const rawRows = [];
+    for (const tl of tableLines) {
+      const cleaned = tl.replace(/^\||\|$/g, '').trim();
+      if (/^(\s*:?-{2,}:?\s*\|?)+$/.test(cleaned)) continue;
+      const cols = cleaned.split('|').map(c => c.replace(/\*\*/g, '').trim());
+      if (cols.length >= 2) rawRows.push(cols);
+    }
+    const rows = rawRows.slice(1);
+    tiers = rows.map(cols => {
+      const rawName = cols[0] || 'Tier';
+      let name = rawName;
+      let note = cols[3] || '';
+      const noteMatch = rawName.match(/^(.*?)\s*\((.*?)\)$/);
+      if (noteMatch) {
+        name = noteMatch[1].trim();
+        if (!note) note = noteMatch[2].trim();
+      }
+      return {
+        name,
+        note,
+        price: cols[1] || '',
+        features: (cols[2] || '').split(';').map(f => f.trim()).filter(Boolean)
+      };
+    });
+  }
+
+  if (tiers.length === 0) {
+    console.warn(`[modern] pricing slide ${index + 1} has zero tiers; rendering empty grid`);
+  }
+
+  const explicitFeaturedIdx = tiers.findIndex(t => t.featured === true);
+  const featuredIdx = explicitFeaturedIdx !== -1 ? explicitFeaturedIdx : (tiers.length > 1 ? Math.floor(tiers.length / 2) : -1);
+
+  const pricingTiersHtml = tiers.slice(0, 3).map((tier, i) => {
+    const isFeatured = i === featuredIdx;
+    const tierName = tier.name || 'Tier';
+    const tierNote = tier.note || (isFeatured ? 'Most popular' : '');
+    const tierPrice = tier.price || '';
+    const tierCta = tier.cta || 'Reserve →';
+    const rawFeatures = Array.isArray(tier.features) ? tier.features : [];
+    const featsHtml = rawFeatures.map(f => `
+                  <li class="tier-feature-item"><span class="dot"></span><span>${inline(f)}</span></li>`).join('');
+
+    return `              <div class="tier-card${isFeatured ? ' featured' : ''}">
+                <div class="tier-top">
+                  <h3 class="tier-name">${inline(tierName)}</h3>
+                  <span class="tier-note">${inline(tierNote)}</span>
+                </div>
+                <div class="tier-price">${inline(tierPrice)}</div>
+                <ul class="tier-features">${featsHtml}
+                </ul>
+                <button class="tier-btn" type="button">${inline(tierCta)}</button>
+              </div>`;
+  }).join('\n');
+
+  const activeClass = index === 0 ? ' active' : '';
+
+  return `      <!-- Slide ${String(index + 1).padStart(2, '0')}: Pricing -->
+      <article class="slide-item${activeClass}" id="slide-${index}">
+        <div class="slide-pricing">
+          <div class="img-col">
+            <img src="${imgSrc}" alt="${inline(title)}">
+            <div class="overlay-gradient"></div>
+            <div class="rail-content">
+              <div class="rail-title">${inline(railTitle)}</div>
+              <div class="rail-sub">${inline(railSub)}</div>
+            </div>
+          </div>
+          <div class="content-col">
+            <span class="mono-kicker">${inline(kicker)}</span>
+            <h2 class="headline">${inline(title)}</h2>
+            <div class="pricing-grid">
+${pricingTiersHtml}
+            </div>
+          </div>
+        </div>
+      </article>`;
+}
+
+// Cinematic dispatcher: routes to the 6 archetype renderers
+function renderCinematicSlide(slide, arg2, arg3, arg4, arg5) {
+  let index = 0;
+  let totalSlides = 6;
+  let brand = {};
+  let assetsDir = '';
+  let assetMap = null;
+
+  if (typeof arg2 === 'number') {
+    index = arg2;
+    totalSlides = typeof arg3 === 'number' ? arg3 : 6;
+    brand = typeof arg4 === 'object' && arg4 !== null ? arg4 : {};
+    assetsDir = typeof arg5 === 'string' ? arg5 : '';
+  } else if (typeof arg2 === 'object' && arg2 !== null) {
+    brand = arg2;
+    if (typeof arg3 === 'object' && arg3 !== null) {
+      assetMap = arg3;
+    } else if (typeof arg3 === 'string') {
+      assetsDir = arg3;
+    }
+    index = slide && typeof slide.index === 'number' ? slide.index : 0;
+    totalSlides = slide && typeof slide.total === 'number' ? slide.total : 6;
+  }
+
+  slide = slide || {};
+  if (assetMap && !slide.assetMap) {
+    slide = Object.assign({}, slide, { assetMap });
+  }
+
+  const arch = classifyCinematicArchetype(slide, index, totalSlides);
+  switch (arch) {
+    case 'cover': return renderCover(slide, brand, index, assetsDir, totalSlides);
+    case 'problem': return renderProblem(slide, brand, index, assetsDir, totalSlides);
+    case 'product': return renderProduct(slide, brand, index, assetsDir, totalSlides);
+    case 'features': return renderFeatures(slide, brand, index, assetsDir, totalSlides);
+    case 'usp': return renderUsp(slide, brand, index, assetsDir, totalSlides);
+    case 'pricing': return renderPricing(slide, brand, index, assetsDir, totalSlides);
+    default: return renderProduct(slide, brand, index, assetsDir, totalSlides);
+  }
+}
+
 // Slide 1: Hero Cover — congen6 section 1 port (hero-layout-grid).
 function renderModernHero(slide, brand, index = 0, assetsDir = '', totalSlides = 9) {
   const content = sanitizeSlideContent(slide.content || '').replace(/<!--[\s\S]*?-->/g, '').trim();
@@ -319,25 +848,6 @@ function renderFeatureSplit(slide, brand, index = 4, assetsDir = '', totalSlides
       </div>
     </section>`;
 }
-
-module.exports = {
-  CINEMATIC_ARCHETYPES,
-  CINEMATIC_SLOT_MAP,
-  classifyCinematicArchetype,
-  classifyModernArchetype,
-  renderModernHero,
-  renderModernWelcome,
-  renderModernServices,
-  renderFeatureCards,
-  renderFeatureSplit,
-  renderModernEcosystem,
-  renderModernMetrics,
-  renderModernDifferentiator,
-  renderModernPricing,
-  renderModernClosing,
-  renderModernSocialProof,
-  renderModernSlide
-};
 
 // Slide 5: Ecosystem — congen6 section 5 port (ecosystem-grid-split).
 // Orbit-SVG pattern from renderCanvaEcosystem restyled to congen6 GPU panel markup.
@@ -777,13 +1287,10 @@ function renderModernSocialProof(slide, brand, index = 7, assetsDir = '', totalS
 // honored (alias-era callers). Superseded by Task 3's renderCinematicSlide.
 function renderModernSlide(slide, index, totalSlides, brand, assetsDir = '') {
   const arch = classifyModernArchetype(slide, index, totalSlides);
+  if (CINEMATIC_ARCHETYPES.includes(arch)) {
+    return renderCinematicSlide(slide, index, totalSlides, brand, assetsDir);
+  }
   switch (arch) {
-    case 'cover': return renderModernHero(slide, brand, index, assetsDir, totalSlides);
-    case 'problem': return renderModernWelcome(slide, brand, index, 'problem', assetsDir, totalSlides);
-    case 'product': return renderModernWelcome(slide, brand, index, 'solution', assetsDir, totalSlides);
-    case 'features': return renderModernServices(slide, brand, index, assetsDir, totalSlides);
-    case 'usp': return renderModernDifferentiator(slide, brand, index, assetsDir, totalSlides);
-    case 'pricing': return renderModernPricing(slide, brand, index, assetsDir, totalSlides);
     case 'solution': return renderModernWelcome(slide, brand, index, 'solution', assetsDir, totalSlides);
     case 'services': return renderModernServices(slide, brand, index, assetsDir, totalSlides);
     case 'feature-cards': return renderFeatureCards(slide, brand, index, assetsDir, totalSlides);
@@ -791,9 +1298,34 @@ function renderModernSlide(slide, index, totalSlides, brand, assetsDir = '') {
     case 'ecosystem': return renderModernEcosystem(slide, brand, index, assetsDir, totalSlides);
     case 'metrics': return renderModernMetrics(slide, brand, index, assetsDir, totalSlides);
     case 'differentiator': return renderModernDifferentiator(slide, brand, index, assetsDir, totalSlides);
-    case 'pricing': return renderModernPricing(slide, brand, index, assetsDir, totalSlides);
     case 'closing': return renderModernClosing(slide, brand, index, assetsDir, totalSlides);
     case 'social-proof': return renderModernSocialProof(slide, brand, index, assetsDir, totalSlides);
-    default: return renderModernWelcome(slide, brand, index, 'solution', assetsDir, totalSlides);
+    default: return renderCinematicSlide(slide, index, totalSlides, brand, assetsDir);
   }
 }
+
+module.exports = {
+  CINEMATIC_ARCHETYPES,
+  CINEMATIC_SLOT_MAP,
+  classifyCinematicArchetype,
+  classifyModernArchetype,
+  renderCinematicSlide,
+  renderCover,
+  renderProblem,
+  renderProduct,
+  renderFeatures,
+  renderUsp,
+  renderPricing,
+  renderModernHero,
+  renderModernWelcome,
+  renderModernServices,
+  renderFeatureCards,
+  renderFeatureSplit,
+  renderModernEcosystem,
+  renderModernMetrics,
+  renderModernDifferentiator,
+  renderModernPricing,
+  renderModernClosing,
+  renderModernSocialProof,
+  renderModernSlide
+};
