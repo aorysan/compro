@@ -491,15 +491,26 @@ async function runMain(customArgs) {
   const argv = customArgs || process.argv.slice(2);
   const ROOT = detectProjectRoot(argv);
 
-  // 1a. CLI argument parser (supports --name=<slug> and --root=<path>, backward-compat positional).
+  // 1a. CLI argument parser (supports --name=<slug>, --input=<path>, --output=<path>, --root=<path>, backward-compat positional).
   // Single-template build: --theme is no longer an option and is ignored with a warning.
   let THEME = 'modern';
   let slug = 'congen';
-  for (const arg of argv) {
+  let customInput = null;
+  let customOutput = null;
+  for (let i = 0; i < argv.length; i++) {
+    const arg = argv[i];
     if (arg.startsWith('--theme=')) {
       console.warn(`[WARN] Single-template build: ignoring "${arg}", using "modern".`);
     } else if (arg.startsWith('--name=')) {
       slug = arg.split('=')[1];
+    } else if (arg.startsWith('--input=')) {
+      customInput = arg.slice('--input='.length);
+    } else if (arg === '--input' && argv[i + 1]) {
+      customInput = argv[++i];
+    } else if (arg.startsWith('--output=')) {
+      customOutput = arg.slice('--output='.length);
+    } else if (arg === '--output' && argv[i + 1]) {
+      customOutput = argv[++i];
     } else if (!arg.startsWith('--')) {
       slug = arg;
     }
@@ -530,7 +541,12 @@ async function runMain(customArgs) {
   }
 
   // Output directories
-  const OUT_DIR = isWorktree ? path.join(process.cwd(), 'compros', slug) : path.join(ROOT, 'compros', slug);
+  let OUT_DIR = isWorktree ? path.join(process.cwd(), 'compros', slug) : path.join(ROOT, 'compros', slug);
+  let OUT_FILE = null;
+  if (customOutput) {
+    OUT_FILE = path.resolve(customOutput);
+    OUT_DIR = path.dirname(OUT_FILE);
+  }
   ASSETS_DIR = path.join(OUT_DIR, 'assets');
   const REPORTS_DIR = path.join(OUT_DIR, 'reports');
   const DRAFTS_DIR = path.join(OUT_DIR, 'drafts');
@@ -579,7 +595,11 @@ async function runMain(customArgs) {
 
   // 1. Resolve source markdown
   let srcMdPath = '';
-  const candidatePaths = [
+  const candidatePaths = [];
+  if (customInput) {
+    candidatePaths.push(path.resolve(customInput));
+  }
+  candidatePaths.push(
     path.join(DRAFTS_DIR, '02-final.md'),
     path.join(DRAFTS_DIR, '02-company-profile-final.md'),
     path.join(ROOT, 'artifacts', '02-final.md'),
@@ -593,7 +613,7 @@ async function runMain(customArgs) {
     path.join(ROOT, 'artifacts', '01-company-profile-draft.md'),
     path.join(process.cwd(), 'artifacts', '01-draft.md'),
     path.join(process.cwd(), 'artifacts', '01-company-profile-draft.md')
-  ];
+  );
 
   for (const p of candidatePaths) {
     if (fs.existsSync(p) && fs.statSync(p).isFile()) {
@@ -774,7 +794,8 @@ async function runMain(customArgs) {
   }
 
   // 8. Write primary deliverables
-  fs.writeFileSync(path.join(OUT_DIR, 'index.html'), shell, 'utf8');
+  const finalHtmlPath = OUT_FILE || path.join(OUT_DIR, 'index.html');
+  fs.writeFileSync(finalHtmlPath, shell, 'utf8');
   fs.writeFileSync(path.join(OUT_DIR, 'compro.md'), md, 'utf8');
 
   // 9. Folder Consolidation: move artifacts, drafts, reports
@@ -831,7 +852,7 @@ async function runMain(customArgs) {
     `Brand Name      : ${brand.name}`,
     `Primary Color   : ${brand.primaryColor} (HSL: ${hsl.h}, ${hsl.s}%, ${hsl.l}%)`,
     `Source Markdown : ${srcMdPath}`,
-    `Output Target   : ${path.join(OUT_DIR, 'index.html')}`,
+    `Output Target   : ${finalHtmlPath}`,
     `Timestamp       : ${new Date().toISOString()}`,
     '',
     `Total Slides    : ${slides.length}`,
@@ -849,7 +870,7 @@ async function runMain(customArgs) {
     `  - ${path.join(ASSETS_DIR, 'logo.svg')} (Brand Vector Emblem)`,
     '',
     'Folder Consolidation:',
-    `  - Slide Deck    : ${path.join(OUT_DIR, 'index.html')}`,
+    `  - Slide Deck    : ${finalHtmlPath}`,
     `  - Final Markdown: ${path.join(OUT_DIR, 'compro.md')}`,
     `  - Assets Folder : ${ASSETS_DIR}`,
     `  - Drafts Folder : ${DRAFTS_DIR}`,
@@ -884,7 +905,7 @@ async function runMain(customArgs) {
   postBuildSyncGuarantee(OUT_DIR, ROOT, slug);
 
   console.log(`\n🎉 Company profile build complete!`);
-  console.log(`  Target : ${path.join(OUT_DIR, 'index.html')}`);
+  console.log(`  Target : ${finalHtmlPath}`);
   console.log(`  Slides : ${slides.length} slides compiled`);
   console.log(`  Assets : 5 SVG vector assets generated in ${ASSETS_DIR}`);
   console.log(`  Reports: build.log, review-report, and seo-report consolidated in ${REPORTS_DIR}`);
@@ -921,6 +942,7 @@ if (typeof module !== 'undefined' && typeof require !== 'undefined') {
     THEME_ALIASES,
     parseImageDirective,
     pickFromPoolDistinct,
-    acquireSlotImage
+    acquireSlotImage,
+    buildReviewerMetaBlock
   };
 }
