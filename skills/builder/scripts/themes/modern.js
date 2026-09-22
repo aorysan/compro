@@ -126,9 +126,16 @@ function resolveSlideParams(slide, brand, defaultIndex, defaultSlot, arg3, arg4,
     totalSlides = slide.total;
   }
 
-  const slot = defaultSlot || (CINEMATIC_SLOT_MAP[classifyCinematicArchetype(slide, index, totalSlides)]) || 'hero';
+  const arch = classifyCinematicArchetype(slide, index, totalSlides);
+  const slot = defaultSlot || (CINEMATIC_SLOT_MAP[arch]) || 'hero';
   const targetSlot = resolveSlideSlot(slide, index, totalSlides, slot);
-  const assetMapUrl = slide && slide.assetMap ? (slide.assetMap[targetSlot] || slide.assetMap[slot]) : null;
+
+  if (typeof arg3 === 'object' && arg3 !== null && !customAssetUrl) {
+    customAssetUrl = arg3[targetSlot] || arg3[slot] || arg3[arch] || null;
+  }
+
+  const assetMap = (slide && slide.assetMap) || (typeof arg3 === 'object' && arg3 !== null ? arg3 : null);
+  const assetMapUrl = assetMap ? (assetMap[targetSlot] || assetMap[slot] || assetMap[arch]) : null;
   const imgSrc = customAssetUrl || (slide && (slide.image || slide.imageUrl)) || assetMapUrl || resolveSlideImageUrl(index + 1, targetSlot, assetsDir);
 
   const brandObj = brand || {};
@@ -142,14 +149,14 @@ function renderCover(slide, brand, indexOrAsset = 0, assetsDir = '', totalSlides
   slide = slide || {};
   const { index, imgSrc, brandName } = resolveSlideParams(slide, brand, 0, 'hero', indexOrAsset, assetsDir, totalSlides);
 
-  const title = slide.title != null ? String(slide.title) : String(slide.h1 || 'Cinema, pocket-sized.');
+  const title = slide.title != null ? String(slide.title) : String(slide.h1 || brandName || 'Aperture');
   const lines = sanitizeSlideContent(slide.content || slide.raw || '')
     .replace(/<!--[\s\S]*?-->/g, '')
     .split('\n')
     .map(l => l.trim())
     .filter(Boolean);
 
-  let kicker = slide.kicker || slide.category || '';
+  let kicker = slide.kicker || slide.category || (brand && (brand.division || brand.category)) || '';
   let subtitle = slide.subtitle || slide.desc || '';
 
   for (const line of lines) {
@@ -161,12 +168,11 @@ function renderCover(slide, brand, indexOrAsset = 0, assetsDir = '', totalSlides
   }
 
   if (!kicker) {
-    const candidate = lines.find(l => /^model\s|^tagline:|^series\s/i.test(l));
+    const candidate = lines.find(l => /^tagline:|^series\s/i.test(l));
     if (candidate) kicker = candidate.replace(/^tagline:\s*/i, '').trim();
   }
-  if (!kicker) kicker = 'Model 01 / Vermilion';
 
-  const statusText = slide.status || slide.pill || 'Now shipping';
+  const statusText = slide.status || slide.pill || (brand && brand.status) || '';
   const titleHtml = inline(title).replace(/\n/g, '<br>');
   const activeClass = index === 0 ? ' active' : '';
 
@@ -179,7 +185,7 @@ function renderCover(slide, brand, indexOrAsset = 0, assetsDir = '', totalSlides
           <div class="content">
             <div class="top-meta">
               <span>${inline(brandName)}</span>
-              <span class="status-pill"><span class="status-dot"></span> ${inline(statusText)}</span>
+              ${statusText ? `<span class="status-pill"><span class="status-dot"></span> ${inline(statusText)}</span>` : ''}
             </div>
             <div>
               ${kicker ? `<span class="mono-kicker">${inline(kicker)}</span>` : ''}
@@ -253,37 +259,43 @@ ${itemsHtml}
 }
 
 function parseMetricBullet(bulletLine) {
-  if (!bulletLine) return { metric: '', label: '' };
+  if (!bulletLine) return { metric: '', label: '', title: '' };
   const clean = bulletLine.replace(/^[-*]\s*/, '').trim();
   const boldMatch = clean.match(/^\*\*([^*]+)\*\*\s*[:—–-]?\s*(.*)$/);
   if (boldMatch) {
     const part1 = boldMatch[1].trim();
     const part2 = boldMatch[2].trim();
-    const isPart1Metric = /^[$€£Rp~><]?\s*[\d.,]+[a-zA-Z%xX/]*$/i.test(part1);
+    const isPart1Metric = /\d/.test(part1) && /^[$€£Rp~><]?\s*[\d.,]+[a-zA-Z%xX/]*$/i.test(part1);
     if (isPart1Metric) {
-      return { metric: part1, label: part2 || part1 };
+      return { metric: part1, label: part2 || part1, title: part2 };
     }
     const numInPart2 = part2.match(/^([$€£Rp~><]?\s*[\d.,]+[a-zA-Z%xX/]*)\b/i);
-    if (numInPart2) {
-      return { metric: numInPart2[1].trim(), label: part1 };
+    if (numInPart2 && /\d/.test(numInPart2[1])) {
+      return { metric: numInPart2[1].trim(), label: part1, title: part1 };
     }
     const m = extractBigNumberMetric(bulletLine);
-    if (m.number && m.number !== '100%') {
-      return { metric: m.number, label: part1 };
+    if (m.number && m.number !== '100%' && /\d/.test(m.number)) {
+      return { metric: m.number, label: part1, title: part1 };
     }
-    return { metric: part1, label: part2 };
+    return { metric: '', label: part2, title: part1 };
   }
   const parts = clean.split(/[—–:-]/);
   if (parts.length > 1) {
     const p0 = parts[0].trim();
     const p1 = parts.slice(1).join(' ').trim();
-    if (/^[$€£Rp~><]?\s*[\d.,]+[a-zA-Z%xX/]*$/i.test(p0)) {
-      return { metric: p0, label: p1 };
+    if (/\d/.test(p0) && /^[$€£Rp~><]?\s*[\d.,]+[a-zA-Z%xX/]*$/i.test(p0)) {
+      return { metric: p0, label: p1, title: p1 };
     }
-    return { metric: p1, label: p0 };
+    if (/\d/.test(p1) && /^[$€£Rp~><]?\s*[\d.,]+[a-zA-Z%xX/]*$/i.test(p1)) {
+      return { metric: p1, label: p0, title: p0 };
+    }
+    return { metric: '', label: p1, title: p0 };
   }
   const m = extractBigNumberMetric(bulletLine);
-  return { metric: m.number, label: m.desc || m.title };
+  if (m.number && m.number !== '100%' && /\d/.test(m.number)) {
+    return { metric: m.number, label: m.desc || m.title, title: m.title };
+  }
+  return { metric: '', label: clean, title: clean };
 }
 
 // 3. Product: 2-col split, macro image with floating glass badge, 2x2 stat matrix
@@ -293,7 +305,7 @@ function renderProduct(slide, brand, indexOrAsset = 2, assetsDir = '', totalSlid
 
   const title = slide.title != null ? String(slide.title) : String(slide.h1 || 'One body.\nEvery format.');
   const kicker = slide.kicker || 'The product';
-  const badge = slide.badge || slide.floatingBadge || 'Machined aluminium · IP54';
+  const badge = slide.badge || slide.floatingBadge || '';
 
   let desc = slide.desc || slide.subtitle || '';
   let stats = [];
@@ -436,9 +448,19 @@ function renderUsp(slide, brand, indexOrAsset = 4, assetsDir = '', totalSlides =
     cards = parsedCards.map(c => {
       const pm = parseMetricBullet(`- **${c.title}** — ${c.desc}`);
       let kicker = c.kicker || c.tag || '';
-      let metric = c.metric || (pm.metric && pm.metric !== '100%' ? pm.metric : '');
-      let title = c.metric ? c.title : (pm.metric && pm.metric !== '100%' ? pm.label : c.title);
-      let desc = c.desc || c.detail || '';
+      let metric = c.metric || (pm.metric && /\d/.test(pm.metric) ? pm.metric : '');
+      let title = c.title || pm.title || '';
+      let desc = c.desc || c.detail || pm.label || '';
+      if (pm.metric && c.title === pm.metric) {
+        const parts = (c.desc || '').split(/[—–:]/);
+        if (parts.length > 1) {
+          title = parts[0].trim();
+          desc = parts.slice(1).join(' ').trim();
+        } else {
+          title = c.desc;
+          desc = '';
+        }
+      }
       return {
         kicker,
         metric,
@@ -463,9 +485,9 @@ function renderUsp(slide, brand, indexOrAsset = 4, assetsDir = '', totalSlides =
                   <span class="usp-kicker">${inline(cardKicker)}</span>
                   <span class="usp-card-num">${num}</span>
                 </div>
-                <div class="usp-metric">${inline(metric)}</div>
+                ${metric ? `<div class="usp-metric">${inline(metric)}</div>` : ''}
                 <h3 class="usp-title">${inline(cardTitle)}</h3>
-                <p class="usp-detail">${inline(cardDesc)}</p>
+                ${cardDesc ? `<p class="usp-detail">${inline(cardDesc)}</p>` : ''}
               </div>`;
   }).join('\n');
 

@@ -30,6 +30,7 @@ for (const fnName of expectedExports) {
   const slide = {
     title: 'Cinema, pocket-sized.',
     kicker: 'Model 01 / Vermilion',
+    status: 'Now shipping',
     subtitle: 'A full-frame cinema sensor in a body you forget you are carrying. Shoot 6K RAW anywhere.'
   };
   const html = modern.renderCover(slide, brand, 0, '', 6);
@@ -53,6 +54,12 @@ for (const fnName of expectedExports) {
   // Test flexible assetUrl signature
   const customAssetHtml = modern.renderCover(slide, brand, 'https://example.com/cover.jpg');
   assert(customAssetHtml.includes('src="https://example.com/cover.jpg"'), 'renderCover: accepts assetUrl as 3rd arg');
+
+  // Test object map signature (Minor finding 1)
+  const mapAssetHtml = modern.renderCover(slide, brand, { cover: 'https://example.com/map-cover.jpg' });
+  assert(mapAssetHtml.includes('src="https://example.com/map-cover.jpg"'), 'renderCover: accepts object map { cover: url } as 3rd arg');
+  const heroMapAssetHtml = modern.renderCover(slide, brand, { hero: 'https://example.com/map-hero.jpg' });
+  assert(heroMapAssetHtml.includes('src="https://example.com/map-hero.jpg"'), 'renderCover: accepts object map { hero: url } as 3rd arg');
 }
 
 // 2. Test renderProblem
@@ -269,6 +276,41 @@ for (const fnName of expectedExports) {
     const outModern = modern.renderModernSlide(s, i, 6, brand, '');
     assert(outModern === outA, `renderModernSlide delegates to renderCinematicSlide for archetype @${i}`);
   }
+}
+
+// 8. Test generic company profile (No hallucinated camera demo defaults)
+{
+  const genericBrand = { name: 'PT Maju Digital' };
+
+  // Cover: no kicker, no status provided -> no "Model 01", no "Vermilion", no status-pill
+  const genericCoverSlide = {
+    title: 'Transformasi Bisnis Modern',
+    content: 'Solusi enterprise cloud dan integrasi sistem terpadu untuk efisiensi bisnis Anda.'
+  };
+  const genericCover = modern.renderCover(genericCoverSlide, genericBrand, 0, '', 6);
+  assert(!genericCover.includes('Model 01'), 'generic cover must NOT contain "Model 01"');
+  assert(!genericCover.includes('Vermilion'), 'generic cover must NOT contain "Vermilion"');
+  assert(!genericCover.includes('status-pill'), 'generic cover without status must NOT have status-pill');
+
+  // Product: no badge provided -> no "Machined aluminium", no badge-floating
+  const genericProductSlide = {
+    title: 'Platform Enterprise',
+    content: 'Solusi modular untuk seluruh unit kerja.\n\n- **99.9%** — Uptime SLA\n- **500+** — Mitra aktif'
+  };
+  const genericProduct = modern.renderProduct(genericProductSlide, genericBrand, 2, '', 6);
+  assert(!genericProduct.includes('Machined aluminium'), 'generic product must NOT contain "Machined aluminium"');
+  assert(!genericProduct.includes('badge-floating'), 'generic product without badge must NOT have badge-floating');
+
+  // USP: non-numeric bullets -> metric MUST be empty, title must NOT be duplicated into metric
+  const genericUspSlide = {
+    title: 'Keunggulan Kami',
+    content: '- **Keandalan Tinggi** — Sistem terjamin dengan proteksi multi-region.\n- **Dukungan Penuh** — Pendampingan implementasi dari awal hingga tuntas.'
+  };
+  const genericUsp = modern.renderUsp(genericUspSlide, genericBrand, 4, '', 6);
+  assert(!genericUsp.includes('class="usp-metric">Keandalan'), 'non-numeric USP bullet must NOT duplicate title in metric');
+  assert(!genericUsp.includes('100%'), 'non-numeric USP bullet must NOT invent 100%');
+  assert(genericUsp.includes('Keandalan Tinggi'), 'generic USP contains card title');
+  assert(genericUsp.includes('Sistem terjamin dengan proteksi multi-region.'), 'generic USP contains card description');
 }
 
 console.log('PASS: all 6 cinematic archetypes + dispatcher + alias tests passed');
