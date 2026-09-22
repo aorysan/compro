@@ -72,6 +72,35 @@ function parseAndSanitizeMarkdown(md) {
   });
 }
 
+function countBullets(content) {
+  return ((content || '').match(/^[-*]\s/gm) || []).length;
+}
+function countWords(content) {
+  const body = (content || '').replace(/<!--[\s\S]*?-->/g, '');
+  return body.split(/\s+/).map(w => w.trim()).filter(w => w && w !== '---').length;
+}
+function splitDenseSlides(slides) {
+  const out = [];
+  for (const s of slides) {
+    const lines = (s.content || '').split('\n');
+    const bullets = lines.filter(l => /^[-*]\s/.test(l.trim()));
+    const words = countWords(s.content);
+    if (bullets.length <= 4 && words <= 60) { out.push(s); continue; }
+    const nonBullets = lines.filter(l => !/^[-*]\s/.test(l.trim())).join('\n').trim();
+    const chunks = [];
+    for (let i = 0; i < bullets.length; i += 4) chunks.push(bullets.slice(i, i + 4));
+    if (chunks.length === 0) chunks.push([]);
+    chunks.forEach((ch, idx) => {
+      const title = idx === 0 ? s.title : `Lanjutan: ${s.title} (Part ${idx + 1})`;
+      const directive = (s.content.match(/<!--[\s\S]*?-->/) || [''])[0];
+      const content = [nonBullets, directive, ...ch].filter(Boolean).join('\n');
+      out.push({ title, content });
+      if (idx > 0) console.log(`[CHUNK] "${s.title}" -> Part ${idx + 1} (${ch.length} bullets)`);
+    });
+  }
+  return out;
+}
+
 // Editorial card parser: "**Bold.** body" bullet cards become { title, desc }, with an
 // intro-text capture and a paragraph fallback when no bullet cards exist.
 function parseEditorialCards(content) {
@@ -2251,7 +2280,7 @@ async function runMain(customArgs) {
   fs.writeFileSync(path.join(ASSETS_DIR, 'logo.svg'), assetGenerator.generateLogoSvg(brandName, primaryColor));
 
   // 5. Parse & chunking: H1 = new slide — now via shared parseAndSanitizeMarkdown()
-  const slides = parseAndSanitizeMarkdown(md);
+  const slides = splitDenseSlides(parseAndSanitizeMarkdown(md));
 
   // 5b. Wire slide image downloads inside build lifecycle with fallback handling
   // Total asset budget (spec §5, binding): ONE build-level deadline shared by all
@@ -2457,6 +2486,7 @@ if (typeof module !== 'undefined' && typeof require !== 'undefined') {
     copyRecursiveSync,
     runMain,
     parseAndSanitizeMarkdown,
+    splitDenseSlides,
     parseEditorialCards,
     renderCanvaCover,
     renderCanvaWelcome,
