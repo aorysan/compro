@@ -18,7 +18,8 @@ Rilis v2.8.0 menggantikan seluruh tema legacy Canva Editorial dan runtime Reveal
   - `pricing`: Vertical Image Rail ("Ship it.") di kiri dan 3 pricing tiers di kanan; featured tier mengusung inverted black background (`#0a0a0a`), teks putih, dan tombol CTA solid vermilion.
 - **Standalone Zero-Dependency Presentation Engine**: Menghilangkan dependensi CDN Reveal.js secara tuntas. Slide deck ditenagai runtime Vanilla HTML5/CSS3/JS yang ter-inline langsung, dilengkapi hairline progress bar 3px di bagian atas panggung, dot navigation interaktif di footer, dynamic counter (`01 / 06`), dan keyboard navigation lengkap (`ArrowLeft`, `ArrowRight`, `Space`, `PageDown`, `PageUp`, `Home`, `End`).
 - **Cinematic Asset Pipeline Slots**: Pemetaan deterministik 6 slot visual Unsplash resolusi tinggi (`hero`, `problem`, `macro`, `hands`, `viewfinder`, `lens`) dengan cascading fallback (Direct Unsplash CDN ➔ Lorem Picsum ➔ Local architectural SVG) dalam budget waktu kompilasi ketat.
-- **Unified Archetype Classifier**: Eliminasi divergensi classifier ganda (`classifyCanvaArchetype` dihapus; `classifyCinematicArchetype` menjadi single source of truth untuk classifier di asset pipeline, build log, dan slide renderer).
+- **Unified Archetype Classifier**: Eliminasi divergensi classifier ganda (`classifyCanvaArchetype` dipertahankan hanya sebagai alias deprecated; `classifyCinematicArchetype` menjadi single source of truth untuk classifier di asset pipeline, build log, dan slide renderer).
+- **Deterministic Density Pipeline**: Splitter deterministik memecah konten padat menjadi slide Part 1/2/3 (4/4/3 bullet budget atau prose split) tanpa pemotongan fakta.
 - **Comprehensive Verification Suite**: Rangkaian tes komprehensif mencakup classifier parity (`test-cinematic-classifier.js`), figma DOM parity rendering (`test-modern-render.js`), dan golden DOM assertions (`test-modern-golden.js`).
 
 ---
