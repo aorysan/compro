@@ -4,6 +4,7 @@ const path = require('path');
 const testScripts = [
   'validate-manifest.js',
   'test-cinematic-classifier.js',
+  'test-doc-drift.js',
   'test-writer-schema.js',
   'test-reviewer-schema.js',
   'test-builder-inlining.js',
