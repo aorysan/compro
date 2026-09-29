@@ -98,10 +98,11 @@ node scripts/test-modern-render.js
 node scripts/test-modern-golden.js
 
 # 5. Uji anti-drift dokumentasi vs SSOT arketipe (README + seluruh SKILL.md)
+#    sekaligus konsistensi suite: setiap test-*.js terdaftar di test-all.js
 node scripts/test-doc-drift.js
 ```
 
-`scripts/test-all.js` menjalankan **seluruh 18 script** dengan `COMPRO_OFFLINE=1` supaya suite tetap hermetik dan tidak membakar rate limit Openverse.
+`scripts/test-all.js` menjalankan **seluruh 19 script** dengan `COMPRO_OFFLINE=1` supaya suite tetap hermetik dan tidak membakar rate limit Openverse.
 
 ---
 
@@ -154,11 +155,12 @@ node scripts/test-doc-drift.js
 ├── assets/                             # Aset global, referensi Figma presentation, & data referensi compro/
 │   └── compro/                         # Runtime reference data (scraped RT Online); binari berat di-gitignore
 ├── scripts/                            # Verifikasi & test suite runner
-│   ├── test-all.js                     # Test runner seluruh suite (18 script)
+│   ├── test-all.js                     # Test runner seluruh suite (19 script)
 │   ├── test-cinematic-classifier.js    # Test classifier 9 arketipe + slot + anti-drift manifest
-│   ├── test-doc-drift.js                # Anti-drift dokumentasi arketipe vs SSOT
+│   ├── test-doc-drift.js               # Anti-drift dokumentasi arketipe vs SSOT + konsistensi suite
 │   ├── test-modern-render.js           # Test render figma DOM parity
-│   └── test-modern-golden.js           # Golden DOM assertions, kontrak kontak, & asset assertions
+│   ├── test-modern-golden.js           # Golden DOM assertions, kontrak kontak, & asset assertions
+│   └── ... (14 suite lainnya: pipeline-flow, density, theme, schema, dll.)
 ├── test-fixtures/                      # Fixture pengujian & verifikasi
 │   ├── 01-company-profile.md           # Dokumen input contoh realistis
 │   └── expected/                       # Golden expected output

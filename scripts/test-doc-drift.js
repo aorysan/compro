@@ -56,5 +56,45 @@ for (const rel of DOCS) {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Verification-suite drift: the runner, the scripts on disk, and the README
+// count must all agree. A test file that exists but is never registered is dead
+// weight; a count in the README that drifts is the same bug class as the
+// archetype count above.
+// ---------------------------------------------------------------------------
+const scriptsDir = path.join(rootDir, 'scripts');
+const runnerPath = path.join(scriptsDir, 'test-all.js');
+assert(fs.existsSync(runnerPath), 'scripts/test-all.js must exist');
+const runner = fs.readFileSync(runnerPath, 'utf-8');
+const registered = (runner.match(/'([a-z0-9-]+\.js)'/g) || []).map(s => s.replace(/'/g, ''));
+
+const onDisk = fs
+  .readdirSync(scriptsDir)
+  .filter(f => /^test-.*\.js$/.test(f) && f !== 'test-all.js');
+
+for (const file of onDisk) {
+  assert(
+    registered.includes(file),
+    `scripts/${file} exists but is not registered in test-all.js (dead test: it never runs)`
+  );
+}
+for (const file of registered) {
+  assert(
+    fs.existsSync(path.join(scriptsDir, file)),
+    `test-all.js registers scripts/${file} which does not exist`
+  );
+}
+
+const readme = fs.readFileSync(path.join(rootDir, 'README.md'), 'utf-8');
+const claimed = readme.match(/seluruh\s+(\d+)\s+script/i);
+assert(claimed, 'README.md must state how many scripts the suite runs');
+if (claimed) {
+  assert(
+    Number(claimed[1]) === registered.length,
+    `README claims the suite runs ${claimed[1]} scripts but test-all.js registers ${registered.length}`
+  );
+}
+
 console.log('PASS: all ' + DOCS.length + ' docs enumerate the 9 CINEMATIC_ARCHETYPES and carry no stale count');
+console.log('PASS: verification suite consistent — ' + registered.length + ' scripts registered, all exist, README count matches');
 process.exit(0);
