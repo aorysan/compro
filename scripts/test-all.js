@@ -10,6 +10,7 @@ const testScripts = [
   'test-builder-inlining.js',
   'test-publisher-workflow.js',
   'test-orchestrator.js',
+  'test-pipeline-flow.js',
   'test-theme-dispatch.js',
   'test-template-bundle.js',
   'test-slide-structure.js',
